@@ -1,0 +1,40 @@
+# ---- data -------------------------------------------------------------------
+# Raw and intermediate data are reproducible from the acquisition scripts and are
+# not redistributed here (see docs/data_sources.md for the licensing rationale).
+data/raw/**
+data/interim/**
+!data/raw/.gitkeep
+!data/interim/.gitkeep
+!data/processed/.gitkeep
+# Processed outputs are committed selectively; large binaries never are.
+data/processed/*.parquet
+*.h5
+*.pkl
+
+# ---- secrets ----------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+
+# ---- python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.ipynb_checkpoints/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- os / editor ------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
