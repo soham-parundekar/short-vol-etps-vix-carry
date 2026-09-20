@@ -273,3 +273,110 @@ needs one re-run of the fetch on a machine with network access to take effect.
    specifies); and whether the products' own tracking error against their benchmark
    accounts for part of it.
 3. H1 stands rejected as written until then. It is not to be relaxed to fit.
+
+---
+
+## Session 3 — 20 September 2026
+
+The December 2012 gap is closed, and the pre-2022 index noise is resolved: it is a
+market-structure fact with a date attached, not a defect in the reconstruction.
+Getting there turned up three more data defects, all of the same dangerous kind —
+the pipeline completed, the output looked normal, and prices were missing.
+
+### The re-run, and what it exposed
+
+The fetch re-run retrieved 80 legacy companion files (January-2008 through
+August-2014 expiries; the legacy archive ends there). All 331 locally-present files
+verify byte-for-byte against the manifest.
+
+Closing the December 2012 gap immediately exposed a worse one. Checking coverage
+session by session rather than only at the boundary showed **95 consecutive
+sessions, 2013-01-02 to 2013-05-17, with no contract priced at all**. Cboe's modern
+archive publishes `Settle = 0` for 852 cells across 98 sessions in the first half of
+2013 while populating every other column normally. The zeros were correctly
+converted to NaN — but *after* de-duplication, and the de-duplication rule was
+"modern archive wins", so the empty modern row beat the legacy row holding the real
+price.
+
+This had been in the index the whole of the previous session and did not announce
+itself: the reconstruction returns NaN on an unpriced day and the level forward-fills
+across it.
+
+Two further defects found alongside it:
+
+* Fourteen legacy files carry a legal disclaimer above the CSV header. The parser
+  read that line as the header, failed, and `load_vx_panel` swallowed the exception.
+* That swallowing was itself the deeper defect. A file that cannot be parsed now
+  raises by default.
+
+All three fixes were **mutation-tested**: each was reverted in turn and the new test
+file re-run, failing 1, 3 and 2 of its 10 tests respectively. A test that would not
+have caught the bug is not a test.
+
+The panel is now 41,872 rows over 4,711 sessions with zero unpriced days, and the
+index covers 2008-01-02 to 2026-09-18 with zero NaN returns.
+
+### Cross-validating the two archives
+
+13,127 (date, expiry) cells carry a settlement price in both archives. **One**
+disagrees: 2013-05-28, February-2014 expiry, modern 20.10 against legacy 10.25. The
+rest of the curve that session runs 15.20 up to 19.60 in monotone contango, so 10.25
+would sit 9.35 points below the front month at nine months out. The legacy print is
+bad; the merge rule already resolves it correctly, and it is now a test.
+
+### The roll convention, settled
+
+`sp_dji` wins all 16 tracking comparisons against `shifted`, by 1.3 to 7.1 bp a day.
+And the residual-on-roll-weight regression the phase prompt specified comes back
+clean: every |t| < 1.21, every p ≥ 0.227. The roll is not the source of the tracking
+error. Recorded with its numbers in `reports/tables/roll_convention.csv`.
+
+### The open question, answered
+
+Two hypotheses rejected by measurement: second-month staleness (the index-return ×
+roll-weight interaction is insignificant in every era, |t| ≤ 1.10, and the second
+month's share of front-two volume is flat at 0.38-0.44 across all nineteen years),
+and closing prices in place of settlement prices (worse in every era).
+
+What the evidence supports is non-synchronous measurement. Regressing the de-levered
+product return on the index at t−1 as well as t, over 2011-2017, the lagged index
+loads at t = 4.97, 4.62 and 4.49 for VIXY, SVXY and UVXY — the signature of an index
+struck *after* the product's closing price.
+
+And there is a dated cause. Cboe moved the VX daily settlement calculation from
+3:15 p.m. CT to **3:00 p.m. CT effective 26 October 2020** — that is 4:00 p.m. ET,
+exactly when the products' consolidated close is struck. Before it the two series
+are measured fifteen minutes apart.
+
+The break was located in the data rather than assumed: the ratio of median tracking
+difference before to after is maximised at 2020-10-26 (3.51) and falls away on either
+side (2.71 at 1 October, 2.42 at 15 November, 1.08 at 15 December). Daily tracking
+error against VIXY goes from 137 bp in 2019-2020 to 31 bp after.
+
+Honestly stated: this explains the largest and final step, not all of it. The lagged
+loading dies after 2015 and the contemporaneous slope improves around 2019, both
+before the settlement change. Those are recorded as unexplained in
+`docs/validation.md` rather than attributed to a mechanism not demonstrated.
+
+**H1 remains rejected as written.** The consequence is carried forward explicitly:
+the reconstruction carries roughly 120 bp/day of measurement noise against the
+products before October 2020 and roughly 30 bp/day after, and that bounds the
+precision of every pre-2020 result.
+
+### Also this session
+
+* `docs/validation.md` written — the file several docstrings already pointed at.
+* The `index` pipeline stage implemented properly (it was a stub); it now builds both
+  conventions, both comparison tables, the constant-maturity curve and the carry
+  measures, and records its QC block in `reports/_pipeline_state.json`.
+* The test-runner shim gained fixtures (`tmp_path`, `monkeypatch`, user fixtures
+  including generators), `pytest.warns`, and honoured `match=` on `raises`.
+* `data/raw/_manifest.json` is now tracked. It holds no vendor data, only URLs,
+  timestamps, sizes and hashes — excluding it made the raw layer unverifiable by a
+  reader, which defeats its purpose.
+
+### Next
+
+1. Phase 07 close-out: reconcile 5 February 2018 against the product filings.
+2. Stage the seven SEC filings and run `prompts/tasks/verify_filing_terms.md`.
+3. Phase 08 onward: ETP mechanics and rebalancing flows.

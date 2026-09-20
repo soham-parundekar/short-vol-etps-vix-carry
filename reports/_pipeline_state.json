@@ -1,0 +1,37 @@
+{
+ "clean": {
+  "rows": 41872,
+  "contracts": 233,
+  "dates": 4711,
+  "first_date": "2008-01-02",
+  "last_date": "2026-09-18",
+  "missing_settle": 311,
+  "duplicate_keys": 0,
+  "output": "data/interim/vx_panel.csv",
+  "seconds": 1.9,
+  "finished_utc": "2026-09-20T18:15:31Z"
+ },
+ "index": {
+  "convention": "sp_dji",
+  "rows": 4711,
+  "first_date": "2008-01-02",
+  "last_date": "2026-09-18",
+  "sessions_with_missing_price": 0,
+  "sessions_with_nan_return": 0,
+  "ann_return": -0.47689533073468204,
+  "ann_vol": 0.7335383671291834,
+  "worst_day": -0.2595600676818952,
+  "worst_day_date": "2018-02-06",
+  "best_day": 0.9610261470152934,
+  "best_day_date": "2018-02-05",
+  "feb_2018_spike": 0.9610261470152934,
+  "outputs": [
+   "data/processed/index_daily.csv",
+   "data/processed/curve_constant_maturity.csv",
+   "reports/tables/index_tracking.csv",
+   "reports/tables/roll_convention.csv"
+  ],
+  "seconds": 6.6,
+  "finished_utc": "2026-09-20T18:15:53Z"
+ }
+}
