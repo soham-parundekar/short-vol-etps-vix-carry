@@ -6,6 +6,12 @@ data/interim/**
 !data/raw/.gitkeep
 !data/interim/.gitkeep
 !data/processed/.gitkeep
+# The retrieval manifest is the exception. It contains no vendor data - only each
+# file's source URL, retrieval timestamp, byte count and SHA-256 - and it is what
+# lets a reader confirm that their own run of scripts/fetch_data.py produced the
+# same bytes this analysis was run on. Excluding it would make the raw layer
+# unverifiable, which is the opposite of the point.
+!data/raw/_manifest.json
 # Processed outputs are committed selectively; large binaries never are.
 data/processed/*.parquet
 *.h5

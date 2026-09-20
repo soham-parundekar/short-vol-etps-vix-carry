@@ -30,6 +30,7 @@ the front-two-contract panel would change what is being reconstructed.
 from __future__ import annotations
 
 import io
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -186,8 +187,20 @@ def download_vx_contracts(
 
 def _parse_vx_file(path: Path, settlement: pd.Timestamp) -> pd.DataFrame:
     raw = path.read_bytes().decode("utf-8", errors="replace")
-    # Some files carry a leading blank line or a stray BOM.
-    df = pd.read_csv(io.StringIO(raw), skip_blank_lines=True)
+    # Some files carry a leading blank line, a stray BOM, or - in the legacy archive
+    # from the July-2013 expiry onward - a one-line legal disclaimer above the
+    # header. Locate the header row explicitly rather than assuming it is first:
+    # read_csv on a disclaimer line yields a single-column frame whose "columns" are
+    # a sentence, which then fails the required-column check and, before this was
+    # fixed, was swallowed by the caller's except branch. Fourteen legacy files were
+    # being dropped in silence.
+    lines = raw.splitlines()
+    hdr = next(
+        (i for i, ln in enumerate(lines)
+         if ln.lstrip("﻿").strip().lower().startswith("trade date")),
+        0,
+    )
+    df = pd.read_csv(io.StringIO("\n".join(lines[hdr:])), skip_blank_lines=True)
     df = df.rename(columns={c: _VX_COLUMNS.get(c.strip(), c.strip()) for c in df.columns})
     missing = {"date", "settle"} - set(df.columns)
     if missing:
@@ -218,7 +231,9 @@ def _parse_vx_file(path: Path, settlement: pd.Timestamp) -> pd.DataFrame:
     return df[keep]
 
 
-def load_vx_panel(start=None, end=None, verbose: bool = False) -> pd.DataFrame:
+def load_vx_panel(
+    start=None, end=None, verbose: bool = False, strict: bool = True
+) -> pd.DataFrame:
     """Assemble every cached VX contract file into one long panel.
 
     Returns columns ``date, expiry, settle, open, high, low, close, volume,
@@ -234,6 +249,22 @@ def load_vx_panel(start=None, end=None, verbose: bool = False) -> pd.DataFrame:
       a handful of files as trailing artefacts).
     * Nothing is forward-filled at this stage. Gap handling is the cleaning step's
       job and is done where it can be documented and tested.
+
+    Merging the two archives
+    ------------------------
+    Where the modern per-expiry file and the legacy archive both cover a
+    ``(date, expiry)`` cell, the row carrying an actual settlement price wins, and
+    only then does the modern file win. The order matters: Cboe's modern archive
+    publishes ``Settle = 0`` for every session from 2013-01-02 to 2013-05-17 while
+    populating ``Close`` normally, so a plain "modern wins" rule keeps the
+    placeholder and discards the legacy row that has the real price. That left 95
+    consecutive sessions in 2013 with no contract priced at all - a hole that does
+    not announce itself, because the reconstruction simply returns NaN there and the
+    index level forward-fills across it.
+
+    A file that cannot be parsed raises by default rather than being skipped.
+    Silently dropping unreadable files is what hid fourteen legacy files whose only
+    problem was a disclaimer line above the header.
     """
     cfg = load_config()
     start = start or cfg.dotted("sample.start")
@@ -244,32 +275,47 @@ def load_vx_panel(start=None, end=None, verbose: bool = False) -> pd.DataFrame:
         raise FileNotFoundError(
             f"no VX contract files in {d}; run scripts/fetch_data.py first"
         )
-    frames = []
+    frames, failures = [], []
     for f in files:
         settlement = pd.Timestamp(f.stem.split("_")[1])
         try:
             part = _parse_vx_file(f, settlement)
-            # Modern rows win where the two archives overlap; legacy rows fill the
-            # history the modern archive truncated.
-            part["_src_rank"] = 0 if f.stem.startswith("VX_") else 1
-            frames.append(part)
         except Exception as exc:
+            failures.append((f.name, f"{type(exc).__name__}: {exc}"))
             if verbose:
                 print(f"  skipping {f.name}: {exc}")
-    panel = pd.concat(frames, ignore_index=True)
-    panel = (panel.sort_values(["date", "expiry", "_src_rank"])
-                  .drop_duplicates(["date", "expiry"], keep="first")
-                  .drop(columns="_src_rank"))
+            continue
+        # 0 = modern per-expiry file, 1 = legacy archive companion.
+        part["_src_rank"] = 0 if f.stem.startswith("VX_") else 1
+        frames.append(part)
 
+    if failures:
+        detail = "; ".join(f"{n} ({e})" for n, e in failures[:5])
+        msg = (f"{len(failures)} VX contract file(s) could not be parsed: {detail}"
+               + ("; ..." if len(failures) > 5 else ""))
+        if strict:
+            raise ValueError(msg)
+        warnings.warn(msg, RuntimeWarning, stacklevel=2)
+
+    panel = pd.concat(frames, ignore_index=True)
+
+    # Placeholder zeros become NaN *before* the de-duplication, so that the
+    # preference below can see which rows carry a real price.
     panel.loc[panel["settle"] <= 0, "settle"] = np.nan
     for c in ("open", "high", "low", "close"):
         if c in panel.columns:
             panel.loc[panel[c] <= 0, c] = np.nan
 
+    panel["_no_settle"] = panel["settle"].isna().astype(int)
+    panel = (panel.sort_values(["date", "expiry", "_no_settle", "_src_rank"])
+                  .drop_duplicates(["date", "expiry"], keep="first")
+                  .drop(columns=["_no_settle", "_src_rank"]))
+
     panel = panel[panel["date"] <= panel["expiry"]]
-    panel = panel.drop_duplicates(subset=["date", "expiry"], keep="last")
     panel = panel.sort_values(["date", "expiry"]).reset_index(drop=True)
     panel["days_to_expiry"] = (panel["expiry"] - panel["date"]).dt.days
+    panel.attrs["n_files"] = len(frames)
+    panel.attrs["parse_failures"] = failures
 
     lo, hi = pd.Timestamp(start), pd.Timestamp(end)
     return panel[(panel["date"] >= lo) & (panel["date"] <= hi)].reset_index(drop=True)

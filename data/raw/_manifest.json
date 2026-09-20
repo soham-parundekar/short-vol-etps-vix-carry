@@ -1,0 +1,2706 @@
+{
+ "data/raw/cboe/vx/VXL_2008-01-16.csv": {
+  "bytes": 8731,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:15Z",
+  "sha256": "bddc41f083e22e4fddf68b098cf7bc65088d715224f1fcb02c4e3c37e635f73e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_F08_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2008-02-19.csv": {
+  "bytes": 17379,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:16Z",
+  "sha256": "c6dcbe7ea07eeb067ff49fea4ab6cadebed2d0ae593a0624533e71d8286eb968",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_G08_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2008-03-19.csv": {
+  "bytes": 8657,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:17Z",
+  "sha256": "c149234c8966cde8d2508c3fb18e4650d31515842dfc42cef01d2ca39fb66424",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_H08_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2008-04-16.csv": {
+  "bytes": 8580,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:18Z",
+  "sha256": "685dd9e26d401dce60e89fff2d5a492d2350aebe9cdcf682adfd30c94c241ab2",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_J08_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2008-05-21.csv": {
+  "bytes": 35432,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:19Z",
+  "sha256": "b6c2b3898a9d2478f86049d3586a02872ab86a46f12bb558fa9ef9322592f530",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_K08_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2008-06-18.csv": {
+  "bytes": 17338,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:19Z",
+  "sha256": "eeda196f29ed40c969e485e750b618dcf21cfe9853e73982f040fc56b4dd2f3f",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_M08_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2008-07-16.csv": {
+  "bytes": 9815,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:20Z",
+  "sha256": "98eeee0a95fbcedb708c28264c38a36011b109fa55401270644853416a9055c7",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_N08_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2008-08-20.csv": {
+  "bytes": 17384,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:21Z",
+  "sha256": "1db08f6847296ba78600976199c22abd5b67681ced2909ff8641aad9e59367a1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Q08_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2008-09-17.csv": {
+  "bytes": 8780,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:22Z",
+  "sha256": "e93965c073e91c7d7c668dae704df98b71ccc44038f34ce6e8750655d85f3056",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_U08_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2008-10-22.csv": {
+  "bytes": 9148,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:23Z",
+  "sha256": "5f493125bbc9d7a345f7bc4dc67c58aa791aba3eb9775945bf5b25562485d65c",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_V08_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2008-11-19.csv": {
+  "bytes": 17442,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:24Z",
+  "sha256": "c5a2b0b221025b1d336dcbe143b1c4aa71922ae8225676a7b1354739a407fefa",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_X08_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2008-12-17.csv": {
+  "bytes": 15923,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:24Z",
+  "sha256": "3319142be531c9b289c7f18e958d52ec3d09d42ac54a7525dc12656c2509afc2",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Z08_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2009-01-21.csv": {
+  "bytes": 13043,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:25Z",
+  "sha256": "b9ae1a33dc45315e6731efa46e5e3b137440af538cc87723c97604a4f4be2741",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_F09_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2009-02-18.csv": {
+  "bytes": 16897,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:26Z",
+  "sha256": "c11ab65a98969952f03145f672c9d2f90fdb8ebc23e7befe6ec7f97bace802fd",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_G09_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2009-03-18.csv": {
+  "bytes": 13921,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:27Z",
+  "sha256": "124c8f3fa26c1aa50bd88b176103aaf426c726a928ba2dbad3fd637dcbcaf89d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_H09_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2009-04-15.csv": {
+  "bytes": 13667,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:27Z",
+  "sha256": "b22a453d4ad58269931210ef5375835d33ceb01ccacb1ef69ccc2cb9e65fdf0a",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_J09_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2009-05-20.csv": {
+  "bytes": 13846,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:28Z",
+  "sha256": "578c32bb3e60b60f6ec380e8675525bfa9384da725d1a5515314e82140c51d4b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_K09_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2009-06-17.csv": {
+  "bytes": 13584,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:29Z",
+  "sha256": "4cba3c482f2dab9bf800fd0ab9e1e69d29c2afec2df3635d6ff406d38c607735",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_M09_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2009-07-22.csv": {
+  "bytes": 14406,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:30Z",
+  "sha256": "ef71fb9142e23c3d8ee1ffe8429e6f0ffab5f2503f195ed6a3f98afaef4b21dd",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_N09_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2009-08-19.csv": {
+  "bytes": 12388,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:31Z",
+  "sha256": "7819182326171e9e5ae51ddfb24a0e6b8e2edb28b59a46caf7b94a3214694a34",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Q09_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2009-09-16.csv": {
+  "bytes": 13989,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:32Z",
+  "sha256": "6e0986aada1b5279aa36711d89952abecc28a1c9e7b479ef68fed805496f4db9",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_U09_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2009-10-21.csv": {
+  "bytes": 14767,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:33Z",
+  "sha256": "fd362e2daad15249bcac969186ffba3063646fd43f4300153adb34767ef7da81",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_V09_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2009-11-18.csv": {
+  "bytes": 14921,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:34Z",
+  "sha256": "827e8717ebc4dfcac9761a1bbbb44ad1b19b7a1199388de626862b4638042db1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_X09_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2009-12-16.csv": {
+  "bytes": 10634,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:35Z",
+  "sha256": "827f55ac4391f64190f1839da4b54fa8aa4719810b708c35c299c1df63f04e9d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Z09_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2010-01-20.csv": {
+  "bytes": 10831,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:36Z",
+  "sha256": "3ae116ddaa6a6e769dfa95f13697b601c18d1919e066bf384085158db14c1dcc",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_F10_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2010-02-17.csv": {
+  "bytes": 10970,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:37Z",
+  "sha256": "90c362ba139cb13419ae9d48c73fa1564c54e1f514737fd1c75d741f30cfbef2",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_G10_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2010-03-17.csv": {
+  "bytes": 10448,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:38Z",
+  "sha256": "a651567fe0d7b97c34355732c18b19005ce074b87989cfdde944f95bf2c68f9e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_H10_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2010-04-21.csv": {
+  "bytes": 10728,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:38Z",
+  "sha256": "bbccd1d89c19cd7ee4d48dfdaea411f7b548ef215fe81434796b4f1e1981c56b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_J10_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2010-05-19.csv": {
+  "bytes": 11998,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:39Z",
+  "sha256": "e6149d5b706345972e8873669fee15a2a3381e40be349bc9f2a28c926f820d19",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_K10_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2010-06-16.csv": {
+  "bytes": 11685,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:40Z",
+  "sha256": "9b64f85a4c38275f29e62ddf1b42dcc56952151a213b2a46680dc26157c417dd",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_M10_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2010-07-21.csv": {
+  "bytes": 12062,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:41Z",
+  "sha256": "763cc0ba681b934a9fc3c4b8cce4ff076a469d3430ee5979b33ebb8be1fe57a0",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_N10_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2010-08-18.csv": {
+  "bytes": 12091,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:42Z",
+  "sha256": "5355342658c4186629e873b51ca6e051960ad07c06902a0c5a30d832a0696931",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Q10_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2010-09-15.csv": {
+  "bytes": 11924,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:42Z",
+  "sha256": "aeba02ee44fbc5a9c16046c5979a68cd04439a56a40b154a75481e14a3ccc7c1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_U10_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2010-10-20.csv": {
+  "bytes": 12299,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:43Z",
+  "sha256": "5549a86a572f7c5d572fbd07b05744288d2485d365ff19731f06cd6fe2ffa911",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_V10_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2010-11-17.csv": {
+  "bytes": 12351,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:44Z",
+  "sha256": "b6584d30fa0b3da062698c1ee92c175719f1d12962958b1582e653f998bcfb80",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_X10_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2010-12-22.csv": {
+  "bytes": 12470,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:45Z",
+  "sha256": "de5b2291a942f77245aa68745a494b768108182a47edd2b0ba9390f80c25d4d2",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Z10_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2011-01-19.csv": {
+  "bytes": 12285,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:46Z",
+  "sha256": "ad8e031d725ec296e5d7b72dbbb23be8d8f9ac4d5df0c38db792bfa796b4c71e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_F11_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2011-02-16.csv": {
+  "bytes": 12378,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:47Z",
+  "sha256": "2623402e9c7b0009c507a44f1f65c1a275b5818692446263f4e9d244f76adb7e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_G11_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2011-03-16.csv": {
+  "bytes": 12139,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:47Z",
+  "sha256": "fff753ba3b24941e03ea7f006534b6ca4551ba9b2cfd441a6ba2707d6145074a",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_H11_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2011-04-20.csv": {
+  "bytes": 12447,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:48Z",
+  "sha256": "45a8a5c1cc0f824e1213f205ab2a954a148416ad07fc9dce05e895246ee12207",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_J11_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2011-05-18.csv": {
+  "bytes": 12237,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:49Z",
+  "sha256": "75fd3c4ddbcba8a2702c2086cf37284682596d94e53e418cbede5fb46b6222a8",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_K11_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2011-06-15.csv": {
+  "bytes": 12008,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:50Z",
+  "sha256": "4fd04271e39dcd52c33cce7a1d8ad47c725a82f326272590e4749866af422402",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_M11_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2011-07-20.csv": {
+  "bytes": 12424,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:50Z",
+  "sha256": "47304e8a6b0adf1f6877321b37078d77e27473548ce545924424b78f055fcfc9",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_N11_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2011-08-17.csv": {
+  "bytes": 12566,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:51Z",
+  "sha256": "2376d2cd88d72c42660c4bde0ac20404114bbbeeb046901de1f429b8f6b2a0d5",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Q11_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2011-09-21.csv": {
+  "bytes": 12755,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:52Z",
+  "sha256": "63eff26f1492fd24bab4886ebaff7bb97d805cc872d26802f188c8169e776fd7",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_U11_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2011-10-19.csv": {
+  "bytes": 12398,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:52Z",
+  "sha256": "a870b7854635baff74d32fe93fab5f5a2b3471a0d5797d45398846ae997eea91",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_V11_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2011-11-16.csv": {
+  "bytes": 12475,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:53Z",
+  "sha256": "99da1becac78bc27aaa10ca1b63247862e8f5edfdd33da96c5c993cf3a6e4650",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_X11_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2011-12-21.csv": {
+  "bytes": 12239,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:54Z",
+  "sha256": "f49786fda02509a3d095167601bf32f792c03449039621102a59ce85a11ac59b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Z11_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2012-01-18.csv": {
+  "bytes": 11990,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:54Z",
+  "sha256": "c1a5d120de89335d49c548fa6b733820ee332ab18d12eb85c75014f4de189b5b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_F12_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2012-02-15.csv": {
+  "bytes": 11975,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:55Z",
+  "sha256": "8d6eb05cc661d8a34425b0e4e1aa104732782f2cbd507760e129b1316d0fb16d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_G12_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2012-03-21.csv": {
+  "bytes": 12041,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:56Z",
+  "sha256": "3112642c83381eef19d2d7072413b051956a61bdad1782cf470453dd802759d1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_H12_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2012-04-18.csv": {
+  "bytes": 11960,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:57Z",
+  "sha256": "0c4dc1d3bbe3ba959ed8b9c6ac63958f6eaf1211a56dce4e6d5b861b2e4629e4",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_J12_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2012-05-16.csv": {
+  "bytes": 13304,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:58Z",
+  "sha256": "c1290ed13d37ad75fbfc205c79beee7c3ccdee8d3dde186fbf34572d977efa0e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_K12_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2012-06-20.csv": {
+  "bytes": 13505,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:58Z",
+  "sha256": "2cea0810c7781cc6f8d27b482ce00852644f2fd574bb0ce4a1ce807b9db5fc5d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_M12_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2012-07-18.csv": {
+  "bytes": 13596,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:02:59Z",
+  "sha256": "61809f1cf7a39ee0c327bfdf3ce287a18763fb4685eafe0943bc3bdf480ae9a4",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_N12_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2012-08-22.csv": {
+  "bytes": 14124,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:01Z",
+  "sha256": "5583e258859c9f3a98560b2f1b912b22b7f0b969a2ea571547a6efefbd44aac9",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Q12_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2012-09-19.csv": {
+  "bytes": 13833,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:02Z",
+  "sha256": "d3fa26d2408eaa4a6c3a38a7918aa9438732a6db9893c69c820f96029064ae36",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_U12_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2012-10-17.csv": {
+  "bytes": 14001,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:03Z",
+  "sha256": "f744c34639f0f347249485ff83f5bb14f6af23095e87c8fbf37a22f8f4636a99",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_V12_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2012-11-21.csv": {
+  "bytes": 14189,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:04Z",
+  "sha256": "ee4693ad2a9c64738b3e2af52c1e3331c9d3dcb3036ea246f7791d879e5fcfcb",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_X12_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2012-12-19.csv": {
+  "bytes": 13708,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:04Z",
+  "sha256": "2298b1f4cfdb95157a7ddc5b3b3fed946f123da7a677b28e7c6002840b1e25a3",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Z12_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2013-01-16.csv": {
+  "bytes": 13813,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:05Z",
+  "sha256": "5e880a72439277bc6a274c2b4e233da1b6d12ce235d4a7fa2707785675f933d8",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_F13_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2013-02-13.csv": {
+  "bytes": 13829,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:06Z",
+  "sha256": "6f9444dec4221ae7322cef81566ee769721f82d500cfc1ffd4a6cf1c867c9cca",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_G13_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2013-03-20.csv": {
+  "bytes": 13805,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:07Z",
+  "sha256": "fec608165d22c39f327b5fbf9709e3954fc72bce667c7b700469197be79e61fe",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_H13_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2013-04-17.csv": {
+  "bytes": 13747,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:08Z",
+  "sha256": "b370081464894229f7da4211528085b4fe1b8ac88d5ebeaf0455985b93553976",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_J13_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2013-05-22.csv": {
+  "bytes": 14198,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:09Z",
+  "sha256": "4869dedda18bda69213a557360cd7715c74873935612e421a9e2a089689cc79f",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_K13_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2013-06-19.csv": {
+  "bytes": 13674,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:10Z",
+  "sha256": "731321cfa8c54f5b9f64e76acf33b2d6bc21a2fed4fef365ea6faa44f3de86f5",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_M13_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2013-07-17.csv": {
+  "bytes": 13906,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:11Z",
+  "sha256": "c92f180a8a36cb1e11a5cc595c9087658c60c451b3e9ca45efe5a9ae003aea14",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_N13_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2013-08-21.csv": {
+  "bytes": 13979,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:12Z",
+  "sha256": "e118dbc2f1eb2b2ba175cff099e41d38f2245262dddb26b263795ebd2a6e8acf",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Q13_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2013-09-18.csv": {
+  "bytes": 13849,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:13Z",
+  "sha256": "3cd8e7d68e910faa0aff589ff562189fe0913bb0d1d8e43dc3811ff00e7a6a6d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_U13_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2013-10-16.csv": {
+  "bytes": 13886,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:14Z",
+  "sha256": "74d53b5faec004a3bb0499e1b890fbbb5a08ac7d801155bd3a81d1d4e51ebb18",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_V13_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2013-11-20.csv": {
+  "bytes": 14459,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:15Z",
+  "sha256": "34ee8595e952a40b0c3d12fa698b9410c80814196def60321727a5fe85b67788",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_X13_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2013-12-18.csv": {
+  "bytes": 14084,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:16Z",
+  "sha256": "a3801da2596a86a84f5fa741fc79e6873c6871a4e68e4f087b53e642b04007f8",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Z13_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2014-01-22.csv": {
+  "bytes": 14241,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:17Z",
+  "sha256": "02b6e54f09f79afeba1084fe1611e1a1e188149310209416afab41e66433c597",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_F14_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2014-02-19.csv": {
+  "bytes": 13860,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:18Z",
+  "sha256": "695c47142e899cb4ab783988417a3837a6aab819e1e507b0d48399075ea1ae55",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_G14_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2014-03-18.csv": {
+  "bytes": 13492,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:19Z",
+  "sha256": "9a9ab797b51f7df61e234d708283f4f8cc94c95f3c3d82e43374351c76825822",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_H14_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2014-04-16.csv": {
+  "bytes": 13959,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:20Z",
+  "sha256": "6d76ecce3c8dde7e1161a9fa3745de1b17606902e1deec2f832d299f401369b5",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_J14_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2014-05-21.csv": {
+  "bytes": 13920,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:21Z",
+  "sha256": "2eebe7ed1701a3197080dd68ace8cc6f2382e8f24d68fce7c0febe5a594c35fd",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_K14_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2014-06-18.csv": {
+  "bytes": 13902,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:22Z",
+  "sha256": "851e67d2aebb4f7291c1052c84063c3ad6de0d7bbdab8df6b834091127383b2d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_M14_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2014-07-16.csv": {
+  "bytes": 13810,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:22Z",
+  "sha256": "51c2cc3f00b32464f6b2a74fc414cc141bc444003e1c37a2ff80dd8ca2511872",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_N14_VX.csv"
+ },
+ "data/raw/cboe/vx/VXL_2014-08-20.csv": {
+  "bytes": 13807,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T18:03:23Z",
+  "sha256": "72ce2c27548e3279fc59bb74c99fc13711fc1d90749c2f4f5a9486649104045c",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Q14_VX.csv"
+ },
+ "data\\raw\\cboe\\indices\\BXM_History.csv": {
+  "bytes": 138737,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:29Z",
+  "sha256": "3cd8be1540a3ebfeaec6f3dcea3c389d2f19630d6f7cdf7eb33f219bcc563273",
+  "status": 200,
+  "url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/BXM_History.csv"
+ },
+ "data\\raw\\cboe\\indices\\PUT_History.csv": {
+  "bytes": 113353,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:28Z",
+  "sha256": "60307a03328bed6f0bd6cda4568ee6d7bbfabbf844fe71abd8eb455065b2c334",
+  "status": 200,
+  "url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/PUT_History.csv"
+ },
+ "data\\raw\\cboe\\indices\\VIX3M_History.csv": {
+  "bytes": 218101,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:24Z",
+  "sha256": "d8204913710ebb7fea3af2fee80ceaf00c2efd5ee316426d08cbbdbe892009fb",
+  "status": 200,
+  "url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX3M_History.csv"
+ },
+ "data\\raw\\cboe\\indices\\VIX6M_History.csv": {
+  "bytes": 240133,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:26Z",
+  "sha256": "e18dc6370e69a3500eddb5cdbc53372a55148241e89c66966a427beb78389317",
+  "status": 200,
+  "url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX6M_History.csv"
+ },
+ "data\\raw\\cboe\\indices\\VIX9D_History.csv": {
+  "bytes": 200642,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:25Z",
+  "sha256": "b5406eb59e37ea936a22625a20711a025505aaf1a683ccacffb268b215df9f0d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX9D_History.csv"
+ },
+ "data\\raw\\cboe\\indices\\VIX_History.csv": {
+  "bytes": 472819,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:23Z",
+  "sha256": "d385cf23df800eb39bba2f68a0f5ee7a1d6cbcb87234b7b3aab48a1b0b8455ad",
+  "status": 200,
+  "url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
+ },
+ "data\\raw\\cboe\\indices\\VVIX_History.csv": {
+  "bytes": 108688,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:27Z",
+  "sha256": "a5ac1ab55726691fcb074c97fee1ed28c1289c158a909104eb77459a8098b328",
+  "status": 200,
+  "url": "https://cdn.cboe.com/api/global/us_indices/daily_prices/VVIX_History.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2008-01-16.csv": {
+  "bytes": 8731,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:28Z",
+  "sha256": "bddc41f083e22e4fddf68b098cf7bc65088d715224f1fcb02c4e3c37e635f73e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_F08_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2008-02-19.csv": {
+  "bytes": 17379,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:30Z",
+  "sha256": "c6dcbe7ea07eeb067ff49fea4ab6cadebed2d0ae593a0624533e71d8286eb968",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_G08_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2008-03-19.csv": {
+  "bytes": 8657,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:32Z",
+  "sha256": "c149234c8966cde8d2508c3fb18e4650d31515842dfc42cef01d2ca39fb66424",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_H08_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2008-04-16.csv": {
+  "bytes": 8580,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:34Z",
+  "sha256": "685dd9e26d401dce60e89fff2d5a492d2350aebe9cdcf682adfd30c94c241ab2",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_J08_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2008-05-21.csv": {
+  "bytes": 35432,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:36Z",
+  "sha256": "b6c2b3898a9d2478f86049d3586a02872ab86a46f12bb558fa9ef9322592f530",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_K08_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2008-06-18.csv": {
+  "bytes": 17338,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:38Z",
+  "sha256": "eeda196f29ed40c969e485e750b618dcf21cfe9853e73982f040fc56b4dd2f3f",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_M08_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2008-07-16.csv": {
+  "bytes": 9815,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:39Z",
+  "sha256": "98eeee0a95fbcedb708c28264c38a36011b109fa55401270644853416a9055c7",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_N08_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2008-08-20.csv": {
+  "bytes": 17384,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:41Z",
+  "sha256": "1db08f6847296ba78600976199c22abd5b67681ced2909ff8641aad9e59367a1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Q08_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2008-09-17.csv": {
+  "bytes": 8780,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:43Z",
+  "sha256": "e93965c073e91c7d7c668dae704df98b71ccc44038f34ce6e8750655d85f3056",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_U08_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2008-10-22.csv": {
+  "bytes": 9148,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:44Z",
+  "sha256": "5f493125bbc9d7a345f7bc4dc67c58aa791aba3eb9775945bf5b25562485d65c",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_V08_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2008-11-19.csv": {
+  "bytes": 17442,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:46Z",
+  "sha256": "c5a2b0b221025b1d336dcbe143b1c4aa71922ae8225676a7b1354739a407fefa",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_X08_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2008-12-17.csv": {
+  "bytes": 15923,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:48Z",
+  "sha256": "3319142be531c9b289c7f18e958d52ec3d09d42ac54a7525dc12656c2509afc2",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Z08_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2009-01-21.csv": {
+  "bytes": 13043,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:50Z",
+  "sha256": "b9ae1a33dc45315e6731efa46e5e3b137440af538cc87723c97604a4f4be2741",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_F09_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2009-02-18.csv": {
+  "bytes": 16897,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:51Z",
+  "sha256": "c11ab65a98969952f03145f672c9d2f90fdb8ebc23e7befe6ec7f97bace802fd",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_G09_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2009-03-18.csv": {
+  "bytes": 13921,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:53Z",
+  "sha256": "124c8f3fa26c1aa50bd88b176103aaf426c726a928ba2dbad3fd637dcbcaf89d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_H09_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2009-04-15.csv": {
+  "bytes": 13667,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:54Z",
+  "sha256": "b22a453d4ad58269931210ef5375835d33ceb01ccacb1ef69ccc2cb9e65fdf0a",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_J09_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2009-05-20.csv": {
+  "bytes": 13846,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:56Z",
+  "sha256": "578c32bb3e60b60f6ec380e8675525bfa9384da725d1a5515314e82140c51d4b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_K09_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2009-06-17.csv": {
+  "bytes": 13584,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:57Z",
+  "sha256": "4cba3c482f2dab9bf800fd0ab9e1e69d29c2afec2df3635d6ff406d38c607735",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_M09_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2009-07-22.csv": {
+  "bytes": 14406,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:43:59Z",
+  "sha256": "ef71fb9142e23c3d8ee1ffe8429e6f0ffab5f2503f195ed6a3f98afaef4b21dd",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_N09_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2009-08-19.csv": {
+  "bytes": 12388,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:01Z",
+  "sha256": "7819182326171e9e5ae51ddfb24a0e6b8e2edb28b59a46caf7b94a3214694a34",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Q09_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2009-09-16.csv": {
+  "bytes": 13989,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:03Z",
+  "sha256": "6e0986aada1b5279aa36711d89952abecc28a1c9e7b479ef68fed805496f4db9",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_U09_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2009-10-21.csv": {
+  "bytes": 14767,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:04Z",
+  "sha256": "fd362e2daad15249bcac969186ffba3063646fd43f4300153adb34767ef7da81",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_V09_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2009-11-18.csv": {
+  "bytes": 14921,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:06Z",
+  "sha256": "827e8717ebc4dfcac9761a1bbbb44ad1b19b7a1199388de626862b4638042db1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_X09_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2009-12-16.csv": {
+  "bytes": 10634,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:07Z",
+  "sha256": "827f55ac4391f64190f1839da4b54fa8aa4719810b708c35c299c1df63f04e9d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Z09_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2010-01-20.csv": {
+  "bytes": 10831,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:09Z",
+  "sha256": "3ae116ddaa6a6e769dfa95f13697b601c18d1919e066bf384085158db14c1dcc",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_F10_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2010-02-17.csv": {
+  "bytes": 10970,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:10Z",
+  "sha256": "90c362ba139cb13419ae9d48c73fa1564c54e1f514737fd1c75d741f30cfbef2",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_G10_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2010-03-17.csv": {
+  "bytes": 10448,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:12Z",
+  "sha256": "a651567fe0d7b97c34355732c18b19005ce074b87989cfdde944f95bf2c68f9e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_H10_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2010-04-21.csv": {
+  "bytes": 10728,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:14Z",
+  "sha256": "bbccd1d89c19cd7ee4d48dfdaea411f7b548ef215fe81434796b4f1e1981c56b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_J10_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2010-05-19.csv": {
+  "bytes": 11998,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:15Z",
+  "sha256": "e6149d5b706345972e8873669fee15a2a3381e40be349bc9f2a28c926f820d19",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_K10_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2010-06-16.csv": {
+  "bytes": 11685,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:17Z",
+  "sha256": "9b64f85a4c38275f29e62ddf1b42dcc56952151a213b2a46680dc26157c417dd",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_M10_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2010-07-21.csv": {
+  "bytes": 12062,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:18Z",
+  "sha256": "763cc0ba681b934a9fc3c4b8cce4ff076a469d3430ee5979b33ebb8be1fe57a0",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_N10_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2010-08-18.csv": {
+  "bytes": 12091,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:19Z",
+  "sha256": "5355342658c4186629e873b51ca6e051960ad07c06902a0c5a30d832a0696931",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Q10_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2010-09-15.csv": {
+  "bytes": 11924,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:21Z",
+  "sha256": "aeba02ee44fbc5a9c16046c5979a68cd04439a56a40b154a75481e14a3ccc7c1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_U10_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2010-10-20.csv": {
+  "bytes": 12299,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:23Z",
+  "sha256": "5549a86a572f7c5d572fbd07b05744288d2485d365ff19731f06cd6fe2ffa911",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_V10_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2010-11-17.csv": {
+  "bytes": 12351,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:24Z",
+  "sha256": "b6584d30fa0b3da062698c1ee92c175719f1d12962958b1582e653f998bcfb80",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_X10_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2010-12-22.csv": {
+  "bytes": 12470,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:26Z",
+  "sha256": "de5b2291a942f77245aa68745a494b768108182a47edd2b0ba9390f80c25d4d2",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Z10_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2011-01-19.csv": {
+  "bytes": 12285,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:27Z",
+  "sha256": "ad8e031d725ec296e5d7b72dbbb23be8d8f9ac4d5df0c38db792bfa796b4c71e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_F11_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2011-02-16.csv": {
+  "bytes": 12378,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:29Z",
+  "sha256": "2623402e9c7b0009c507a44f1f65c1a275b5818692446263f4e9d244f76adb7e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_G11_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2011-03-16.csv": {
+  "bytes": 12139,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:30Z",
+  "sha256": "fff753ba3b24941e03ea7f006534b6ca4551ba9b2cfd441a6ba2707d6145074a",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_H11_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2011-04-20.csv": {
+  "bytes": 12447,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:32Z",
+  "sha256": "45a8a5c1cc0f824e1213f205ab2a954a148416ad07fc9dce05e895246ee12207",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_J11_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2011-05-18.csv": {
+  "bytes": 12237,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:33Z",
+  "sha256": "75fd3c4ddbcba8a2702c2086cf37284682596d94e53e418cbede5fb46b6222a8",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_K11_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2011-06-15.csv": {
+  "bytes": 12008,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:35Z",
+  "sha256": "4fd04271e39dcd52c33cce7a1d8ad47c725a82f326272590e4749866af422402",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_M11_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2011-07-20.csv": {
+  "bytes": 12424,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:37Z",
+  "sha256": "47304e8a6b0adf1f6877321b37078d77e27473548ce545924424b78f055fcfc9",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_N11_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2011-08-17.csv": {
+  "bytes": 12566,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:39Z",
+  "sha256": "2376d2cd88d72c42660c4bde0ac20404114bbbeeb046901de1f429b8f6b2a0d5",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Q11_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2011-09-21.csv": {
+  "bytes": 12755,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:40Z",
+  "sha256": "63eff26f1492fd24bab4886ebaff7bb97d805cc872d26802f188c8169e776fd7",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_U11_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2011-10-19.csv": {
+  "bytes": 12398,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:42Z",
+  "sha256": "a870b7854635baff74d32fe93fab5f5a2b3471a0d5797d45398846ae997eea91",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_V11_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2011-11-16.csv": {
+  "bytes": 12475,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:44Z",
+  "sha256": "99da1becac78bc27aaa10ca1b63247862e8f5edfdd33da96c5c993cf3a6e4650",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_X11_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2011-12-21.csv": {
+  "bytes": 12239,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:45Z",
+  "sha256": "f49786fda02509a3d095167601bf32f792c03449039621102a59ce85a11ac59b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Z11_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2012-01-18.csv": {
+  "bytes": 11990,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:47Z",
+  "sha256": "c1a5d120de89335d49c548fa6b733820ee332ab18d12eb85c75014f4de189b5b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_F12_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2012-02-15.csv": {
+  "bytes": 11975,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:49Z",
+  "sha256": "8d6eb05cc661d8a34425b0e4e1aa104732782f2cbd507760e129b1316d0fb16d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_G12_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2012-03-21.csv": {
+  "bytes": 12041,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:50Z",
+  "sha256": "3112642c83381eef19d2d7072413b051956a61bdad1782cf470453dd802759d1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_H12_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2012-04-18.csv": {
+  "bytes": 11960,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:52Z",
+  "sha256": "0c4dc1d3bbe3ba959ed8b9c6ac63958f6eaf1211a56dce4e6d5b861b2e4629e4",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_J12_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2012-05-16.csv": {
+  "bytes": 13304,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:53Z",
+  "sha256": "c1290ed13d37ad75fbfc205c79beee7c3ccdee8d3dde186fbf34572d977efa0e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_K12_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2012-06-20.csv": {
+  "bytes": 13505,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:55Z",
+  "sha256": "2cea0810c7781cc6f8d27b482ce00852644f2fd574bb0ce4a1ce807b9db5fc5d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_M12_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2012-07-18.csv": {
+  "bytes": 13596,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:57Z",
+  "sha256": "61809f1cf7a39ee0c327bfdf3ce287a18763fb4685eafe0943bc3bdf480ae9a4",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_N12_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2012-08-22.csv": {
+  "bytes": 14124,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:44:58Z",
+  "sha256": "5583e258859c9f3a98560b2f1b912b22b7f0b969a2ea571547a6efefbd44aac9",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Q12_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2012-09-19.csv": {
+  "bytes": 13833,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:45:00Z",
+  "sha256": "d3fa26d2408eaa4a6c3a38a7918aa9438732a6db9893c69c820f96029064ae36",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_U12_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2012-10-17.csv": {
+  "bytes": 14001,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:45:02Z",
+  "sha256": "f744c34639f0f347249485ff83f5bb14f6af23095e87c8fbf37a22f8f4636a99",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_V12_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2012-11-21.csv": {
+  "bytes": 14189,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:45:04Z",
+  "sha256": "ee4693ad2a9c64738b3e2af52c1e3331c9d3dcb3036ea246f7791d879e5fcfcb",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_X12_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2012-12-19.csv": {
+  "bytes": 13708,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:45:05Z",
+  "sha256": "2298b1f4cfdb95157a7ddc5b3b3fed946f123da7a677b28e7c6002840b1e25a3",
+  "status": 200,
+  "url": "https://cdn.cboe.com/resources/futures/archive/volume-and-price/CFE_Z12_VX.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2013-01-16.csv": {
+  "bytes": 933,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:04Z",
+  "sha256": "637d9a8c0d6fd8a5a1b6d035e662b440cc61ca7206aba3968587ba37b49154c5",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2013-01-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2013-02-13.csv": {
+  "bytes": 2418,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:05Z",
+  "sha256": "7402f4dfe90c93df3e8b88d92ae211a0ce2ab73a58de511adb339e1974b99075",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2013-02-13.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2013-03-20.csv": {
+  "bytes": 4258,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:05Z",
+  "sha256": "8ef55a7d2d9246c5ce4e286a53d8b0acc80f250acdf9652640573bef490bcd76",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2013-03-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2013-04-17.csv": {
+  "bytes": 5683,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:06Z",
+  "sha256": "6f45bb6c481121f2a5da6cd423699939d76fc99245489d3a0fdaf4756268f305",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2013-04-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2013-05-22.csv": {
+  "bytes": 7600,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:07Z",
+  "sha256": "d37b794a921a7ac691370ff6b23a925216bdf8f47e241a51c4f4c17d8dd7fa77",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2013-05-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2013-06-19.csv": {
+  "bytes": 9211,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:07Z",
+  "sha256": "cca2f88a792c21bce6c2a690bd009467660a24900d805ff2e4f0105fe47fa19f",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2013-06-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2013-07-17.csv": {
+  "bytes": 10821,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:08Z",
+  "sha256": "c812baff00929d2458f5782b27b3ef65265c6a9a6b18924a1f68df4e0e24ab01",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2013-07-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2013-08-21.csv": {
+  "bytes": 12947,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:09Z",
+  "sha256": "ff18a4b2e59f10e220e2f61f17e388d9453d377d4d327e1554205959a5d416f1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2013-08-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2013-09-18.csv": {
+  "bytes": 14485,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:10Z",
+  "sha256": "872a3a5258dd17cf6e81f25df3c415716adf9a2868f8839c8185720ee020e61b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2013-09-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2013-10-16.csv": {
+  "bytes": 15186,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:10Z",
+  "sha256": "73374c275e18fcf315ce88c60a5a3d0f51d1131ffeb1ee4e49b909a5339eb25d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2013-10-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2013-11-20.csv": {
+  "bytes": 16021,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:11Z",
+  "sha256": "a3f304d0dc58bfaa519b4cd37d9371e39cb9faea4db2d0c91affc9a9947f3848",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2013-11-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2013-12-18.csv": {
+  "bytes": 15809,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:12Z",
+  "sha256": "7d8f14b22c810a7918ff1c061f3a8ba6a1905efac388814374b9e6e059211cac",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2013-12-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2014-01-22.csv": {
+  "bytes": 16227,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:13Z",
+  "sha256": "d5d3f8db6146aa08b2bfda7bb2f7b6c435b0f0aa75ef939027d0b3edd64bfbc1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2014-01-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2014-02-19.csv": {
+  "bytes": 16034,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:14Z",
+  "sha256": "15032cb7c7f2e71fa0cdc996c68f5b427ed2487d5773cab7547a361fc38d5f97",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2014-02-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2014-03-18.csv": {
+  "bytes": 15978,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:14Z",
+  "sha256": "71324b5a73ba18d4859ceb33da5f83bb3cf9cdaa82be3cd1ec17ed88aa4ce629",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2014-03-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2014-04-16.csv": {
+  "bytes": 16161,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:15Z",
+  "sha256": "e186eec5fc46b59f885cfa26b52f2d6b1f920fb81d85becf425468ddc3debdcb",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2014-04-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2014-05-21.csv": {
+  "bytes": 16065,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:16Z",
+  "sha256": "e7cda391897612ffa3b9dfe043a9fa7037a70975b47e9418adbb9a46bd6bb06c",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2014-05-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2014-06-18.csv": {
+  "bytes": 16047,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:16Z",
+  "sha256": "67f188b5710a653e22b3c8afd911b25a42bc3ac1be237a38e4de4481e7594549",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2014-06-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2014-07-16.csv": {
+  "bytes": 15941,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:17Z",
+  "sha256": "d9186d832169a62371cfce07438ea5833503235ad305c83c590ff02f9ceded31",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2014-07-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2014-08-20.csv": {
+  "bytes": 15938,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:18Z",
+  "sha256": "1cf327407b0df7d95855569d5d7b48929ac49efd9548c131ff1455e903b47bb1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2014-08-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2014-09-17.csv": {
+  "bytes": 15930,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:19Z",
+  "sha256": "c7f363c0ba88a335e8d477a997e73f15b12ca34e3aa6ef8a7a5a4da410c42a2a",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2014-09-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2014-10-22.csv": {
+  "bytes": 16236,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:19Z",
+  "sha256": "ffc837e32032cae60653999f91b06ad27bb7096ceccfc46a891f439eea413a0e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2014-10-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2014-11-19.csv": {
+  "bytes": 16360,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:20Z",
+  "sha256": "ff1bebfbe24b1e6bf2f8401d6df61bdc37fda1ba7657806a165257c2d2a39180",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2014-11-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2014-12-17.csv": {
+  "bytes": 16259,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:21Z",
+  "sha256": "22d871cdfbc45dfeee9695ec46ddc5ca4e3218150634fc9ebb4acabdf9801d2c",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2014-12-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2015-01-21.csv": {
+  "bytes": 16453,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:22Z",
+  "sha256": "41f91ba132ef95d0d08b406632fc7287d0ae33549638bbae5fe74353f3b50067",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2015-01-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2015-02-18.csv": {
+  "bytes": 15942,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:22Z",
+  "sha256": "031a8bee01141dee071e95db1736f0123c8d9f61c2e06c0445035db185eee495",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2015-02-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2015-03-18.csv": {
+  "bytes": 16023,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:23Z",
+  "sha256": "a6f97e10b12cfd879c1909726e36f78f67308a25b64306ab7cb035336da6b728",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2015-03-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2015-04-15.csv": {
+  "bytes": 16116,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:24Z",
+  "sha256": "0f76e3367e83899aeb630373c03756cfdaa378815c253df1e99f8a1ce32c34ee",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2015-04-15.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2015-05-20.csv": {
+  "bytes": 16146,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:25Z",
+  "sha256": "7f9ef8a648e5941633d1d698fe0df5a1028742be6419dd739519d579866a1431",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2015-05-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2015-06-17.csv": {
+  "bytes": 16092,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:25Z",
+  "sha256": "dfd038349b2bf5b42201098bfd773154dffc00e95fca40a546460895706ae5b3",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2015-06-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2015-07-22.csv": {
+  "bytes": 16001,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:26Z",
+  "sha256": "716680bec93ae4e2ad275de6205ff465e8a280d75aa794a78760d942163e2e5d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2015-07-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2015-08-19.csv": {
+  "bytes": 16010,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:27Z",
+  "sha256": "db84d1d673c2a9f26cb8da329c30128607b1d54fc2b6b22dac662bab5deb140c",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2015-08-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2015-09-16.csv": {
+  "bytes": 15977,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:28Z",
+  "sha256": "8cd9ed89f3b134dcd079d75836c4b484eb7996220327f96ed3fe7eacbfe86f71",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2015-09-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2015-10-21.csv": {
+  "bytes": 16216,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:29Z",
+  "sha256": "be9ab48393f87cecf4405260faaa117fb2350a10c27c68788cd2d03c8d0108ab",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2015-10-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2015-11-18.csv": {
+  "bytes": 16307,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:29Z",
+  "sha256": "c264a160247da17575d26f5f3b1903b7a2844033ea8325e6d3d045eb5e25a913",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2015-11-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2015-12-16.csv": {
+  "bytes": 16231,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:30Z",
+  "sha256": "781f9d1b72a9b9ba842c57a3462497db7cfe106a638e6f76ac06fe58c388308a",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2015-12-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2016-01-20.csv": {
+  "bytes": 16359,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:31Z",
+  "sha256": "aeea0930e1c1b5687c7304cd5a2ed03dcaf9e40f76bfee12e39724ca1e66792a",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2016-01-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2016-02-17.csv": {
+  "bytes": 15823,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:31Z",
+  "sha256": "075420a20cbe4638ecbb816ea1ab30e884ca073dc8c6b18f2eaabf934dcf494b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2016-02-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2016-03-16.csv": {
+  "bytes": 15926,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:32Z",
+  "sha256": "3cd20339c7a6fef1c0979e90df62a17cae3158344eb2e89c0d499d86c7260745",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2016-03-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2016-04-20.csv": {
+  "bytes": 15949,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:33Z",
+  "sha256": "393dc45b85ce059739bbe328da511feb7a5f59ccef23d6da3ac159cd430fdd91",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2016-04-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2016-05-18.csv": {
+  "bytes": 15942,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:34Z",
+  "sha256": "aba10814ffe052491b3a326afff42ee5c5ac3986a164e192ad1a300e2e419499",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2016-05-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2016-06-15.csv": {
+  "bytes": 15852,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:34Z",
+  "sha256": "1101fe08a03e5ede056d1566dc44bf2becd64d385620c04701b827edd1f7a71d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2016-06-15.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2016-07-20.csv": {
+  "bytes": 15852,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:35Z",
+  "sha256": "014b65d3ac1144eb04b7dc381b975da9a5507731a529f238724a800502764521",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2016-07-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2016-08-17.csv": {
+  "bytes": 15918,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:36Z",
+  "sha256": "e81b49d8bf1daf53328e77f4c0aa648f863273445cfccd5b990b5961f7177e43",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2016-08-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2016-09-21.csv": {
+  "bytes": 16302,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:37Z",
+  "sha256": "f778fc3e4642c0e992e6ad5582db7ca31bc94a43039c999f40556696a2e937df",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2016-09-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2016-10-19.csv": {
+  "bytes": 16123,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:38Z",
+  "sha256": "707f3ac7b19512d971db6a96936a567eda446e861571317f3dd71d81e3bf688e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2016-10-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2016-11-16.csv": {
+  "bytes": 16198,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:39Z",
+  "sha256": "82b88e73cfa95aff4dac5c9b3b8fc7515f1006756a6d4baf68c69313a7e1663d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2016-11-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2016-12-21.csv": {
+  "bytes": 16599,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:40Z",
+  "sha256": "59548c21843d208954c670faa8e7332bf98c7ecff9131ef99faa97844eb17c12",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2016-12-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2017-01-18.csv": {
+  "bytes": 15971,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:40Z",
+  "sha256": "8cc56e11f937e065cd0670708fbcf4b8f7bed30fe91362dddb64b62b38ca5063",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2017-01-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2017-02-15.csv": {
+  "bytes": 15917,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:41Z",
+  "sha256": "4d23113158ebc3b0445b1d7bc1f6f4c2cb98a7ddff800a541b20e4a105422d84",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2017-02-15.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2017-03-22.csv": {
+  "bytes": 16321,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:41Z",
+  "sha256": "dad65fc550fdb332ec587126650a8035cc267985a6f56ce69931ce4bcbabd977",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2017-03-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2017-04-19.csv": {
+  "bytes": 15946,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:42Z",
+  "sha256": "1bbf0643c00b792e053e5a848568f986ad90b77fa4c0cbb6e9c0d563a330505d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2017-04-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2017-05-17.csv": {
+  "bytes": 15956,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:43Z",
+  "sha256": "2566cf9cd35d406e35f88b6d90ac8b22ee673b0024d8bf0baf5f99caadadfe78",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2017-05-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2017-06-21.csv": {
+  "bytes": 15971,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:44Z",
+  "sha256": "a510e1faecbcecb1017a6afd7abeffc1703a65d3f8aeeb87749e24c82b677201",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2017-06-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2017-07-19.csv": {
+  "bytes": 15897,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:45Z",
+  "sha256": "b7905ad2d1385b3b0eca354af5a155cc0f3812280f32e343438b65477eab720e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2017-07-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2017-08-16.csv": {
+  "bytes": 15933,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:45Z",
+  "sha256": "1517565a43fc34cff1e4ec865f8859a9b4711c9e2a22bc47d0c0b74aa72b2db1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2017-08-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2017-09-20.csv": {
+  "bytes": 15957,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:46Z",
+  "sha256": "75713d9de1021f98b522c38a89acead6346f895df5d0c7c4c8459621e72ac05e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2017-09-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2017-10-18.csv": {
+  "bytes": 16164,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:46Z",
+  "sha256": "e221c859ae483d88a9bac23e8b9f3fb1dc229489388d566c2e2476e241bd6dbb",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2017-10-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2017-11-15.csv": {
+  "bytes": 16146,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:47Z",
+  "sha256": "77b6e9e2906739392ba361f1d1c6e9cf8e0b478f647e5ea88d1d0a1fababc22b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2017-11-15.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2017-12-20.csv": {
+  "bytes": 16239,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:48Z",
+  "sha256": "6ef323577e4ae0cb605abbf681b38d52b35648284c0c51435554ca1c3c6859cb",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2017-12-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2018-01-17.csv": {
+  "bytes": 16031,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:49Z",
+  "sha256": "7825a246b640f7f5e541e4c1d507fc6b21bae78f544718afb70eda7320db2286",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2018-01-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2018-02-14.csv": {
+  "bytes": 16059,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:50Z",
+  "sha256": "a5b46f776331c120318c8a97304b51f72102531ad751d02d73a64ba613f9ec3e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2018-02-14.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2018-03-21.csv": {
+  "bytes": 16117,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:50Z",
+  "sha256": "7c78a94b9f9c7403467f5236093412a798969c4bdc2e72e7ba577942cbf1a38e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2018-03-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2018-04-18.csv": {
+  "bytes": 16016,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:51Z",
+  "sha256": "3920a20b460e45826d871e7473cbb8ed4569a05e77cc2521bbbd1c5a2b350d67",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2018-04-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2018-05-16.csv": {
+  "bytes": 16053,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:52Z",
+  "sha256": "32804f6248e71c6e014729e3979480cc581f6e4b1221f4ce93d867bd4ccf790b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2018-05-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2018-06-20.csv": {
+  "bytes": 16073,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:53Z",
+  "sha256": "6c5ca228bdd8bce9d72703720c77b7ca80462b073829a53a890ff768a46114b1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2018-06-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2018-07-18.csv": {
+  "bytes": 15967,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:53Z",
+  "sha256": "042fa86dce5f555489e6201bfac79394d94af53b83bff4f2386b63123b7028ea",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2018-07-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2018-08-22.csv": {
+  "bytes": 16404,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:54Z",
+  "sha256": "35ed1ae5658e1d3574427c4f1f6ba2effb4dd6d9d8c1450a31deba8f982cf27b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2018-08-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2018-09-19.csv": {
+  "bytes": 16000,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:55Z",
+  "sha256": "95e63535525b24056476129ce86927156fa43c2f192be7ce3573becb56306c81",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2018-09-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2018-10-17.csv": {
+  "bytes": 16227,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:55Z",
+  "sha256": "11fa3df6f434e331800fa23abaef7dc4ac9270199433bf93638c945a2a3dda24",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2018-10-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2018-11-21.csv": {
+  "bytes": 16690,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:56Z",
+  "sha256": "bf6d078b02a7d7b16d4359d43cd0e10f9e5c9d1257c8f03ca67f33a4793ff113",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2018-11-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2018-12-19.csv": {
+  "bytes": 16228,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:57Z",
+  "sha256": "b95cf1efd7df610ae76a19ff4c816c62e7bd808d147b36d52fc55d06beef7e6b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2018-12-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2019-01-16.csv": {
+  "bytes": 16072,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:58Z",
+  "sha256": "02acfe3646e1816cca399ce9bbbb8a1b02c9410ec1277760448f264f1d96ffe1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2019-01-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2019-02-13.csv": {
+  "bytes": 16019,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:30:59Z",
+  "sha256": "9f0b9f1ddcfd30c54db9a74a24d5bcb109133074f4c1ce7b60f9532c783f28da",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2019-02-13.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2019-03-19.csv": {
+  "bytes": 15966,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:00Z",
+  "sha256": "2f86c6a1d6eed44390b8134bff68e186d2a1ae34469deaea1e594eb97ebe91a6",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2019-03-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2019-04-17.csv": {
+  "bytes": 16193,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:01Z",
+  "sha256": "15b9c792ba9b9d37b9f7b6a930dbad9715f1f83789757b8c9134b16362b1febc",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2019-04-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2019-05-22.csv": {
+  "bytes": 16103,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:02Z",
+  "sha256": "0f364af221b4de67fc0c95105e8edafba1b634f60237b8b07c33b0d769fa364c",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2019-05-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2019-06-19.csv": {
+  "bytes": 16127,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:02Z",
+  "sha256": "a0a122738217db57d59481294dd3c2206555d508a1f6f2ea88b7a64324b9162b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2019-06-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2019-07-17.csv": {
+  "bytes": 15952,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:03Z",
+  "sha256": "ea2adcccd6dded6cac7139a9191b991f74b33a12fa3328bdae628f47f818ecfd",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2019-07-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2019-08-21.csv": {
+  "bytes": 16100,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:04Z",
+  "sha256": "d8865c5f71d723b1081460b4979384d5ae8edbf5faa4d078dff1db9ab07a3a4f",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2019-08-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2019-09-18.csv": {
+  "bytes": 15998,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:05Z",
+  "sha256": "8fbdffbd379c70d7c1b754b2ca9ea97d01bb916aea84c6b5f7984379f57cc350",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2019-09-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2019-10-16.csv": {
+  "bytes": 16120,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:06Z",
+  "sha256": "24ed3fffe793a77e50312c268ccc09fd402b76b3650afcc579b994f1cd0cc9f5",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2019-10-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2019-11-20.csv": {
+  "bytes": 16690,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:07Z",
+  "sha256": "4f65b9d64aece0ce838779ab8be34af3f6383d4af7d95f2905769e34cced2a38",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2019-11-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2019-12-18.csv": {
+  "bytes": 16291,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:08Z",
+  "sha256": "426d90a4d696bb9592e022b311be766a6c6ac808c71a68f4e66712b4a6ef6f32",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2019-12-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2020-01-22.csv": {
+  "bytes": 16432,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:08Z",
+  "sha256": "88dd32dd13b10c67427b6e2d9a3350d2bc663974aed3f89c87b22ab2cd287eb4",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2020-01-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2020-02-19.csv": {
+  "bytes": 15898,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:09Z",
+  "sha256": "4282f32fadf5e45e889072f373af2077769e0e6ab11b16c5a74dc6dce5c8b749",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2020-02-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2020-03-18.csv": {
+  "bytes": 15992,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:10Z",
+  "sha256": "b0754a52316241f15d66f41706d3569f20cdfe1703bbd4cd7f87146cf57beb50",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2020-03-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2020-04-15.csv": {
+  "bytes": 16010,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:11Z",
+  "sha256": "abcfd156b05a0c8b8b75811e5bf17f1cf1dbfdac0d408231bc48d133e57934ca",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2020-04-15.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2020-05-20.csv": {
+  "bytes": 16008,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:12Z",
+  "sha256": "0dce9099b417b8af888244d993b2f77fe8cc0cef77c4473b9ca66dc727a80cef",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2020-05-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2020-06-17.csv": {
+  "bytes": 15951,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:12Z",
+  "sha256": "5d66bb8cbdd182c0fad4e984fa60ffbde7122388dc218fb91bb10a02faa82d1a",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2020-06-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2020-07-22.csv": {
+  "bytes": 16200,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:13Z",
+  "sha256": "c5f58ca4a7c62f4b205646064e3038d34751e47ab4bb14aaa9e96be59521a407",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2020-07-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2020-08-19.csv": {
+  "bytes": 15756,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:14Z",
+  "sha256": "7fa02eb5311f0012391223e6aa7d0b1d7ea2a0992e86bf66366dd5408eeef67e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2020-08-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2020-09-16.csv": {
+  "bytes": 16535,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:15Z",
+  "sha256": "bb0fd4d378b682148f1999323e35227a71a4b8a18e95deba5980267bf3c65cf4",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2020-09-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2020-10-21.csv": {
+  "bytes": 18645,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:16Z",
+  "sha256": "f623bf53dbbb3fccc011dcb4f0df19c8726b91ae6b0f9ccfd9ba31e2ca2ee414",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2020-10-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2020-11-18.csv": {
+  "bytes": 20181,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:16Z",
+  "sha256": "b4e461566167f08151ab6a44268a61c964c1d828c6ea3e41928996e328dcd02c",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2020-11-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2020-12-16.csv": {
+  "bytes": 15678,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:17Z",
+  "sha256": "bbb2ec67e0c3993a1c78ba6f77123c52709ff1c142604042eb70d048a71a99fd",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2020-12-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2021-01-20.csv": {
+  "bytes": 15810,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:18Z",
+  "sha256": "53a84f66db60c505ed1ce0eb8deb0e8c8b013b0488fb02c5671edb80db3379a1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-01-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2021-02-17.csv": {
+  "bytes": 15347,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:19Z",
+  "sha256": "ed9f4381dead986af6f25f11923c40a1f1997a44f916f417bff36c30df4c8b3c",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-02-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2021-03-17.csv": {
+  "bytes": 15494,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:19Z",
+  "sha256": "ee3ba3bd455cad5772198f3f04d3d3e7179779319cf74d22fe90b23f40a21ff7",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-03-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2021-04-21.csv": {
+  "bytes": 15492,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:20Z",
+  "sha256": "0d707904eafaa6ea39c727a5e843eeb6b692577c63b7ae14835227dd90643029",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-04-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2021-05-19.csv": {
+  "bytes": 15602,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:21Z",
+  "sha256": "6ed8f065f27edf49e137829ce247b2e2533e11640ded0f6a79535583772a4b3b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-05-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2021-06-16.csv": {
+  "bytes": 15551,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:22Z",
+  "sha256": "b87dac062797b9da171f294d5cd2bcfd2d1513d6b7816ddbba2c7737347b658c",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-06-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2021-07-21.csv": {
+  "bytes": 15500,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:23Z",
+  "sha256": "95fd3d2330eedfdbfa0d65b90c0916c309b43b70e54bd43f1ad91a8f2ea008e9",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-07-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2021-08-18.csv": {
+  "bytes": 15519,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:23Z",
+  "sha256": "fc1cda584f8e667ef85470b84edbe42fb877573652becb51ebbd91ff8b900dab",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-08-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2021-09-15.csv": {
+  "bytes": 15468,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:24Z",
+  "sha256": "c73076114fc912535a6f27f2ceb418f7cf32e08e4f536a4e146de8be48ef9526",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-09-15.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2021-10-20.csv": {
+  "bytes": 15839,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:25Z",
+  "sha256": "88fb7fe945081fb68984cdb45bee72790526b5bcaf543c54cc8d4b5a790a3e92",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-10-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2021-11-17.csv": {
+  "bytes": 15985,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:26Z",
+  "sha256": "a9e3cf02243b17308013f772bb572cea159d084399bbb74eaccf7acc0751e34e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-11-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2021-12-22.csv": {
+  "bytes": 16373,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:27Z",
+  "sha256": "e929a9ce4fbde81983feb0029503af903a3170ee09c7422ff51669ca75de9f6e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2021-12-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2022-01-19.csv": {
+  "bytes": 15805,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:28Z",
+  "sha256": "41737f15dd52ec81ff903457215a0bcd6ba2870b3ef8dd0ca771b91403efff58",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-01-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2022-02-16.csv": {
+  "bytes": 15814,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:28Z",
+  "sha256": "2f43ba33437708a03914d4140b690321059816328b4f24e631ae6f70a89ebc44",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-02-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2022-03-15.csv": {
+  "bytes": 15712,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:29Z",
+  "sha256": "b0df778b923c87d120da4bfd4f85d89a304e2bef0f7d3b40f951183e5a1d80b4",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-03-15.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2022-04-20.csv": {
+  "bytes": 15790,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:30Z",
+  "sha256": "988293cd474dcb1e7b8d01279826ab426aab4186db8802cc9c8f6bea9febf97e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-04-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2022-05-18.csv": {
+  "bytes": 15871,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:31Z",
+  "sha256": "af283c8213f8e95b60395ca243e3d8fc42b7854a8bb5b504bd8815bf1086379b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-05-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2022-06-15.csv": {
+  "bytes": 15844,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:32Z",
+  "sha256": "9eadf959920fdb4317fae7f1f8ecca8265ab950d8f450c188d6e750fa6552b87",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-06-15.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2022-07-20.csv": {
+  "bytes": 15654,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:32Z",
+  "sha256": "feedfacfa508083eb0820e83f82c5cb354a2eef1d83ec4e18dcef64b53ffffdf",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-07-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2022-08-17.csv": {
+  "bytes": 15727,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:33Z",
+  "sha256": "5000aa4012119373978c50575ce39441a8f8dcad06ab98c340bb2a71dc01053c",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-08-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2022-09-21.csv": {
+  "bytes": 15819,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:34Z",
+  "sha256": "a74598b17c5e92b068ee46ee38aefdfe8423d62153bee7d879ff4eddc2fbb626",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-09-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2022-10-19.csv": {
+  "bytes": 15850,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:35Z",
+  "sha256": "270abe0333366e5395d88d6e56da51fa403962f03229d119a8208ece339c778d",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-10-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2022-11-16.csv": {
+  "bytes": 15880,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:36Z",
+  "sha256": "bb433441c5a2d77f060a86265337d397e56ddfcfa191d2f3dc5f7b474a298379",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-11-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2022-12-21.csv": {
+  "bytes": 16360,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:36Z",
+  "sha256": "4bd0da312422aaa889cbb73bc6643eef556efb2e2599509540fb064657caaf8b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2022-12-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2023-01-18.csv": {
+  "bytes": 15684,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:37Z",
+  "sha256": "8c279882f4e81636eae5bf9e99573015ca18edb52384b9b3f6819715cf510561",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2023-01-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2023-02-15.csv": {
+  "bytes": 15700,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:38Z",
+  "sha256": "9f804c61ba0a51fad872dae5568792a75a2ab21daf5a5972603465898d071d55",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2023-02-15.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2023-03-22.csv": {
+  "bytes": 16045,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:39Z",
+  "sha256": "3d35c3f0b0cef53f7808bd7faccf5245869c1972571c58b0727216c646a3571b",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2023-03-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2023-04-19.csv": {
+  "bytes": 15776,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:40Z",
+  "sha256": "700fc43046fc215e5ae2828cf5983bd4a545f4c2d74be987669da6f666fc49b9",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2023-04-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2023-05-17.csv": {
+  "bytes": 15773,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:41Z",
+  "sha256": "432cef2e4402d5fc9dc9f0f1540a58099196540987eca39e6ced49eb7fdd10df",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2023-05-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2023-06-21.csv": {
+  "bytes": 15699,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:41Z",
+  "sha256": "4391c7a0c323e417d2f31685b2a0a0ad6afab79f80689abb128ad54ba8e549ae",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2023-06-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2023-07-19.csv": {
+  "bytes": 15610,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:42Z",
+  "sha256": "5fbcb598942050a24edba2194a29384b95ee77feb379cfc5e8779463d70785e8",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2023-07-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2023-08-16.csv": {
+  "bytes": 15686,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:43Z",
+  "sha256": "96e7efc1d13016754a4bd56f53f371f68598c66459409e2293dfe27b8ab02292",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2023-08-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2023-09-20.csv": {
+  "bytes": 15697,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:44Z",
+  "sha256": "c6b98a1d7be7f1048fdd7db2286de25c54144dd0e6147503156d96602786f55e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2023-09-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2023-10-18.csv": {
+  "bytes": 15926,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:45Z",
+  "sha256": "6596d7594ed67016c51191e066c0a8728eda9e8c7ddbdfecf895bb693b859ffa",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2023-10-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2023-11-15.csv": {
+  "bytes": 15950,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:46Z",
+  "sha256": "3af9d807e0c29efd2d799d34c7be02d2847b4ffd44d27f92d945bc1f711420b2",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2023-11-15.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2023-12-20.csv": {
+  "bytes": 15988,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:46Z",
+  "sha256": "3203a21bb069021befc6365499b06045db1cfb7d7ffbee2897e7b2c923e1c772",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2023-12-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2024-01-17.csv": {
+  "bytes": 15792,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:47Z",
+  "sha256": "c33e7eacdcbc80f3a52bd021019e41f9a22d92754a0c2c224f3d2a2f4db4b069",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-01-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2024-02-14.csv": {
+  "bytes": 15705,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:48Z",
+  "sha256": "df87152acdc324ac6f7878833173fb393177b2054fba519c936bbd0c6605c944",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-02-14.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2024-03-20.csv": {
+  "bytes": 15814,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:49Z",
+  "sha256": "d40ceba875932194c2ae69e7416755bd51d9a5eddc33d0f51cd2bed76ebd8277",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-03-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2024-04-17.csv": {
+  "bytes": 15812,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:50Z",
+  "sha256": "60c15395c50f5451ee2f5df1d6827bb7e4a9025854f78f2581991ebde8b828f3",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-04-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2024-05-22.csv": {
+  "bytes": 16289,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:51Z",
+  "sha256": "e8440ac8098644e41d1a1aeba7cc026252a0616fd063766e98c15a1d4ba65e60",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-05-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2024-06-18.csv": {
+  "bytes": 15727,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:52Z",
+  "sha256": "b4573e89dc71fed7b7c8edd67dee89eec915c06d45a6c151a081449e07555d52",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-06-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2024-07-17.csv": {
+  "bytes": 15660,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:52Z",
+  "sha256": "0c17e6acd5dbdf555d9739f81858ba3bb71082553e5c4b52d2de5b8f106f4164",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-07-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2024-08-21.csv": {
+  "bytes": 16063,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:53Z",
+  "sha256": "7dda0ad59d4c66f9bfe50b473349e710447188c80347dc103483c9511f5a8900",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-08-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2024-09-18.csv": {
+  "bytes": 15691,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:54Z",
+  "sha256": "d607740411fdf401a1a6eda8a6fceb9f130f285bb04efb85fb275794bcc2afe6",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-09-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2024-10-16.csv": {
+  "bytes": 15935,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:54Z",
+  "sha256": "9a30d119303106c1a971aee8e3a718a8a65b98aa9a444b6f3665988fe3d8c667",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-10-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2024-11-20.csv": {
+  "bytes": 16348,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:55Z",
+  "sha256": "18068d634bfce677ce8904d013b5c52e2f8c949c88b77768a4c49bca6ad9c3b7",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-11-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2024-12-18.csv": {
+  "bytes": 15868,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:56Z",
+  "sha256": "d67e4ced59a4e85e30c381d4a1578e16fce47c28ee8b16e1df885beddd4c907a",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2024-12-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2025-01-22.csv": {
+  "bytes": 16056,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:57Z",
+  "sha256": "d2c75bbfaef1bebf310fa08b2b1bc014853856d5abb7c653fa854624174a7494",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-01-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2025-02-19.csv": {
+  "bytes": 15583,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:57Z",
+  "sha256": "ad6b0d7108076e6e8f7b93f183fe246f8f7ef6a559e76d71f67b8f56d53bc654",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-02-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2025-03-18.csv": {
+  "bytes": 15658,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:58Z",
+  "sha256": "faf37215efaccc8e64a66b7e3691fe8cf1075ac5708d76cb8e1dadb33c2b2ec6",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-03-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2025-04-16.csv": {
+  "bytes": 15872,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:31:59Z",
+  "sha256": "b0e29d9f0714be57568f7774947f46f06f5dc14c3ff963be08aeec29ccb08322",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-04-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2025-05-21.csv": {
+  "bytes": 15869,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:00Z",
+  "sha256": "5fdb6b068b3d263d60cf42003582d6fc19e667964037bec10bad3cf2cc0821d9",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-05-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2025-06-18.csv": {
+  "bytes": 15810,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:01Z",
+  "sha256": "a43f1037452b6ec8273601cbe5dc43d5821b2c49be79d9f0ce9458cd06fe317e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-06-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2025-07-16.csv": {
+  "bytes": 15631,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:01Z",
+  "sha256": "ae0cc06f810f8d84cfe7de674439062ca1264e42dcecdf8c1b94c3da7ef90c47",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-07-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2025-08-20.csv": {
+  "bytes": 15727,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:02Z",
+  "sha256": "5ff06fc719856ac1b43560515a8e8154cbf90915a69033b315464b5f3f6a98e8",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-08-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2025-09-17.csv": {
+  "bytes": 15689,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:03Z",
+  "sha256": "d4efe5445722462c1949c673e5d575b797be2d259148b61b30fb1baec29516cd",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-09-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2025-10-22.csv": {
+  "bytes": 15919,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:04Z",
+  "sha256": "12089242dbacf614f0e4ebebe42d5b4b967afb252c0553216a1175599bd6dc36",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-10-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2025-11-19.csv": {
+  "bytes": 16019,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:04Z",
+  "sha256": "ddc4b95e078d0f7df0bcb63d559f64dc8e5f0653a8193372b4b1da164b4d9464",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-11-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2025-12-17.csv": {
+  "bytes": 15944,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:05Z",
+  "sha256": "0567a34df3a617ea4a540c82def1e80108efbd8c74d87e49b5fab90e1c617b08",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2025-12-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2026-01-21.csv": {
+  "bytes": 16101,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:06Z",
+  "sha256": "0b1403f9c4a541b7526ceef9718ec86ca7805b54ea72a075653d560970c9b266",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-01-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2026-02-18.csv": {
+  "bytes": 15606,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:07Z",
+  "sha256": "212b9932dfd0296984c2c6ed4534eb88bbc9068f0aa49f0f16fd513dc578c4e8",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-02-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2026-03-18.csv": {
+  "bytes": 15780,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:08Z",
+  "sha256": "2be0f20e3164571c36ab6d13766c24545f1436ce35c1a329a52f2f05250fbbb4",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-03-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2026-04-15.csv": {
+  "bytes": 15795,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:08Z",
+  "sha256": "a22c1d90792a90d697a164ad8dcf988ff6655424a8e5d9f25a6400d441b86509",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-04-15.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2026-05-19.csv": {
+  "bytes": 15784,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:09Z",
+  "sha256": "17d7de93dcaf63db1ae4e30032d98f50dc0c56f5dca6f1f64a750e8364e0d0c1",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-05-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2026-06-17.csv": {
+  "bytes": 15819,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:10Z",
+  "sha256": "c661d08dbed936be0df4cf4c23d7a66d4c1d0d9277547f78fdd5ee4febacaaf0",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-06-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2026-07-22.csv": {
+  "bytes": 15674,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:11Z",
+  "sha256": "7231559f0504e73b081f085c4d348b2aab30129aaee6ec1e9f11bad5a962af4e",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-07-22.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2026-08-19.csv": {
+  "bytes": 15680,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:12Z",
+  "sha256": "714558fad23a2f0482efa3f949dfcfb4b2d74af019a0cf27c92b787ad6166948",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-08-19.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2026-09-16.csv": {
+  "bytes": 15688,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:12Z",
+  "sha256": "1424925c1dd61cda64f457df9d4778e5d7a39eec2411d1e60ee27856c787d36f",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-09-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2026-10-21.csv": {
+  "bytes": 13941,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:13Z",
+  "sha256": "04e3d8742dabe4db0584bcd3a4599b94282af41b2a34014bd499a760205482e8",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-10-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2026-11-18.csv": {
+  "bytes": 12223,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:14Z",
+  "sha256": "1de5a2e19cb354c420fce2a97ea716ce838a6c3f0945a1b492c8b92d400afea4",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-11-18.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2026-12-16.csv": {
+  "bytes": 10521,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:15Z",
+  "sha256": "46d330cdd194035ae3fd97075cad7b2d9f0d06bacc6f91ff8c56db54521930dd",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2026-12-16.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2027-01-20.csv": {
+  "bytes": 8787,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:15Z",
+  "sha256": "f11177f6c496d1895882d560e4eab7f61d2473a9c738518e357fd4f513de2cec",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2027-01-20.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2027-02-17.csv": {
+  "bytes": 6705,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:16Z",
+  "sha256": "f8f6a44a8db1c8873f171ec54c6344d0be3e2a31f38c3d536d702552075d3ea3",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2027-02-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2027-03-17.csv": {
+  "bytes": 5166,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:17Z",
+  "sha256": "9cc3d2b8ec3bf4d7fccbfa7882d09cb2d45ed366949ecaaa992ffb322310c376",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2027-03-17.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2027-04-21.csv": {
+  "bytes": 3200,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:18Z",
+  "sha256": "e18a272afb3f03892cc0cc4f530890b297525a9c67b0ef245d95df8e93e8fd78",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2027-04-21.csv"
+ },
+ "data\\raw\\cboe\\vx\\VX_2027-05-18.csv": {
+  "bytes": 1586,
+  "content_type": "text/csv",
+  "retrieved_utc": "2026-09-20T08:32:18Z",
+  "sha256": "63fa960369b29b59c474f020783ba9db0e42ad903f594e5dae6ab29136b07273",
+  "status": 200,
+  "url": "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/VX_2027-05-18.csv"
+ },
+ "data\\raw\\fred\\DFF.csv": {
+  "bytes": 423867,
+  "content_type": "application/csv",
+  "retrieved_utc": "2026-09-20T08:32:37Z",
+  "sha256": "12c2e6721d98f00ec322f4766cc3c1790b202b3152efbb6fd237cf9e84b13302",
+  "status": 200,
+  "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DFF"
+ },
+ "data\\raw\\fred\\DGS3MO.csv": {
+  "bytes": 186483,
+  "content_type": "application/csv",
+  "retrieved_utc": "2026-09-20T08:32:36Z",
+  "sha256": "88bf4677cd5a44f889dcefa4fbee067746db40855fb450eddb6bfe735948b4b2",
+  "status": 200,
+  "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS3MO"
+ },
+ "data\\raw\\fred\\DTB3.csv": {
+  "bytes": 301045,
+  "content_type": "application/csv",
+  "retrieved_utc": "2026-09-20T08:32:35Z",
+  "sha256": "68c3692a8bf044b95bde0ab86344edff75e10402dca25821f1dd1227ddf0a89a",
+  "status": 200,
+  "url": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DTB3"
+ },
+ "data\\raw\\prices\\yahoo\\SPY.json": {
+  "bytes": 633987,
+  "content_type": "application/json;charset=utf-8",
+  "retrieved_utc": "2026-09-20T08:32:33Z",
+  "sha256": "3769c668900420bb50805d1cb236ed50e95cf5a8401d32949a93236843f37531",
+  "status": 200,
+  "url": "https://query2.finance.yahoo.com/v8/finance/chart/SPY?period1=1072915200&period2=1789948800&interval=1d&events=div%2Csplit&includeAdjustedClose=true"
+ },
+ "data\\raw\\prices\\yahoo\\SVIX.json": {
+  "bytes": 123139,
+  "content_type": "application/json;charset=utf-8",
+  "retrieved_utc": "2026-09-20T08:32:32Z",
+  "sha256": "96667759610238a3cbea87c6e6bdb020babd256a85c5d754aa572da40bd857e6",
+  "status": 200,
+  "url": "https://query2.finance.yahoo.com/v8/finance/chart/SVIX?period1=1072915200&period2=1789948800&interval=1d&events=div%2Csplit&includeAdjustedClose=true"
+ },
+ "data\\raw\\prices\\yahoo\\SVXY.json": {
+  "bytes": 407757,
+  "content_type": "application/json;charset=utf-8",
+  "retrieved_utc": "2026-09-20T08:32:31Z",
+  "sha256": "963792107c1e435cc72bf3c96052243b559a12eadf9a78138cb149cf0ca77473",
+  "status": 200,
+  "url": "https://query2.finance.yahoo.com/v8/finance/chart/SVXY?period1=1072915200&period2=1789948800&interval=1d&events=div%2Csplit&includeAdjustedClose=true"
+ },
+ "data\\raw\\prices\\yahoo\\UVXY.json": {
+  "bytes": 262470,
+  "content_type": "application/json;charset=utf-8",
+  "retrieved_utc": "2026-09-20T08:32:31Z",
+  "sha256": "c94163e5765ca10bb241bc53df0de45c1f7f0dbab6a3547583a4ce83e7785bf8",
+  "status": 200,
+  "url": "https://query2.finance.yahoo.com/v8/finance/chart/UVXY?period1=1072915200&period2=1789948800&interval=1d&events=div%2Csplit&includeAdjustedClose=true"
+ },
+ "data\\raw\\prices\\yahoo\\VIXY.json": {
+  "bytes": 332272,
+  "content_type": "application/json;charset=utf-8",
+  "retrieved_utc": "2026-09-20T08:32:30Z",
+  "sha256": "558308b0e0f8e5eff147052ad74b2de3407995384981a8e392921f42881336b9",
+  "status": 200,
+  "url": "https://query2.finance.yahoo.com/v8/finance/chart/VIXY?period1=1072915200&period2=1789948800&interval=1d&events=div%2Csplit&includeAdjustedClose=true"
+ },
+ "data\\raw\\prices\\yahoo\\VXX.json": {
+  "bytes": 231262,
+  "content_type": "application/json;charset=utf-8",
+  "retrieved_utc": "2026-09-20T08:32:30Z",
+  "sha256": "19371c85e0f575ec45ba2def95e5a3409d754c8be19577e4c7ab1f666e1f36e0",
+  "status": 200,
+  "url": "https://query2.finance.yahoo.com/v8/finance/chart/VXX?period1=1072915200&period2=1789948800&interval=1d&events=div%2Csplit&includeAdjustedClose=true"
+ },
+ "data\\raw\\prices\\yahoo\\_GSPC.json": {
+  "bytes": 613489,
+  "content_type": "application/json;charset=utf-8",
+  "retrieved_utc": "2026-09-20T08:32:33Z",
+  "sha256": "2b17900fe990caf2de442522e77f14af665f9585f567009b39cdffdec3df0498",
+  "status": 200,
+  "url": "https://query2.finance.yahoo.com/v8/finance/chart/%5EGSPC?period1=1072915200&period2=1789948800&interval=1d&events=div%2Csplit&includeAdjustedClose=true"
+ },
+ "data\\raw\\prices\\yahoo\\_VIX.json": {
+  "bytes": 602748,
+  "content_type": "application/json;charset=utf-8",
+  "retrieved_utc": "2026-09-20T08:32:34Z",
+  "sha256": "5a57c696ac070ef29966f5f62c82ea3263b7124de3f2de65edf8cdea5ecd372a",
+  "status": 200,
+  "url": "https://query2.finance.yahoo.com/v8/finance/chart/%5EVIX?period1=1072915200&period2=1789948800&interval=1d&events=div%2Csplit&includeAdjustedClose=true"
+ },
+ "references\\filings\\Barclays_iPath_SeriesB_launch_2018.htm": {
+  "bytes": 812808,
+  "content_type": "text/html",
+  "retrieved_utc": "2026-09-20T08:32:43Z",
+  "sha256": "69ee3a26a34e269282112773a40dec209ee4ce2ede07acb5c4129583e49d2c25",
+  "status": 200,
+  "url": "https://www.sec.gov/Archives/edgar/data/312070/000110465918000637/a18-2032_4424b2.htm"
+ },
+ "references\\filings\\Barclays_iPath_VXX_SeriesB_424B2.htm": {
+  "bytes": 13417,
+  "content_type": "text/html",
+  "retrieved_utc": "2026-09-20T08:32:42Z",
+  "sha256": "e30684885ba1924e45cce17c005bad2af8d9ceda59288ff88210102615d34f70",
+  "status": 200,
+  "url": "https://www.sec.gov/Archives/edgar/data/312070/000095010322004469/dp169097_424b2-vxxetns.htm"
+ },
+ "references\\filings\\CS_VelocityShares_424B2_2017-06-30.htm": {
+  "bytes": 956664,
+  "content_type": "text/html",
+  "retrieved_utc": "2026-09-20T08:32:39Z",
+  "sha256": "acec797072965cda1069dffbb8cbc25c8bf067bffc97b77984bfe04c5b7799c1",
+  "status": 200,
+  "url": "https://www.sec.gov/Archives/edgar/data/1053092/000095010317006323/dp77928_424b2-vix.htm"
+ },
+ "references\\filings\\CS_XIV_acceleration_2018-02-06.htm": {
+  "bytes": 9407,
+  "content_type": "text/html",
+  "retrieved_utc": "2026-09-20T08:32:37Z",
+  "sha256": "fde6c9a9f7d91afc52247e8a4f7941c87322c1fba723c725c602c715bba3769f",
+  "status": 200,
+  "url": "https://www.sec.gov/Archives/edgar/data/1053092/000095010318001572/dp86358_ex9901.htm"
+ },
+ "references\\filings\\ProSharesTrustII_10K_FY2017.htm": {
+  "bytes": 5272991,
+  "content_type": "text/html",
+  "retrieved_utc": "2026-09-20T08:32:40Z",
+  "sha256": "d1ed4cfb2b499a8183534b100827ecfd8076a7766d32b6e6151d50ee7678e4dc",
+  "status": 200,
+  "url": "https://www.sec.gov/Archives/edgar/data/1415311/000119312518067452/d535701d10k.htm"
+ },
+ "references\\filings\\ProSharesTrustII_424B3_2018-02-15.htm": {
+  "bytes": 1776165,
+  "content_type": "text/html",
+  "retrieved_utc": "2026-09-20T08:32:41Z",
+  "sha256": "226bfb573f8b6487be1bf9398e879a6dfab6f47518a300c58a8190f89e87877d",
+  "status": 200,
+  "url": "https://www.sec.gov/Archives/edgar/data/1415311/000119312518047310/d526069d424b3.htm"
+ },
+ "references\\filings\\VSTrust_SVIX_424B3_2022-01-28.htm": {
+  "bytes": 5660659,
+  "content_type": "text/html",
+  "retrieved_utc": "2026-09-20T08:32:44Z",
+  "sha256": "30029d600feddc14b912a5d222c215b832fc1ec28029e8b3d89fd6804ccb2dd3",
+  "status": 200,
+  "url": "https://www.sec.gov/Archives/edgar/data/1793497/000121390022014381/f424b30122_vstrust.htm"
+ }
+}
