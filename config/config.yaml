@@ -1,0 +1,150 @@
+# ---------------------------------------------------------------------------
+# Project configuration.
+#
+# Everything that a reviewer might want to vary - the sample window, the roll
+# convention, transaction costs, the signal thresholds, the EVT threshold - lives
+# here rather than being buried in code, so that the robustness section can sweep
+# these values programmatically and the headline specification is visible in one
+# place.
+# ---------------------------------------------------------------------------
+
+project:
+  name: short-vol-etps-vix-carry
+  # Contact string sent in the User-Agent header. SEC EDGAR requires a real
+  # identifier; Cboe and FRED do not, but sending one is good manners.
+  contact: "Soham Parundekar (parundekarsoham@gmail.com) - academic research"
+
+sample:
+  # VIX futures began trading in March 2004 but the second-month contract is only
+  # reliably liquid from late 2005; the S&P short-term index itself has a live
+  # history from 2005-12-20. The primary sample starts in 2008 to include the
+  # global financial crisis while keeping the futures curve well populated.
+  start: "2008-01-02"
+  end: null            # null = through the most recent available trading day
+  # Fixed in-sample window for every parameter choice. Nothing estimated on data
+  # after this date is used to set a parameter of the strategy.
+  design_end: "2015-12-31"
+  # Held-out evaluation window. Contains 5 Feb 2018, Mar 2020 and Aug 2024.
+  oos_start: "2016-01-01"
+
+index:
+  # 'sp_dji'  : dr/dt weights with the roll period running from one VIX futures
+  #             settlement date to the next (S&P Dow Jones Indices methodology).
+  # 'shifted' : the same weights advanced by one business day. Both are built and
+  #             the one that tracks the traded products is selected empirically;
+  #             see docs/validation.md.
+  roll_convention: sp_dji
+  # Constant-maturity points (calendar days) interpolated from the futures curve.
+  constant_maturities: [30, 60, 90, 120, 150, 180]
+  # Minimum open interest for a contract to be treated as reliably priced.
+  min_open_interest: 100
+
+products:
+  # Terms taken from the filings listed in docs/data_sources.md. Fees are annual.
+  XIV:
+    issuer: Credit Suisse AG
+    wrapper: ETN
+    leverage: -1.0
+    fee: 0.0135
+    inception: "2010-11-30"
+    terminated: "2018-02-21"
+    filing: 424B2
+  SVXY:
+    issuer: ProShares Trust II
+    wrapper: commodity pool ETF
+    leverage: -1.0            # changed to -0.5 on 2018-02-28
+    leverage_after: -0.5
+    leverage_change_date: "2018-02-28"
+    fee: 0.0095
+    inception: "2011-10-03"
+  UVXY:
+    issuer: ProShares Trust II
+    wrapper: commodity pool ETF
+    leverage: 2.0             # changed to 1.5 on 2018-02-28
+    leverage_after: 1.5
+    leverage_change_date: "2018-02-28"
+    fee: 0.0095
+    inception: "2011-10-03"
+  VXX:
+    issuer: Barclays Bank PLC
+    wrapper: ETN
+    leverage: 1.0
+    fee: 0.0089
+    inception: "2009-01-29"   # original iPath series B relaunched 2018-01-17
+  VIXY:
+    issuer: ProShares Trust II
+    wrapper: commodity pool ETF
+    leverage: 1.0
+    fee: 0.0085
+    inception: "2011-01-03"
+  SVIX:
+    issuer: Volatility Shares
+    wrapper: commodity pool ETF
+    leverage: -1.0
+    fee: 0.0129
+    inception: "2022-03-28"
+
+tail:
+  # Peaks-over-threshold settings. The headline threshold is the 95th percentile
+  # of standardised residuals; the full grid is reported in docs/validation.md.
+  threshold_quantile: 0.95
+  threshold_grid: [0.90, 0.925, 0.95, 0.96, 0.97, 0.975, 0.98, 0.99]
+  garch_dist: skewt
+  # Termination thresholds, expressed as the one-day SIMPLE return of the index
+  # that wipes out 80% of a product's value at the given leverage.
+  wipeout_fraction: 0.80
+  survival:
+    n_paths: 20000
+    years: 5
+    seed: 20260920
+
+forecast:
+  har_horizon: 21
+  har_lags: [1, 5, 22]
+  har_log: true
+  har_train_min: 1000
+  har_refit_every: 21
+  rv_method: rs_overnight
+
+strategy:
+  # Short exposure to the reconstructed short-term VIX futures index.
+  contango_threshold: 1.0       # trade only when VIX / VIX3M < this
+  vrp_min: 0.0                  # require a positive variance risk premium
+  vol_target: 0.15              # annualised
+  vol_lookback: 21
+  max_stress_loss: 0.20         # cap on the loss under the stress scenario
+  stress_quantile: 0.999
+  stress_floor_event: "2018-02-05"   # stress move is at least this day's move
+  max_weight: 1.0
+  cost_ticks: 1.0               # per side, in 0.05 VIX points
+  tick_value: 0.05
+  rebalance: daily
+  signal_lag: 1                 # signal from close of t-1 traded at close of t
+
+robustness:
+  cost_ticks_grid: [0.0, 1.0, 2.0, 4.0]
+  contango_grid: [0.95, 0.975, 1.0, 1.025]
+  vol_target_grid: [0.10, 0.15, 0.20]
+  stress_loss_grid: [0.10, 0.20, 0.30, 1.00]
+  rebalance_grid: [1, 5, 21]
+  subsamples:
+    - ["2008-01-02", "2012-12-31"]
+    - ["2013-01-01", "2017-12-31"]
+    - ["2018-01-01", "2021-12-31"]
+    - ["2022-01-01", null]
+  stress_windows:
+    gfc_2008: ["2008-09-01", "2008-12-31"]
+    euro_2011: ["2011-08-01", "2011-10-31"]
+    aug_2015: ["2015-08-17", "2015-09-04"]
+    volmageddon_2018: ["2018-01-26", "2018-02-28"]
+    covid_2020: ["2020-02-19", "2020-04-30"]
+    yen_carry_2024: ["2024-07-25", "2024-08-16"]
+
+paths:
+  raw: data/raw
+  interim: data/interim
+  processed: data/processed
+  reference: data/reference
+  figures: reports/figures
+  tables: reports/tables
+  filings: references/filings

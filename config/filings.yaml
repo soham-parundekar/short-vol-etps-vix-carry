@@ -1,0 +1,113 @@
+# ---------------------------------------------------------------------------
+# Primary-source filings archived by scripts/fetch_data.py into references/filings/.
+#
+# Every product term asserted anywhere in this repository - leverage, fee,
+# acceleration clause, benchmark index, structure - must be traceable to one of
+# these documents. URLs below were resolved on EDGAR and each is a public filing;
+# nothing here requires authentication.
+#
+# 'verified' records whether the exact wording of the term(s) we rely on has been
+# read out of the archived file itself (as opposed to a secondary description).
+# Anything marked false is re-checked in scripts/extract_filing_terms.py and the
+# result is recorded in docs/data_sources.md.
+# ---------------------------------------------------------------------------
+
+filings:
+  - key: xiv_acceleration_8k
+    issuer: Credit Suisse AG
+    cik: 1053092
+    form: 8-K exhibit 99.1
+    date: "2018-02-06"
+    title: >-
+      Credit Suisse announces event acceleration of VelocityShares Daily Inverse
+      VIX Short Term ETNs (XIV)
+    url: https://www.sec.gov/Archives/edgar/data/1053092/000095010318001572/dp86358_ex9901.htm
+    local_name: CS_XIV_acceleration_2018-02-06.htm
+    used_for:
+      - acceleration trigger (intraday indicative value <= 20% of prior close)
+      - prior closing indicative value of 108.3681 on 2018-02-02
+      - accelerated valuation date and redemption mechanics
+    verified: true
+
+  - key: xiv_424b2
+    issuer: Credit Suisse AG
+    cik: 1053092
+    form: 424B2
+    date: "2017-06-30"
+    title: >-
+      Pricing supplement, VelocityShares VIX Short Term and Mid Term ETNs
+      (XIV, ZIV, VIIX, VIIZ, TVIX, TVIZ)
+    url: https://www.sec.gov/Archives/edgar/data/1053092/000095010317006323/dp77928_424b2-vix.htm
+    local_name: CS_VelocityShares_424B2_2017-06-30.htm
+    used_for:
+      - daily investor fee factor (0.0135 for the inverse ETNs)
+      - closing indicative value and daily ETN performance formulas
+      - daily accrual on the three-month US Treasury rate
+      - underlying index (S&P 500 VIX Short-Term Futures Index ER)
+      - optional and event acceleration provisions
+    verified: partial   # fee and formulas read directly; full acceleration clause re-checked in script
+
+  - key: proshares_trust_ii_10k_2017
+    issuer: ProShares Trust II
+    cik: 1415311
+    form: 10-K
+    date: "2018-02-28"
+    title: ProShares Trust II annual report for the year ended 31 December 2017
+    url: https://www.sec.gov/Archives/edgar/data/1415311/000119312518067452/d535701d10k.htm
+    local_name: ProSharesTrustII_10K_FY2017.htm
+    used_for:
+      - SVXY and UVXY structure, benchmark and fees
+      - net assets outstanding by fund and month
+      - subsequent-event disclosure of the change in daily target exposure
+    verified: false
+
+  - key: proshares_424b3_2018_02
+    issuer: ProShares Trust II
+    cik: 1415311
+    form: 424B3
+    date: "2018-02-15"
+    title: ProShares Trust II prospectus (VIX funds) filed 15 February 2018
+    url: https://www.sec.gov/Archives/edgar/data/1415311/000119312518047310/d526069d424b3.htm
+    local_name: ProSharesTrustII_424B3_2018-02-15.htm
+    used_for:
+      - SVXY at -1x and UVXY at 2x immediately before the change
+      - fee and benchmark wording as at February 2018
+    verified: true
+
+  - key: ipath_vxx_series_b_424b2
+    issuer: Barclays Bank PLC
+    cik: 312070
+    form: 424B2
+    date: "2022-04-01"
+    title: iPath Series B S&P 500 VIX Short-Term Futures ETN pricing supplement
+    url: https://www.sec.gov/Archives/edgar/data/312070/000095010322004469/dp169097_424b2-vxxetns.htm
+    local_name: Barclays_iPath_VXX_SeriesB_424B2.htm
+    used_for:
+      - VXX investor fee (0.89% per annum) used in the tracking validation
+      - VXX intraday indicative value formula
+    verified: false
+
+  - key: ipath_vxx_series_b_2018_launch
+    issuer: Barclays Bank PLC
+    cik: 312070
+    form: 424B2
+    date: "2018-01-04"
+    title: iPath Series B ETN offering documents (VXXB / VXZB launch)
+    url: https://www.sec.gov/Archives/edgar/data/312070/000110465918000637/a18-2032_4424b2.htm
+    local_name: Barclays_iPath_SeriesB_launch_2018.htm
+    used_for:
+      - the January 2018 relaunch that makes the VXX price history two-segment
+    verified: false
+
+  - key: vs_trust_svix_424b3
+    issuer: VS Trust (Volatility Shares)
+    cik: 1793497
+    form: 424B3
+    date: "2022-01-28"
+    title: VS Trust prospectus, -1x Short VIX Futures ETF (SVIX) and 2x Long VIX Futures ETF
+    url: https://www.sec.gov/Archives/edgar/data/1793497/000121390022014381/f424b30122_vstrust.htm
+    local_name: VSTrust_SVIX_424B3_2022-01-28.htm
+    used_for:
+      - SVIX objective (-1x of the Short VIX Futures Index), structure and breakeven
+      - post-2018 re-offering of the same exposure without an acceleration clause
+    verified: partial
