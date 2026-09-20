@@ -46,6 +46,7 @@ import pandas as pd
 
 __all__ = [
     "easter_sunday",
+    "CFE_ONLY_SESSIONS",
     "us_market_holidays",
     "trading_days",
     "is_trading_day",
@@ -58,6 +59,11 @@ __all__ = [
 
 # CME/Cboe single-letter month codes used in the Cboe historical futures files,
 # e.g. "G (Feb 2018)" -> February 2018 expiry.
+#: Public view of the equity-closed / futures-open sessions.
+CFE_ONLY_SESSIONS: tuple[str, ...] = (
+    "2015-04-03", "2018-12-05", "2025-01-09",
+)
+
 MONTH_CODES: dict[int, str] = {
     1: "F", 2: "G", 3: "H", 4: "J", 5: "K", 6: "M",
     7: "N", 8: "Q", 9: "U", 10: "V", 11: "X", 12: "Z",
@@ -66,6 +72,21 @@ CODE_TO_MONTH: dict[str, int] = {v: k for k, v in MONTH_CODES.items()}
 
 # Ad-hoc, non-recurring US market closures. Only full-day closures matter for us.
 # Source: NYSE historical closings.
+#: Days the equity market was closed but Cboe Futures Exchange held a session.
+#: These are not guesses: each was identified because the downloaded VX contract
+#: files contain settlement prices and non-zero volume on that date while the NYSE
+#: calendar calls it a holiday. Using the equity calendar for the futures panel
+#: would silently drop these sessions and shift the roll business-day counts around
+#: them.
+#:   2015-04-03  Good Friday; CFE held a session around the March employment report
+#:   2018-12-05  national day of mourning, President G.H.W. Bush (NYSE shut, CFE open)
+#:   2025-01-09  national day of mourning, President Carter (NYSE shut, CFE open)
+_CFE_ONLY_SESSIONS: tuple[str, ...] = (
+    "2015-04-03",
+    "2018-12-05",
+    "2025-01-09",
+)
+
 _AD_HOC_CLOSURES: tuple[str, ...] = (
     "2004-06-11",  # National day of mourning, President Reagan
     "2007-01-02",  # National day of mourning, President Ford
@@ -105,52 +126,87 @@ def _nth_weekday(year: int, month: int, weekday: int, n: int) -> _dt.date:
     return last_day - _dt.timedelta(days=offset + 7 * (-n - 1))
 
 
-def _observed(d: _dt.date) -> _dt.date:
-    """NYSE observance rule for fixed-date holidays."""
-    if d.weekday() == 5:  # Saturday -> preceding Friday
-        return d - _dt.timedelta(days=1)
-    if d.weekday() == 6:  # Sunday -> following Monday
+def _observed(d: _dt.date) -> _dt.date | None:
+    """NYSE observance rule for fixed-date holidays.
+
+    The rule is: a holiday falling on a Saturday is observed on the preceding
+    Friday, **unless that Friday is the last trading day of the calendar year**, and
+    a holiday falling on a Sunday is observed on the following Monday.
+
+    The exception matters and is easy to miss. When 1 January falls on a Saturday the
+    preceding Friday is 31 December, so the exchange does *not* close: it stays open
+    on 31 December 2010 and 31 December 2021, both of which this project's futures
+    data confirms were full trading sessions. An implementation without the carve-out
+    marks those two days as holidays, which shifts every business-day count in the
+    surrounding roll periods.
+
+    Returns ``None`` when the holiday produces no closure at all.
+    """
+    if d.weekday() == 5:                      # Saturday
+        friday = d - _dt.timedelta(days=1)
+        if friday.month == 12 and friday.day == 31:
+            return None                       # last trading day of the year: open
+        return friday
+    if d.weekday() == 6:                      # Sunday -> following Monday
         return d + _dt.timedelta(days=1)
     return d
 
 
 @lru_cache(maxsize=None)
-def us_market_holidays(start_year: int = 2003, end_year: int = 2035) -> frozenset[_dt.date]:
-    """Full-day NYSE/Cboe closures between ``start_year`` and ``end_year`` inclusive."""
+def us_market_holidays(start_year: int = 2003, end_year: int = 2035,
+                       market: str = "nyse") -> frozenset[_dt.date]:
+    """Full-day closures between ``start_year`` and ``end_year`` inclusive.
+
+    ``market="nyse"`` gives the equity-market calendar, which is what the S&P 500
+    OHLC data follows. ``market="cfe"`` gives the Cboe Futures Exchange calendar,
+    which differs on a handful of days when CFE held a session while the equity
+    market was shut - see :data:`_CFE_ONLY_SESSIONS`.
+    """
     days: set[_dt.date] = set()
+
+    def _add(d: _dt.date | None) -> None:
+        if d is not None:
+            days.add(d)
+
     for y in range(start_year, end_year + 1):
-        days.add(_observed(_dt.date(y, 1, 1)))                     # New Year's Day
-        days.add(_nth_weekday(y, 1, 0, 3))                          # MLK Jr Day
-        days.add(_nth_weekday(y, 2, 0, 3))                          # Washington's Birthday
-        days.add(easter_sunday(y) - _dt.timedelta(days=2))          # Good Friday
-        days.add(_nth_weekday(y, 5, 0, -1))                         # Memorial Day
+        _add(_observed(_dt.date(y, 1, 1)))                          # New Year's Day
+        _add(_nth_weekday(y, 1, 0, 3))                              # MLK Jr Day
+        _add(_nth_weekday(y, 2, 0, 3))                              # Washington's Birthday
+        _add(easter_sunday(y) - _dt.timedelta(days=2))              # Good Friday
+        _add(_nth_weekday(y, 5, 0, -1))                             # Memorial Day
         if y >= 2022:
-            days.add(_observed(_dt.date(y, 6, 19)))                 # Juneteenth
-        days.add(_observed(_dt.date(y, 7, 4)))                      # Independence Day
-        days.add(_nth_weekday(y, 9, 0, 1))                          # Labor Day
-        days.add(_nth_weekday(y, 11, 3, 4))                         # Thanksgiving
-        days.add(_observed(_dt.date(y, 12, 25)))                    # Christmas
-    for s in _AD_HOC_CLOSURES:
-        days.add(_dt.date.fromisoformat(s))
+            _add(_observed(_dt.date(y, 6, 19)))                     # Juneteenth
+        _add(_observed(_dt.date(y, 7, 4)))                          # Independence Day
+        _add(_nth_weekday(y, 9, 0, 1))                              # Labor Day
+        _add(_nth_weekday(y, 11, 3, 4))                             # Thanksgiving
+        _add(_observed(_dt.date(y, 12, 25)))                        # Christmas
+    for iso in _AD_HOC_CLOSURES:
+        days.add(_dt.date.fromisoformat(iso))
+    if market == "cfe":
+        days -= {_dt.date.fromisoformat(x) for x in _CFE_ONLY_SESSIONS}
     return frozenset(days)
 
 
-def is_trading_day(d) -> bool:
-    """True if ``d`` is a weekday and not a full-day market closure."""
+def is_trading_day(d, market: str = "nyse") -> bool:
+    """True if ``d`` is a weekday and not a full-day closure for ``market``."""
     d = pd.Timestamp(d).date()
-    return d.weekday() < 5 and d not in us_market_holidays()
+    return d.weekday() < 5 and d not in us_market_holidays(market=market)
 
 
-def trading_days(start, end) -> pd.DatetimeIndex:
-    """All US trading days in ``[start, end]`` inclusive."""
+def trading_days(start, end, market: str = "nyse") -> pd.DatetimeIndex:
+    """All trading days in ``[start, end]`` inclusive for ``market``.
+
+    ``market="cfe"`` is the right calendar for anything derived from the VIX futures
+    panel; ``market="nyse"`` for anything derived from equity prices.
+    """
     rng = pd.date_range(pd.Timestamp(start).normalize(), pd.Timestamp(end).normalize(), freq="D")
-    hol = us_market_holidays()
+    hol = us_market_holidays(market=market)
     mask = np.array([(ts.weekday() < 5) and (ts.date() not in hol) for ts in rng])
     return pd.DatetimeIndex(rng[mask])
 
 
-def _prev_trading_day(d: _dt.date) -> _dt.date:
-    while not is_trading_day(d):
+def _prev_trading_day(d: _dt.date, market: str = "cfe") -> _dt.date:
+    while not is_trading_day(d, market=market):
         d -= _dt.timedelta(days=1)
     return d
 
@@ -168,7 +224,8 @@ def vix_settlement_date(year: int, month: int) -> pd.Timestamp:
     # By construction ``settle`` is a Wednesday; verify rather than assume.
     if settle.weekday() != 2:
         raise AssertionError(f"expected Wednesday, got {settle} ({settle.weekday()})")
-    if (third_friday in us_market_holidays()) or (settle in us_market_holidays()):
+    hol = us_market_holidays(market="cfe")
+    if (third_friday in hol) or (settle in hol):
         settle = _prev_trading_day(settle - _dt.timedelta(days=1))
     return pd.Timestamp(settle)
 
@@ -187,7 +244,7 @@ def vix_settlement_dates(start, end) -> pd.DatetimeIndex:
     return idx[(idx >= start) & (idx <= end)]
 
 
-def build_roll_calendar(start, end) -> pd.DataFrame:
+def build_roll_calendar(start, end, business_days=None, market: str = "cfe") -> pd.DataFrame:
     """Per-trading-day roll state for the S&P short-term VIX futures index.
 
     The index holds the two nearest monthly VX contracts and shifts weight from the
@@ -224,12 +281,26 @@ def build_roll_calendar(start, end) -> pd.DataFrame:
         ``is_settlement``    True on a VIX futures settlement date
     """
     start, end = pd.Timestamp(start), pd.Timestamp(end)
-    days = trading_days(start, end)
+    if business_days is not None:
+        # The caller supplies the days the index is actually computed on - in
+        # practice, the dates present in the futures panel. Preferred over any
+        # derived calendar, because it cannot disagree with the data.
+        bd = pd.DatetimeIndex(pd.Series(pd.DatetimeIndex(business_days)).sort_values().unique())
+        days = bd[(bd >= start) & (bd <= end)]
+    else:
+        days = trading_days(start, end, market=market)
     settles = vix_settlement_dates(start - pd.Timedelta(days=120), end + pd.Timedelta(days=400))
     settles = pd.DatetimeIndex(sorted(set(settles)))
 
-    # Business-day ordinal for fast counting.
-    all_days = trading_days(start - pd.Timedelta(days=200), end + pd.Timedelta(days=500))
+    # Business-day ordinal for fast counting. Built on the same day set as `days`,
+    # extended at both ends so the roll periods at the sample boundaries are countable.
+    pad = trading_days(start - pd.Timedelta(days=200), end + pd.Timedelta(days=500),
+                       market=market)
+    if business_days is not None:
+        all_days = pd.DatetimeIndex(sorted(set(pad[(pad < days.min()) | (pad > days.max())])
+                                           | set(days)))
+    else:
+        all_days = pad
     ordinal = pd.Series(np.arange(len(all_days)), index=all_days)
 
     rows = []

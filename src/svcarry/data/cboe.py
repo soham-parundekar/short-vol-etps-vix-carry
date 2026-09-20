@@ -59,9 +59,11 @@ VX_URL = (
 #: Cboe serves the modern per-expiry files only for contracts expiring from roughly
 #: January 2013 onward. Earlier contracts live in a legacy archive keyed by the CME
 #: month code and a two-digit year rather than by settlement date, and dated
-#: MM/DD/YYYY rather than ISO. Both are downloaded into the same local naming scheme
-#: (``VX_<settlement>.csv``) so that nothing downstream needs to know which endpoint
-#: served a given contract; which one did is recorded in the raw manifest.
+#: MM/DD/YYYY rather than ISO. A contract served by the legacy endpoint alone is
+#: written as ``VX_<settlement>.csv`` like any other; where the modern endpoint
+#: served a *truncated* file the legacy version is kept beside it as
+#: ``VXL_<settlement>.csv`` and the two are merged at load time. The raw manifest
+#: records which endpoint produced each file.
 LEGACY_VX_URL = (
     "https://cdn.cboe.com/resources/futures/archive/volume-and-price/"
     "CFE_{code}{yy}_VX.csv"
@@ -109,7 +111,8 @@ def _raw_dir() -> Path:
 
 
 def download_vx_contracts(
-    start, end, force: bool = False, verbose: bool = True
+    start, end, force: bool = False, verbose: bool = True,
+    legacy_companion_before: str = "2014-12-31",
 ) -> pd.DataFrame:
     """Download every monthly VX contract whose settlement falls in ``[start, end]``.
 
@@ -146,6 +149,24 @@ def download_vx_contracts(
             if verbose:
                 print(f"  VX_{tag}.csv  unavailable ({detail or '404 on both'})")
             continue
+
+        # The modern archive begins on 2013-01-02 and *truncates* every contract that
+        # was already listed on that date: the January-2013 contract's modern file
+        # holds 10 rows where the legacy file holds 275. Left alone this leaves the
+        # seven sessions of 20-31 December 2012 with no contract priced at all, and
+        # strips the pre-2013 history from every 2013 expiry. So where the modern
+        # endpoint served a contract that straddles the boundary, fetch the legacy
+        # file alongside it; load_vx_panel takes the union of the two.
+        if source == "modern" and s <= pd.Timestamp(legacy_companion_before):
+            try:
+                comp = fetch(legacy_vx_url(s), out_dir / f"VXL_{tag}.csv",
+                             force=force, allow_missing=True)
+                if comp is not None:
+                    if verbose and not comp.from_cache:
+                        print(f"  VXL_{tag}.csv {comp.n_bytes:,} bytes  [legacy companion]")
+            except Exception as exc:
+                if verbose:
+                    print(f"  VXL_{tag}.csv companion failed: {str(exc)[:80]}")
 
         rows.append(
             dict(settlement=s, status="cached" if res.from_cache else "downloaded",
@@ -218,7 +239,7 @@ def load_vx_panel(start=None, end=None, verbose: bool = False) -> pd.DataFrame:
     start = start or cfg.dotted("sample.start")
     end = end or (cfg.dotted("sample.end") or pd.Timestamp.today().normalize())
     d = _raw_dir() / "cboe" / "vx"
-    files = sorted(d.glob("VX_*.csv"))
+    files = sorted(d.glob("VX_*.csv")) + sorted(d.glob("VXL_*.csv"))
     if not files:
         raise FileNotFoundError(
             f"no VX contract files in {d}; run scripts/fetch_data.py first"
@@ -227,11 +248,18 @@ def load_vx_panel(start=None, end=None, verbose: bool = False) -> pd.DataFrame:
     for f in files:
         settlement = pd.Timestamp(f.stem.split("_")[1])
         try:
-            frames.append(_parse_vx_file(f, settlement))
+            part = _parse_vx_file(f, settlement)
+            # Modern rows win where the two archives overlap; legacy rows fill the
+            # history the modern archive truncated.
+            part["_src_rank"] = 0 if f.stem.startswith("VX_") else 1
+            frames.append(part)
         except Exception as exc:
             if verbose:
                 print(f"  skipping {f.name}: {exc}")
     panel = pd.concat(frames, ignore_index=True)
+    panel = (panel.sort_values(["date", "expiry", "_src_rank"])
+                  .drop_duplicates(["date", "expiry"], keep="first")
+                  .drop(columns="_src_rank"))
 
     panel.loc[panel["settle"] <= 0, "settle"] = np.nan
     for c in ("open", "high", "low", "close"):

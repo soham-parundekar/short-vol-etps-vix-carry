@@ -116,7 +116,11 @@ def reconstruct_index(
     start = pd.Timestamp(start or panel["date"].min())
     end = pd.Timestamp(end or panel["date"].max())
 
-    cal = build_roll_calendar(start, end)
+    # The index's business days are the days the futures market actually traded, so
+    # the roll's business-day counts are taken from the panel itself rather than from
+    # a derived calendar that could disagree with it. This matters on the handful of
+    # sessions where CFE traded while the equity market was shut.
+    cal = build_roll_calendar(start, end, business_days=panel["date"].unique())
     cal = cal.loc[cal.index.isin(panel["date"].unique())]
     if cal.empty:
         raise ValueError("no overlap between the futures panel and the roll calendar")

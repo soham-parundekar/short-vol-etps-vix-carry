@@ -164,7 +164,12 @@ def fetch(
         digest = hashlib.sha256(content).hexdigest()
 
         entries = read_manifest()
-        entries[str(dest.relative_to(PROJECT_ROOT))] = {
+        # Store the key POSIX-style. The manifest is a provenance record that has to
+        # survive being read on a different platform from the one that wrote it -
+        # this project's data was fetched on Windows and verified on Linux - and a
+        # backslash key resolves to a single nonsense filename on POSIX, which makes
+        # every entry look like a missing file.
+        entries[dest.relative_to(PROJECT_ROOT).as_posix()] = {
             "url": resp.url,
             "retrieved_utc": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
             "status": resp.status_code,
@@ -179,10 +184,16 @@ def fetch(
 
 
 def verify_manifest(paths: Iterable[str] | None = None) -> list[dict]:
-    """Re-hash cached files and report any that no longer match the manifest."""
-    entries = read_manifest()
+    """Re-hash cached files and report any that no longer match the manifest.
+
+    Keys are normalised to POSIX separators on read as well as on write, so a
+    manifest produced on Windows verifies on Linux and vice versa. Without this the
+    check reports every entry as missing, which is the most useless possible failure
+    mode for an integrity check: it is indistinguishable from total data loss.
+    """
+    entries = {k.replace("\\", "/"): v for k, v in read_manifest().items()}
     problems: list[dict] = []
-    keys = list(entries) if paths is None else list(paths)
+    keys = list(entries) if paths is None else [p.replace("\\", "/") for p in paths]
     for k in keys:
         rec = entries.get(k)
         p = PROJECT_ROOT / k

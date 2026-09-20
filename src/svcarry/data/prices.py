@@ -175,24 +175,66 @@ def load_prices(symbol: str, provider: str | None = None) -> pd.DataFrame:
     )
 
 
+def is_preadjusted(df: pd.DataFrame, tol: float = 1e-12) -> bool:
+    """True when the provider's OHLC is already split-adjusted.
+
+    Yahoo's chart endpoint returns **split-adjusted** open/high/low/close and an
+    ``adjclose`` that additionally handles distributions. For products that pay no
+    distributions - which is every ETP in this project - the two series are then
+    identical to the bit, and there is no raw unadjusted price to rebuild an
+    adjustment from.
+
+    This matters because the obvious cross-check ("reconstruct the adjustment from
+    raw close and the split factors, and confirm it matches the provider") is not
+    merely unnecessary here, it is wrong: applying the factors a second time
+    double-adjusts the history and silently rescales everything behind each split.
+    """
+    if "adjclose" not in df.columns or df["adjclose"].isna().all():
+        return False
+    # Built without pd.concat on purpose: these frames carry a Series in .attrs
+    # (the split events), and concat compares .attrs for equality, which raises on a
+    # Series. Subtracting the two aligned columns avoids the issue entirely.
+    a = df["close"].astype(float).pct_change().to_numpy()
+    b = df["adjclose"].astype(float).pct_change().to_numpy()
+    ok = np.isfinite(a) & np.isfinite(b)
+    return bool(ok.any() and np.nanmax(np.abs(a[ok] - b[ok])) <= tol)
+
+
 def split_adjusted_returns(df: pd.DataFrame, prefer: str = "adjclose") -> pd.Series:
     """Daily simple returns corrected for splits and distributions.
 
-    ``prefer='adjclose'`` uses the provider's adjusted close, which is the right
-    choice when it is available and trustworthy. ``prefer='manual'`` instead rebuilds
-    the adjustment from the raw close and the recorded split factors, which is used
-    in ``docs/validation.md`` to confirm that the provider's adjustment agrees with
-    an independent reconstruction.
+    ``prefer='adjclose'`` uses the provider's adjusted close. ``prefer='manual'``
+    rebuilds the adjustment from the raw close and the recorded split factors, as an
+    independent check on the provider - but only where the provider actually serves
+    a raw series. Where its OHLC is already adjusted (see :func:`is_preadjusted`) the
+    manual path would double-adjust, so it raises instead of returning a plausible
+    wrong answer.
     """
     if prefer == "adjclose" and "adjclose" in df.columns and df["adjclose"].notna().any():
         px = df["adjclose"].astype(float)
         return px.pct_change().rename("ret")
 
+    if prefer == "manual" and is_preadjusted(df):
+        raise ValueError(
+            "this provider's OHLC is already split-adjusted, so there is no raw "
+            "series to rebuild an adjustment from; re-applying the split factors "
+            "would double-adjust the history. Use prefer='adjclose', and cross-check "
+            "the adjustment against a provider that serves unadjusted prices."
+        )
+
     px = df["close"].astype(float)
     splits: pd.Series = df.attrs.get("splits", pd.Series(dtype=float))
     factor = pd.Series(1.0, index=px.index)
     for d, ratio in splits.items():
-        # a 1-for-4 reverse split arrives as numerator/denominator = 0.25
-        factor.loc[factor.index < d] *= ratio
+        # The provider reports numerator/denominator, so a 1-for-5 *reverse* split
+        # arrives as 0.2 and a 2-for-1 forward split as 2.0. In both cases the
+        # historical price must be multiplied by 1/ratio to splice onto the current
+        # share count: $10 before a 1-for-5 reverse becomes $50 after, so the old
+        # price scales UP by 5 = 1/0.2.
+        #
+        # Getting this inverted is not a small error. It scales the pre-split history
+        # by 0.2 instead of 5, which prints a +2,400% return on the split date and
+        # then a permanently mis-scaled series behind it.
+        factor.loc[factor.index < d] *= 1.0 / float(ratio)
     adj = px * factor
     return adj.pct_change().rename("ret")

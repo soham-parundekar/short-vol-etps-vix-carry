@@ -161,3 +161,115 @@ Run `scripts/fetch_data.py` the moment egress allows, then Phase 06 (cleaning an
 panel construction) followed by Phase 07 (index reconstruction and tracking
 validation). Until then: visualisation module, pipeline runner and README skeleton,
 none of which need data.
+
+---
+
+## 2026-09-20 — Session 2: first run on real data; three bugs, one open question
+
+**Objective.** Both blockers cleared by the user (network via a local fetch, GitHub
+via a bundle push). Stage the downloaded data in, build the futures panel, and run
+the index reconstruction with its tracking validation.
+
+### Data landed
+
+233 monthly VX contracts (2008-01-16 → 2027-05-18), 7 Cboe index series, 8 price
+series, 3 FRED series, 7 SEC filings. 251 of 251 staged files re-hash to the SHA-256
+recorded in the manifest, so nothing was corrupted crossing the device bridge.
+
+**Calendar validated against reality.** The 233 settlement dates the calendar derives
+from the contract specification match, exactly, the 233 contract files Cboe served
+across 2008-2027 — no discrepancy in either direction. The calendar was never fitted
+to the data; this is an out-of-sample check on it.
+
+### Bug 1 — NYSE New Year's Eve rule (calendar)
+
+Five dates carried settlement prices and real volume while the calendar called them
+holidays. Two of them, 2010-12-31 and 2021-12-31, were the code's fault: a holiday
+falling on a Saturday is observed on the preceding Friday **unless that Friday is the
+last trading day of the calendar year**, and 1 January fell on a Saturday in 2011 and
+2022. The carve-out was missing, so both sessions were dropped and every business-day
+count in the surrounding roll periods shifted. Fixed, with the rule written out.
+
+The other three — 2015-04-03, 2018-12-05, 2025-01-09 — are real: CFE held a session
+while the equity market was shut. That is not a bug but a missing distinction, so the
+calendar now carries separate NYSE and CFE markets, and the roll calendar takes its
+business days from the futures panel itself rather than from any derived calendar.
+After the fix, zero panel dates fall outside the calendar.
+
+### Bug 2 — inverted split factor (prices)
+
+The provider reports a 1-for-5 reverse split as 0.2. Historical prices must be
+multiplied by 1/0.2 = 5 to splice onto the current share count; the code multiplied by
+0.2, which prints a +2,400% return on the split date and mis-scales everything behind
+it. Found by comparing the manual reconstruction against the provider's adjusted
+close: max absolute difference 4.05 in return units.
+
+### Bug 3 — the cross-check was itself invalid (prices)
+
+After fixing Bug 2 the two series still disagreed. Yahoo's chart endpoint returns
+OHLC that is **already split-adjusted**: `close.pct_change()` and
+`adjclose.pct_change()` are identical to the bit for these products. So "rebuild the
+adjustment from raw close and the split factors" is not an independent check, it is a
+second adjustment. The manual path now detects a pre-adjusted provider and raises
+rather than returning a plausible wrong answer. Seven tests added covering both bugs.
+
+### Index reconstruction — built, and it looks right
+
+4,704 daily observations, 2008-01-02 → 2026-09-18. Annualised return −47.1%,
+annualised volatility 73.3%: the expected signature of a rolling short-term VIX
+futures position. **5 February 2018 reconstructs as +96.1%** — the index almost
+doubled in a day, against a −1× product's 80% wipeout threshold. Worst day −26.0%,
+the following session's reversal.
+
+### H1 — REJECTED as stated, with a diagnosis
+
+The hypothesis was a tracking error of 10 bp/day against VIXY and VXX net of fees,
+failing above 25 bp. Actual, by era:
+
+| product | era | n | sd (bp/day) | corr | slope |
+|---|---|---|---|---|---|
+| VIXY | 2011-2017 | 1,637 | 124.5 | 0.9573 | 0.8871 |
+| VIXY | 2018-2021 | 1,008 | 242.8 | 0.9098 | 0.7943 |
+| VIXY | **2022-2026** | 1,182 | **28.2** | **0.9980** | **0.9858** |
+| VXX | 2022-2026 | 1,182 | 101.2 | 0.9731 | 0.9201 |
+
+Two hypotheses raised and **rejected** by test rather than by argument:
+
+1. *Settlement-time mismatch between the 4:15pm futures settlement and the 4:00pm
+   equity close.* Rebuilding the index on the futures `close` column instead of
+   `settle` made the best era worse (28 → 104 bp) and did not help the others.
+2. *The settle-versus-close gap in the futures data explains the era pattern.* The
+   gap is **larger** in 2022-2026 (median 0.29%) than in 2011-2017 (0.13%), i.e.
+   largest exactly where tracking is best.
+
+The decisive diagnostic: the regression slope divided by each product's own leverage
+is 0.8871 (VIXY, +1x), 0.8886 (SVXY, -1x) and 0.8767 (UVXY, +2x) over 2011-2017 —
+three issuers, three leverages, **one common attenuation factor of 0.884**. An
+attenuation common to all three cannot be a property of the products; it is
+errors-in-variables in the regressor, which is the reconstructed index. The implied
+idiosyncratic noise is about 0.36 × index volatility in the early era and near zero
+from 2022.
+
+So the reconstruction is essentially exact in 2022-2026 and carries real noise before
+it. That noise is the open question, and it bounds the precision of every downstream
+claim until it is resolved.
+
+### Open: the 2012 endpoint-boundary gap
+
+The modern Cboe archive begins 2013-01-02 and truncates every contract already listed
+then: the January-2013 contract's modern file holds 10 rows where its legacy file
+holds 275. Consequently the seven sessions of 20-31 December 2012 have no contract
+priced at all. The downloader now fetches the legacy file as a companion
+(`VXL_<expiry>.csv`) for boundary contracts and the loader takes the union; this
+needs one re-run of the fetch on a machine with network access to take effect.
+
+### Next
+
+1. Re-run the futures fetch to close the December 2012 gap.
+2. Resolve the pre-2022 index noise. Next candidates, in order: settlement-price
+   granularity and staleness in the second-month contract; whether the roll period
+   boundary matches the S&P methodology exactly (the tracking residual should be
+   regressed on the roll weight, which is the test the phase prompt already
+   specifies); and whether the products' own tracking error against their benchmark
+   accounts for part of it.
+3. H1 stands rejected as written until then. It is not to be relaxed to fit.
