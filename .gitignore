@@ -44,3 +44,8 @@ venv/
 Thumbs.db
 .vscode/
 .idea/
+
+# ---- transfer artefacts ------------------------------------------------------
+# Git bundles are used to move commits between the analysis environment and a
+# machine with push access. They are a transport, never content.
+*.bundle
