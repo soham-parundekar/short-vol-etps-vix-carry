@@ -81,7 +81,15 @@ products:
     issuer: Volatility Shares
     wrapper: commodity pool ETF
     leverage: -1.0
-    fee: 0.0129
+    # 1.35%, quoted from the launch prospectus: "SVIX pays the Sponsor a management
+    # fee ... in an amount equal to 1.35% per annum of its average daily net assets"
+    # (VS Trust 424B3, 28 January 2022). This was 0.0129 here until the filing was
+    # actually read; 1.29% could not be located anywhere in the archived document.
+    # Caveat recorded in docs/limitations.md: the archived filing is the one from
+    # launch, and a later amendment reducing the fee has not been checked. The
+    # difference is 0.06% a year, about 0.24 bp a day, against a tracking error of
+    # 51 bp a day - it moves the mean residual and no conclusion in this project.
+    fee: 0.0135
     inception: "2022-03-28"
 
 tail:

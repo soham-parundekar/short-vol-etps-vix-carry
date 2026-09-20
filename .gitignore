@@ -17,6 +17,21 @@ data/processed/*.parquet
 *.h5
 *.pkl
 
+# ---- archived primary documents ---------------------------------------------
+# The SEC filings are public records and freely redistributable, but they are third-
+# party documents running to 14 MB and the repository's policy is provenance and
+# reproduction rather than redistribution - the same rule the Cboe files follow.
+# scripts/fetch_data.py re-downloads them from the EDGAR URLs in config/filings.yaml
+# and data/raw/_manifest.json verifies them byte-for-byte by SHA-256.
+#
+# What IS committed is the evidence a reader needs without the documents: the
+# register (references/filings/_index.json) and every verbatim quotation with the
+# search pattern that found it (reports/tables/filing_terms.csv).
+references/filings/*.htm
+references/filings/*.html
+references/filings/*.pdf
+!references/filings/_index.json
+
 # ---- secrets ----------------------------------------------------------------
 .env
 .env.*

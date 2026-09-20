@@ -70,10 +70,10 @@ re-hashes every file on disk and reports any that are missing or altered. The
 manifest is committed (`data/raw/_manifest.json`); the vendor data itself is not
 redistributed.
 
-**Result.** 338 recorded files. 331 verify byte-for-byte. The 7 that do not appear
-locally are the SEC filings, which are still on the author's machine and have not
-been staged into this environment; they are listed as missing rather than silently
-passed. No file that is present differs from its recorded hash.
+**Result.** 338 recorded files, **338 verify byte-for-byte**. No file differs from
+its recorded hash and none is missing. (For most of this work the seven SEC filings
+were absent from the analysis environment; the check reported them as missing rather
+than passing them, which is the behaviour being relied on here.)
 
 ### V2a. A verification bug
 
@@ -335,6 +335,170 @@ code correct in each case: the number of 2018 trading days (251), a drawdown tro
 −0.15, slow Gumbel convergence), and the condition under which the Lo (2002) Sharpe
 correction exceeds the naive standard error. Corrected in the tests, not in the
 code, with the reasoning in each docstring.
+
+---
+
+## V9. 5 February 2018, reconciled against the filings
+
+The single most consequential return in the sample. If the reconstruction is wrong
+anywhere, it is worth being wrong here, so this date is checked against a primary
+document rather than against another model.
+
+**The reconstruction says** the index rose **+96.10%** on 2018-02-05.
+
+**The independent anchor.** Credit Suisse's acceleration release states two numbers
+and one rule:
+
+> "Because the intraday indicative value of XIV on February 5, 2018 was **equal to or
+> less than twenty percent of the prior day's closing indicative value**, an
+> acceleration event has occurred."
+> "On February 2, 2018, the closing indicative value was **$108.3681**."
+
+XIV was an inverse (-1x) note on this index with a daily investor fee factor of
+0.0135 (both quoted in V10). Applying the reconstructed return:
+
+| | |
+|---|---|
+| Prior closing indicative value (from the filing) | $108.3681 |
+| Reconstructed index return, 2018-02-05 | +96.10% |
+| Implied closing indicative value at -1x, net of fee and T-bill accrual | **$4.22** |
+| Acceleration threshold, 20% of the prior close | $21.67 |
+| Threshold breached? | yes, by a factor of five |
+
+The reconstruction therefore predicts the acceleration event that the filing records,
+from futures settlement prices alone, with no product data used as an input. Note
+what this does and does not show: the trigger is defined on the *intraday* indicative
+value, and the figure above is an end-of-day one, so this confirms the event and the
+magnitude rather than the precise instant of the breach.
+
+### The same date, measured at 4:00 p.m., says something entirely different
+
+| Product | Leverage | Its own 4:00 p.m. close | Index move this implies |
+|---|---|---|---|
+| VIXY | +1x | +34.24% | **+34.24%** |
+| SVXY | -1x | -31.99% | **+31.99%** |
+| UVXY | +2x | +66.21% | **+33.11%** |
+| reconstruction | - | - (4:15 p.m. settlement) | **+96.10%** |
+
+Three products, three issuers, three different leverages, one long and two geared -
+and they agree with each other to within **2.25 percentage points** on what the index
+did. They agree with each other and disagree with the 4:15 p.m. settlement by a factor
+of three. In log terms, **57.5% of the day's move happened after 4:00 p.m. ET**.
+
+This is V6's asynchronicity in its most extreme instance, and the raw contract data
+shows the mechanism: the February-2018 VX contract opened at 16.15, ranged from 15.20
+to 33.35, and **closed at 33.20 - its high of the day**, on 567,407 lots. That is the
+shape of forced buying into the settlement window, which is the rebalancing mechanism
+Phase 08 is about.
+
+**And the filings say so directly.** ProShares' own prospectus:
+
+> "A 'single day' is measured from the time a Fund calculates its net asset value
+> ('NAV') to the time of the Fund's next NAV calculation. **The NAV calculation time
+> for the Funds is typically 4:15 p.m. (Eastern Time)**."
+
+So the funds strike NAV at 4:15 p.m., aligned with the pre-October-2020 futures
+settlement, while the closing *price* this project regresses on is the 4:00 p.m.
+consolidated close. The gap is between the index and the traded price, not between
+the index and the fund's NAV. On 5 February 2018 that distinction was the difference
+between a fund down 32% and a fund down 96%.
+
+### The leverage change, dated two ways
+
+ProShares Trust II's 10-K, Note 9:
+
+> "Effective as of **close of business on February 27, 2018**, the investment
+> objective of ProShares Ultra VIX Short-Term Futures ETF and ProShares Short VIX
+> Short-Term Futures ETF changed ... to seek results ... that correspond to **one and
+> one-half times (1.5x)** the performance of the ... Index for a single day."
+
+`config/config.yaml` stores `leverage_change_date: 2018-02-28`. That is not a
+disagreement: the filing dates the *change*, the configuration dates the first daily
+*return* computed under the new objective, and a change at the close of the 27th
+first affects the return from the 27th close to the 28th close. Confirmed in the
+data rather than argued:
+
+| Date | SVXY implied leverage | UVXY implied leverage |
+|---|---|---|
+| 2018-02-27 | -1.21 | +2.48 |
+| **2018-02-28** | **-0.24** | **+1.13** |
+
+and over the following 60 sessions the fitted slopes are -0.565 and +1.687, against
+targets of -0.5 and +1.5 - attenuated by about 13%, which is the same era attenuation
+V6 documents, from the same cause.
+
+---
+
+## V10. Every product term, quoted from its filing
+
+**Proposition.** No product term asserted anywhere in this repository comes from
+recall or from a secondary description. Each is located in the archived primary
+document by a stored search pattern, and the surrounding passage is kept.
+
+**Test.** `python scripts/extract_filing_terms.py`. Twenty-seven terms across seven
+filings. The script writes every quotation to `reports/tables/filing_terms.csv`
+alongside the pattern that found it, compares each against `config/config.yaml`, and
+**exits non-zero** if any term cannot be located or any configuration value
+disagrees.
+
+**Result.** 27/27 located, 0 disagreements outstanding.
+
+| Filing | Terms |
+|---|---|
+| CS VelocityShares 424B2 (2017-06-30) | 5/5 |
+| CS XIV acceleration release (2018-02-06) | 4/4 |
+| ProShares 424B3 (2018-02-15) | 7/7 |
+| ProShares Trust II 10-K FY2017 | 4/4 |
+| iPath Series B pricing supplement (2018-01-03) | 3/3 |
+| iPath Series B Amendment No. 1 (2022-03-14) | 1/1 |
+| VS Trust 424B3 (2022-01-28) | 3/3 |
+
+**Does the check fail when it should?** Mutation-tested three ways: a deliberately
+wrong fee in the configuration exits 1 and names the disagreement; a removed archived
+file exits 1 and names each claim it can no longer support; the unmodified repository
+exits 0.
+
+### What reading the filings actually changed
+
+Four things, none of which would have surfaced without opening the documents.
+
+**1. A fee that was wrong.** `config/config.yaml` gave SVIX a fee of 1.29%. The
+archived launch prospectus says:
+
+> "SVIX pays the Sponsor a management fee ... in an amount equal to **1.35% per
+> annum** of its average daily net assets."
+
+1.29% appears nowhere in the document. Corrected to 1.35%, per the decision rule that
+the filing wins. Materiality: 0.06% a year is about 0.24 bp a day against a 51 bp
+daily tracking error - it moves the mean residual and no conclusion.
+
+**2. A claim attached to the wrong document.** The VXX investor fee of 0.89% was
+recorded against `Barclays_iPath_VXX_SeriesB_424B2.htm`. That file turns out to be
+Amendment No. 1 of 14 March 2022 - a one-page notice with no fee schedule at all. The
+fee is stated in the January-2018 pricing supplement, which was also archived:
+
+> "the net effect of the fee accumulates over time and is subtracted at the rate of
+> **0.89% per year**, which we refer to as the 'investor fee rate'."
+
+The claim has been moved to the document that supports it. This is exactly the error
+the task exists to catch: the number was right, the citation was not.
+
+**3. A structural difference between the products that the project had not recorded.**
+VXX is linked to the **total-return** version of the index; XIV was linked to the
+**excess-return** version. The project reconstructs ER. Recorded in
+`docs/limitations.md` as a known bias in VXX's mean residual.
+
+**4. Why VXX tracks worse than VIXY after 2022.** The amendment that turned out not to
+contain the fee contains something better:
+
+> "Effective as of the open of trading on March 14, 2022, we will **suspend, until
+> further notice, any further sales from inventory and any further issuances** of the
+> ETNs ... this may cause the ETNs to trade at a premium or discount in relation to
+> their indicative value."
+
+With creations suspended, the arbitrage that holds an ETN to its indicative value is
+switched off. VXX's 2022-2026 daily tracking error is 101 bp against VIXY's 28 bp over
+the identical window, and the issuer's own filing says why.
 
 ---
 

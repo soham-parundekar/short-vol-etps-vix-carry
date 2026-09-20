@@ -43,9 +43,9 @@ filings:
       - daily investor fee factor (0.0135 for the inverse ETNs)
       - closing indicative value and daily ETN performance formulas
       - daily accrual on the three-month US Treasury rate
-      - underlying index (S&P 500 VIX Short-Term Futures Index ER)
+      - underlying index (S&P 500 VIX Short-Term Futures Index)
       - optional and event acceleration provisions
-    verified: partial   # fee and formulas read directly; full acceleration clause re-checked in script
+    verified: true      # 5/5 claims quoted; see reports/tables/filing_terms.csv
 
   - key: proshares_trust_ii_10k_2017
     issuer: ProShares Trust II
@@ -57,9 +57,13 @@ filings:
     local_name: ProSharesTrustII_10K_FY2017.htm
     used_for:
       - SVXY and UVXY structure, benchmark and fees
-      - net assets outstanding by fund and month
+      - net assets outstanding by fund
       - subsequent-event disclosure of the change in daily target exposure
-    verified: false
+      - the -0.5x and 1.5x classes, and the effective date of the change
+    verified: true      # 4/4 claims quoted. Note 9 "Subsequent Events" dates the
+                        # change to the close of business on 27 February 2018; the
+                        # configuration stores 2018-02-28 as the first RETURN under
+                        # the new objective. Confirmed against the price data.
 
   - key: proshares_424b3_2018_02
     issuer: ProShares Trust II
@@ -72,20 +76,32 @@ filings:
     used_for:
       - SVXY at -1x and UVXY at 2x immediately before the change
       - fee and benchmark wording as at February 2018
-    verified: true
+      - >-
+        NAV calculation time of 4:15 p.m. ET. Load-bearing for docs/validation.md
+        V6 and V9 - the funds strike NAV at 4:15 p.m. while the closing price this
+        project regresses on is the 4:00 p.m. consolidated close.
+      - the SVXY 2-for-1 split of July 2017 and the VIXY/UVXY 1-for-4 reverse split
+    verified: true      # 7/7 claims quoted
 
   - key: ipath_vxx_series_b_424b2
     issuer: Barclays Bank PLC
     cik: 312070
     form: 424B2
-    date: "2022-04-01"
-    title: iPath Series B S&P 500 VIX Short-Term Futures ETN pricing supplement
+    date: "2022-03-14"        # "Amendment No. 1 dated March 14, 2022", per the document
+    title: >-
+      iPath Series B S&P 500 VIX Short-Term Futures ETN - Amendment No. 1,
+      suspending further sales and issuances
     url: https://www.sec.gov/Archives/edgar/data/312070/000095010322004469/dp169097_424b2-vxxetns.htm
     local_name: Barclays_iPath_VXX_SeriesB_424B2.htm
+    # This is NOT the pricing supplement. It is a one-page amendment suspending
+    # issuance, and it contains no fee schedule. The fee claim was recorded against
+    # this entry in error and has been moved to the January-2018 pricing supplement,
+    # which does state it. Logged in docs/project_log.md.
     used_for:
-      - VXX investor fee (0.89% per annum) used in the tracking validation
-      - VXX intraday indicative value formula
-    verified: false
+      - suspension of further sales and issuances effective 14 March 2022, which is
+        why VXX can trade at a persistent premium or discount to indicative value
+        and tracks the reconstructed index worse than VIXY after 2022
+    verified: true
 
   - key: ipath_vxx_series_b_2018_launch
     issuer: Barclays Bank PLC
@@ -97,7 +113,15 @@ filings:
     local_name: Barclays_iPath_SeriesB_launch_2018.htm
     used_for:
       - the January 2018 relaunch that makes the VXX price history two-segment
-    verified: false
+      - VXX investor fee rate of 0.89% per annum, used in the tracking validation
+      - VXX is linked to the S&P 500 VIX Short-Term Futures Index **TR**, the
+        total-return version, where XIV was linked to the excess-return version.
+        The project reconstructs ER, so VXX's mean tracking residual carries a known
+        bias of roughly the T-bill rate less the fee. See docs/limitations.md.
+    verified: true      # 3/3 claims quoted. Caveat: this is the PRELIMINARY pricing
+                        # supplement of 3 January 2018 ("the information ... is not
+                        # complete and may be changed"); the final has not been
+                        # archived, and the fee has not been re-checked against it.
 
   - key: vs_trust_svix_424b3
     issuer: VS Trust (Volatility Shares)
@@ -110,4 +134,7 @@ filings:
     used_for:
       - SVIX objective (-1x of the Short VIX Futures Index), structure and breakeven
       - post-2018 re-offering of the same exposure without an acceleration clause
-    verified: partial
+      - management fee of 1.35% per annum
+    verified: true      # 3/3 claims quoted. The fee in config/config.yaml was 1.29%
+                        # and has been corrected to the 1.35% this filing states;
+                        # 1.29% appears nowhere in the document.

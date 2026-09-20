@@ -380,3 +380,97 @@ precision of every pre-2020 result.
 1. Phase 07 close-out: reconcile 5 February 2018 against the product filings.
 2. Stage the seven SEC filings and run `prompts/tasks/verify_filing_terms.md`.
 3. Phase 08 onward: ETP mechanics and rebalancing flows.
+
+---
+
+## Session 4 — 21 September 2026
+
+Phase 07 closed. The reconstruction is now anchored to a primary document at the one
+date where being wrong would matter most, and every product term in the repository
+has been quoted from the filing that states it.
+
+### 5 February 2018 reconciles to the filing
+
+Credit Suisse's acceleration release gives two numbers and a rule: XIV's closing
+indicative value on 2 February 2018 was $108.3681, and an acceleration event occurs
+when the intraday indicative value falls to twenty percent or less of the prior
+close. Applying the reconstructed index return for 5 February (+96.10%) at -1x, net
+of the 0.0135 daily fee factor and the T-bill accrual, gives **$4.22** against a
+threshold of **$21.67**.
+
+So the reconstruction predicts, from futures settlement prices alone and with no
+product data as an input, the event that destroyed XIV. That is the strongest
+single check available on the whole series.
+
+### The same date measured at 4:00 p.m. says the index rose 33%, not 96%
+
+| | leverage | own close | implied index |
+|---|---|---|---|
+| VIXY | +1x | +34.24% | +34.24% |
+| SVXY | -1x | -31.99% | +31.99% |
+| UVXY | +2x | +66.21% | +33.11% |
+| reconstruction | | | **+96.10%** |
+
+Three issuers, three leverages, one long and two geared, agreeing with each other to
+2.25 percentage points and disagreeing with the 4:15 p.m. settlement by a factor of
+three. **57.5% of the day's move, in log terms, happened after 4:00 p.m. ET.**
+
+The raw contract data shows the mechanism: the February-2018 VX contract opened at
+16.15, ranged 15.20 to 33.35, and closed at 33.20 — its high — on 567,407 lots. That
+is forced buying into the settlement window, which is Phase 08's subject appearing
+early.
+
+And ProShares' own prospectus confirms the measurement gap directly: "The NAV
+calculation time for the Funds is typically 4:15 p.m. (Eastern Time)". The funds
+strike NAV at 4:15 with the futures settlement; the *traded price* is the 4:00
+consolidated close. On 5 February that distinction was a fund down 32% versus a fund
+down 96%.
+
+### The leverage change: a discrepancy that was not one
+
+The 10-K says "effective as of close of business on February 27, 2018"; the
+configuration stores 2018-02-28. Not a conflict — the filing dates the change, the
+configuration dates the first return computed under it. Confirmed in the data:
+implied leverage on 27 Feb is −1.21 (SVXY) and +2.48 (UVXY), on 28 Feb −0.24 and
++1.13.
+
+### What reading the filings changed
+
+`scripts/extract_filing_terms.py` locates 27 terms across 7 filings by stored search
+patterns, writes each quotation with the pattern that found it, compares against the
+configuration, and exits non-zero on any failure. Mutation-tested: a wrong config
+value exits 1 and names it; a removed filing exits 1 and names every claim it
+supported; the clean repository exits 0.
+
+Four things surfaced that would not have otherwise:
+
+1. **SVIX's fee was wrong.** Config said 1.29%; the launch prospectus says "1.35% per
+   annum" and 1.29% appears nowhere in the document. Corrected. Immaterial to any
+   conclusion (0.24 bp/day against a 51 bp tracking error) but wrong is wrong.
+2. **The VXX fee was cited to the wrong document.** It was recorded against a file
+   that turns out to be Amendment No. 1 of March 2022 — a one-page notice with no fee
+   schedule. The fee is in the January-2018 pricing supplement, also archived. The
+   number was right; the citation was not. This is precisely what the task exists to
+   catch.
+3. **VXX tracks the total-return index; XIV tracked excess-return.** The project
+   reconstructs ER. Recorded as a known bias in VXX's mean residual.
+4. **Why VXX tracks worse than VIXY after 2022.** The same amendment: issuance
+   suspended 14 March 2022, so the creation arbitrage that holds an ETN to its
+   indicative value is switched off. VXX 101 bp/day against VIXY 28 bp over the
+   identical window, explained by the issuer's own filing.
+
+### Also this session
+
+* All seven SEC filings staged; **338/338 manifest entries now verify byte-for-byte**.
+* `docs/limitations.md` written — eight items, each naming the results it bears on.
+* `docs/validation.md` gains V9 (the February 2018 reconciliation) and V10 (filing
+  terms), and V2 updated to full coverage.
+* The project folder on the author's machine was never a git repository; the working
+  push had been coming from a clone elsewhere. It is now the repository, with origin
+  set, and `git ls-remote` works from the analysis environment, so the remote can be
+  verified after each push instead of assumed.
+
+### Next
+
+Phase 08 — ETP mechanics. The rebalancing identity ΔE = L(L−1)·A·r, the decay
+identity, and the flow estimates. 5 February 2018 is already the worked example.
