@@ -36,12 +36,14 @@ import numpy as np
 import pandas as pd
 
 from ..config import load_config
-from ..index.calendar import vix_settlement_dates
+from ..index.calendar import MONTH_CODES, vix_settlement_dates
 from .http import fetch
 
 __all__ = [
     "VX_URL",
+    "LEGACY_VX_URL",
     "INDEX_URL",
+    "legacy_vx_url",
     "download_vx_contracts",
     "load_vx_panel",
     "download_cboe_index",
@@ -53,6 +55,27 @@ VX_URL = (
     "https://cdn.cboe.com/data/us/futures/market_statistics/historical_data/VX/"
     "VX_{settlement}.csv"
 )
+
+#: Cboe serves the modern per-expiry files only for contracts expiring from roughly
+#: January 2013 onward. Earlier contracts live in a legacy archive keyed by the CME
+#: month code and a two-digit year rather than by settlement date, and dated
+#: MM/DD/YYYY rather than ISO. Both are downloaded into the same local naming scheme
+#: (``VX_<settlement>.csv``) so that nothing downstream needs to know which endpoint
+#: served a given contract; which one did is recorded in the raw manifest.
+LEGACY_VX_URL = (
+    "https://cdn.cboe.com/resources/futures/archive/volume-and-price/"
+    "CFE_{code}{yy}_VX.csv"
+)
+
+
+def legacy_vx_url(settlement) -> str:
+    """Legacy archive URL for the contract expiring in ``settlement``'s month.
+
+    A VX contract's final settlement date always falls inside its own expiry month,
+    so the month code and year come directly from the settlement date.
+    """
+    s = pd.Timestamp(settlement)
+    return LEGACY_VX_URL.format(code=MONTH_CODES[s.month], yy=f"{s.year % 100:02d}")
 INDEX_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/{name}_History.csv"
 
 #: Cboe index series used in this project, with what each is for.
@@ -100,25 +123,43 @@ def download_vx_contracts(
     rows = []
     for s in settles:
         tag = s.strftime("%Y-%m-%d")
-        url = VX_URL.format(settlement=tag)
         dest = out_dir / f"VX_{tag}.csv"
-        try:
-            res = fetch(url, dest, force=force, allow_missing=True)
-        except Exception as exc:
-            rows.append(dict(settlement=s, status="error", detail=str(exc)[:200]))
-            continue
+
+        # Modern per-expiry endpoint first, legacy archive as a fallback. The two
+        # cover different eras (roughly 2013 onward, and 2004-2013 respectively),
+        # so a failure on one is expected rather than exceptional.
+        res, source, detail = None, None, None
+        for label, url in (("modern", VX_URL.format(settlement=tag)),
+                           ("legacy", legacy_vx_url(s))):
+            try:
+                res = fetch(url, dest, force=force, allow_missing=True)
+            except Exception as exc:
+                detail = f"{label}: {type(exc).__name__}: {str(exc)[:120]}"
+                res = None
+            if res is not None:
+                source = label
+                break
+
         if res is None:
-            rows.append(dict(settlement=s, status="missing", detail="404"))
+            rows.append(dict(settlement=s, status="unavailable",
+                             detail=detail or "not served by either endpoint"))
+            if verbose:
+                print(f"  VX_{tag}.csv  unavailable ({detail or '404 on both'})")
             continue
+
         rows.append(
             dict(settlement=s, status="cached" if res.from_cache else "downloaded",
-                 bytes=res.n_bytes, sha256=res.sha256[:12], path=str(dest))
+                 source=source, bytes=res.n_bytes, sha256=res.sha256[:12],
+                 path=str(dest))
         )
         if verbose and not res.from_cache:
-            print(f"  VX_{tag}.csv  {res.n_bytes:,} bytes")
+            print(f"  VX_{tag}.csv  {res.n_bytes:,} bytes  [{source}]")
+
     log = pd.DataFrame(rows)
-    if verbose:
+    if verbose and len(log):
         print(log["status"].value_counts().to_string())
+        if "source" in log.columns:
+            print(log["source"].value_counts(dropna=True).to_string())
     return log
 
 
@@ -130,7 +171,21 @@ def _parse_vx_file(path: Path, settlement: pd.Timestamp) -> pd.DataFrame:
     missing = {"date", "settle"} - set(df.columns)
     if missing:
         raise ValueError(f"{path.name}: missing expected columns {missing}")
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
+
+    # The two Cboe endpoints date their rows differently: the modern per-expiry files
+    # use ISO (2018-02-05), the legacy archive uses US order (02/05/2018). Parse each
+    # with an explicit format rather than letting pandas infer, because inference on a
+    # file whose first rows happen to be ambiguous (03/04/2013) would silently swap
+    # day and month for part of the sample.
+    raw_dates = df["date"].astype(str).str.strip()
+    fmt = "%m/%d/%Y" if raw_dates.str.contains("/").mean() > 0.5 else "%Y-%m-%d"
+    df["date"] = pd.to_datetime(raw_dates, format=fmt, errors="coerce")
+    n_unparsed = int(df["date"].isna().sum())
+    if n_unparsed:
+        # Fall back only for the stragglers, and only after the deterministic pass.
+        df.loc[df["date"].isna(), "date"] = pd.to_datetime(
+            raw_dates[df["date"].isna()], errors="coerce"
+        )
     df = df.dropna(subset=["date"])
     for c in ("open", "high", "low", "close", "settle", "change", "volume",
               "efp", "open_interest"):
