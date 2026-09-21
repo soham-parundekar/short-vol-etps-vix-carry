@@ -644,6 +644,180 @@ same shock would have landed just below the 10% threshold H2 uses.
 
 ---
 
+## V14. The GJR-GARCH filter
+
+Skewed-*t* GJR-GARCH(1,1) on daily index **log** returns, fitted twice: on data ending
+2017-12-31 (2,518 days, the ex-ante model) and on the full sample (4,710 days,
+descriptive only). `reports/tables/garch_fit.csv`.
+
+| Check | pre-2018 | full | Criterion |
+|---|---|---|---|
+| Same optimum from two seeds x four starts | params agree to 6e-7 | 5e-7 | pass |
+| Persistence a + b + g/2 | 0.938 | 0.926 | pass, in (0.90, 0.999) |
+| Ljung-Box on z^2, 10 / 20 lags | p = 0.81 / 0.34 | 0.74 / 0.55 | pass |
+| KS on the probability-integral transform | p = 0.43 | 0.81 | pass |
+| Asymmetry gamma | -0.245 (t = -6.4) | -0.306 | expected sign |
+
+The asymmetry is the reverse of the equity leverage effect, as it should be for long
+VIX futures: an **up**-shock raises next-day variance by alpha = 0.28 times its square,
+a down-shock by only alpha + gamma = 0.03. The skewness parameter is positive (0.20).
+
+**Is the scale calibrated across regimes?** Under a correct scale, 5% of standardised
+residuals exceed their 95th percentile in every volatility quintile. Pre-2018: 5.2%,
+5.8%, 5.4%, 5.2%, 3.6% from calm to turbulent, chi-square p = 0.56 - no evidence of
+miscalibration, and in particular none that the model under-reacts in calm regimes.
+Full sample: p = 0.006, driven by too *few* exceedances in the turbulent quintile
+(3.1%), i.e. the model over-reacts after shocks.
+
+---
+
+## V15. The EVT threshold
+
+Chosen on **pre-2018 residuals only** by the rule in
+`prompts/tasks/choose_evt_threshold.md`: the lowest quantile with at least 50
+exceedances, xi within one standard error of the next two thresholds, KS on the
+excesses p > 0.10, and inside the linear region of the mean excess (taken as the lower
+and upper halves of [q, 0.99] implying xi within one standard error of each other).
+
+| q | exceedances | xi (se) | KS p | linear | passes |
+|---|---|---|---|---|---|
+| 0.900 | 252 | 0.169 (0.072) | 0.74 | no - halves imply 0.08 vs 0.19 | no |
+| **0.925** | **189** | **0.181 (0.085)** | 0.66 | yes | **chosen** |
+| 0.950 | 126 | 0.233 (0.117) | 0.93 | yes | yes |
+| 0.970 | 76 | 0.204 (0.150) | 0.83 | yes | yes |
+| 0.990 | 26 | 0.303 (0.374) | 0.73 | - | no, too few |
+
+xi is positive at every threshold (a heavy tail, as expected) and moves by 0.07 across
+the region with at least 50 exceedances. An informal reading of the mean-excess plot
+had suggested 0.95; the coded rule, with its sharper linearity test, stops at 0.925,
+and the rule governs. The full-sample rule chooses 0.90.
+
+---
+
+## V16. Termination probabilities and H3
+
+The one-day index **simple** return that removes 80% of a product is 80% at -1x and
+160% at -0.5x; on the log scale the model is fitted in, 0.588 and 0.956. Checked by
+hand for 5 February 2018: sigma = 0.0801, standardised threshold 7.38, GPD tail
+0.075 x (1 + 0.181 x 5.92 / 0.630)^(-1/0.181) = 3.09e-4 a day, i.e. 1 in 12.8 years -
+the pipeline's number.
+
+**Ex-ante, pre-2018 model, headline threshold** (`termination_probabilities.csv`):
+
+| State | -1x wipeout | -0.5x wipeout |
+|---|---|---|
+| unconditional (average over 2008-2017 days) | **1 in 79 years** | 1 in 685 years |
+| across the whole threshold grid | 1 in 53 - 85 years | 1 in 279 - 797 years |
+| calm quintile of volatility | 1 in 2,835 years (grid 484 - 3,991) | 1 in 34,333 years (grid 2,443 - 61,700) |
+| 12 January 2018 | 1 in 3,877 years (grid 592 - 5,629) | 1 in 47,450 years (grid 2,984 - 88,484) |
+| **5 February 2018, data through 2 February** | **1 in 12.8 years** (grid 10.0 - 13.7) | 1 in 115 years (grid 53 - 135) |
+
+The unconditional numbers move by 1.6x (-1x) and 2.9x (-0.5x) across the grid, inside
+the factor of three beyond which the phase prompt requires a range as the headline.
+The calm-state numbers move by 8x to 30x across the grid and are therefore reported as
+ranges, never as points: far into the tail, small differences in xi compound.
+
+**The warning, day by day** (`exante_warning_path.csv`, `figures/exante_warning.png`).
+Parameters frozen at 31 December 2017, volatility state updated as each day arrives:
+1 in 2,163 to 3,877 years through mid-January, 1 in 105 after the +8% day on
+29 January, 1 in 12.8 after the +14% day on 2 February. A three-hundred-fold rise in a
+week - and still a one-day probability of about 1 in 3,200 trading days on the morning
+of the event.
+
+**A correction to the phase prompt.** Its self-review asserted that the
+calm-quintile probability "should" exceed the unconditional one. Under any GARCH
+scale the one-day tail probability rises with sigma, so the reverse must hold, and it
+does. The real question behind the assertion - whether the model under-states risk
+in calm regimes - is tested in V14 and the answer is no. Prompt corrected; the
+property is now a test.
+
+**H3, against its pre-registered rule.** Rejected if the ordering reverses, if the
+survival gap is unstable across the grid, or if the -1x probability is below 1 in
+10,000 years. None holds: ordering preserved at every threshold, the gap is stable
+(V17), and the ex-ante -1x probability is 1 in 79 years. **H3 is not rejected.** But
+its stated magnitude is not met: the -1x probability is **8.7 times** the -0.5x
+probability at the headline threshold and 5.3 to 9.4 times across the grid - not the
+order of magnitude the hypothesis claimed. Reported as a warning, not reworded.
+
+---
+
+## V17. Survival, and where the simulated risk comes from
+
+20,000 five-year paths from the pre-2018 model, seed from configuration. Standard
+errors at five years are 0.28 points or less.
+
+| Five-year survival | -1x | -0.5x | gap |
+|---|---|---|---|
+| model dynamics unbounded | 81.1% | 93.7% | 12.6 pp |
+| volatility capped at the 2008-2017 maximum | 89.9% | 98.6% | 8.7 pp |
+| gap across the threshold grid, unbounded | | | 12.1 - 14.0 pp |
+| gap across the threshold grid, capped | | | 7.8 - 9.4 pp |
+
+**Why two versions.** Averaging the in-sample one-day probabilities gives 1 in 79
+years; the unbounded simulation implies a hazard nearer 1 in 24. The difference is
+not simulation error. The fitted recursion - alpha of 0.28 on up-shocks, GPD
+innovations - generates volatility spirals far outside anything observed
+(`simulation_diagnostics.csv`, 4,000 paths):
+
+| | 2008-2017 | simulated |
+|---|---|---|
+| daily volatility, 99.9th percentile | 0.137 | 0.412 |
+| daily volatility, maximum | 0.158 | **6.92** |
+
+The 1.1% of simulated days with volatility above the observed maximum carry **81%** of
+simulated wipeouts, and 41% of paths that suffer one suffer another within 20 days. That is extrapolation of the variance dynamics, not of
+the innovation tail. Capping volatility at its observed maximum removes it; the pair
+brackets the answer and neither is offered alone. Notably, 5 February 2018 itself did
+not come out of such a spiral: it was an 8.5-sigma innovation at a volatility of 127%
+annualised, well inside the observed range.
+
+---
+
+## V18. Kelly and H4
+
+Growth-optimal short exposure `f* = argmax E[ln(1 - f R)]` on daily **simple** index
+returns, with the solvency bound `f < 1 / max R`, and a 1,000-replication stationary
+bootstrap (mean block 21 days). `reports/tables/kelly.csv`.
+
+| Returns | f* | 95% interval |
+|---|---|---|
+| full sample | 0.62 | [0.05, 1.34] |
+| pre-2018 | **1.11** | [0.22, 2.07] |
+| full sample without 5 Feb 2018 | 0.86 | [0.22, 1.45] |
+
+**H4 is rejected**: the interval contains 1.0 in every case. Before the crash the
+empirical point estimate was *above* one - the historical record said a full -1x
+short was roughly growth-optimal. At the full-sample optimum, expected log growth is
+13.1% a year; at -1x it is about +1.6%.
+
+**Why there is no model-based Kelly number.** The fitted tail has xi > 0 and unbounded
+support, so for any short exposure f > 0 there is positive probability that R exceeds
+1/f, which makes E[ln(1 - f R)] minus infinity. The model-implied growth-optimal short
+is exactly zero. Kelly computed on simulated returns returns 0.014 and 0.059
+(unbounded, capped), each just below one over its own largest draw (0.015, 0.059): it
+measures how many draws were taken, not an optimum. So whether -1x was "too much"
+by the Kelly criterion is not something the sample can settle - it turns on whether
+the upside is bounded, which is an assumption, not an estimate.
+
+---
+
+## V19. The jackknife
+
+The largest day of each sample removed and everything refitted
+(`tail_jackknife.csv`).
+
+| Sample | Day removed | -1x probability | -0.5x | xi | Kelly f* |
+|---|---|---|---|---|---|
+| pre-2018 | 24 Jun 2016, +32.7% | -25% (79 -> 105 yrs) | -33% | 0.181 -> 0.173 | 1.11 -> 1.22 |
+| full | 5 Feb 2018, +96.1% | -42% (26 -> 44 yrs) | -60% | 0.169 -> 0.151 | 0.62 -> 0.86 |
+
+The ex-ante headline moves by 25%, inside the 50% tolerance: no single pre-2018 day
+is the result. In the full sample, 5 February 2018 moves the -1x number by 42% (pass)
+and the -0.5x number by 60% (warning): the event itself carries more of the tail than
+any earlier day did.
+
+---
+
 ## Open items
 
 1. The 2016 and 2019 steps in V6 are not explained.

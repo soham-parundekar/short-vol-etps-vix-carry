@@ -36,6 +36,7 @@ __all__ = [
     "plot_flow_vs_open_interest",
     "plot_decay_blocks",
     "plot_asset_bounds",
+    "plot_exante_warning",
     "plot_mean_excess",
     "plot_gpd_qq",
     "plot_survival_curves",
@@ -228,6 +229,56 @@ def plot_flow_vs_open_interest(
     return fig
 
 
+def plot_exante_warning(path: pd.DataFrame, event: str = "2018-02-05",
+                        source: str = _SOURCE):
+    """The pre-2018 model's own warning, day by day, into the event.
+
+    Parameters are frozen at 31 December 2017; only the volatility state is updated
+    as each day's return arrives, so every point is something that could have been
+    computed that morning. Top: the implied return period of a wipeout-sized day for
+    each design, on a log scale because it moves by orders of magnitude. Bottom: the
+    index return that updated the state. One axis per panel.
+    """
+    import matplotlib.pyplot as plt
+
+    from .style import apply_style
+
+    apply_style()
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(9.5, 6.4), sharex=True,
+                                 gridspec_kw={"height_ratios": [1.5, 1.0]})
+    cols = [c for c in path.columns if c.startswith("return_period_years_")]
+    for i, c in enumerate(cols):
+        st = series_style(i)
+        lab = c.replace("return_period_years_", "")
+        y = path[c].where(path.index <= pd.Timestamp(event))
+        a1.plot(path.index, y, marker="o", ms=4, lw=1.6, **st)
+        last = y.dropna()
+        direct_label(a1, last.index[-1], last.iloc[-1],
+                     f"{lab}: 1 in {last.iloc[-1]:,.0f} yrs", st["color"])
+    a1.set_yscale("log")
+    a1.legend([ln for ln in a1.get_lines()],
+              [c.replace("return_period_years_", "") + " wipeout" for c in cols],
+              loc="upper right")
+    a1.set_ylabel("years between wipeout-sized days\n(if every day were like this one)")
+    a1.set_title("Model estimated on data to 31 Dec 2017; state updated daily",
+                 loc="left", color=INK["primary"], fontsize=10.5)
+    r = path["index_return"] * 100.0
+    a2.bar(r.index, r.values, width=0.8,
+           color=[PALETTE[0] if v >= 0 else INK["muted"] for v in r.values])
+    a2.axhline(0, color=INK["muted"], lw=0.8)
+    a2.set_ylabel("index return, %")
+    a2.set_title("Index daily return", loc="left", color=INK["primary"], fontsize=10.5)
+    for ax in (a1, a2):
+        ax.axvline(pd.Timestamp(event), color=INK["secondary"], lw=1.0, ls=(0, (4, 3)))
+    format_date_axis(a2)
+    fig.suptitle("The ex-ante warning before 5 February 2018",
+                 x=0.01, ha="left", color=INK["primary"], fontsize=12)
+    fig.tight_layout()
+    add_source(fig, source + " GJR-GARCH(1,1), skewed-t body, GPD upper tail at the "
+               "0.925 quantile. Return period = 1 / (252 x one-day probability).")
+    return fig
+
+
 def plot_decay_blocks(panels: "list[dict]", source: str = _SOURCE):
     """The decay regression's own observations, one panel per product and era.
 
@@ -365,24 +416,38 @@ def plot_gpd_qq(empirical: np.ndarray, theoretical: np.ndarray, source: str = _S
 
 def plot_survival_curves(curves: "dict[str, pd.Series]",
                          bands: "dict[str, tuple] | None" = None,
-                         source: str = _SOURCE):
-    """Simulated survival probability by product design, with simulation error."""
+                         source: str = _SOURCE,
+                         styles: "dict[str, dict] | None" = None,
+                         ylim: "tuple[float, float] | None" = None):
+    """Simulated survival probability by product design, with simulation error.
+
+    ``styles`` maps a curve name to its colour and line style. Pass it when the
+    curves have two dimensions - design and simulation dynamics here - so that colour
+    carries one and line style the other, instead of four unrelated colours.
+    ``ylim`` defaults to a range fitted to the curves: survival here lives between
+    0.8 and 1.0, and an axis from zero would spend four-fifths of the plot on nothing.
+    """
     fig, ax = new_figure(
         "Simulated survival probability by daily leverage",
-        "Probability of surviving without an 80% single-day loss",
+        "Probability of no wipeout-sized day",
         xlabel="Years",
-        figsize=(8.2, 4.8),
+        figsize=(8.8, 4.8),
     )
     for i, (name, s) in enumerate(curves.items()):
-        st = series_style(i)
-        ax.plot(s.index, s.values, label=name, **st)
+        st = (styles or {}).get(name) or series_style(i)
+        ax.plot(s.index, s.values, label=name, lw=1.8, **st)
         if bands and name in bands:
             lo, hi = bands[name]
             ax.fill_between(s.index, lo, hi, color=st["color"], alpha=0.18, lw=0)
         direct_label(ax, s.index[-1], s.iloc[-1], name, st["color"])
-    ax.set_ylim(0, 1.02)
+    if ylim is None:
+        lo = min(float(np.nanmin(s.values)) for s in curves.values())
+        ylim = (max(0.0, np.floor((lo - 0.03) * 20) / 20), 1.005)
+    ax.set_ylim(*ylim)
     ax.legend(loc="lower left")
-    add_source(fig, source + " Paths simulated from the GJR-GARCH / EVT model fitted to data ending 2017-12-31.")
+    add_source(fig, source + " Paths simulated from the GJR-GARCH / EVT model fitted to "
+               "data ending 2017-12-31. 'Capped' bounds conditional volatility at its "
+               "2008-2017 maximum; 'unbounded' lets the model's own dynamics run.")
     return fig
 
 
@@ -397,13 +462,13 @@ def plot_kelly_growth_curve(f_grid: np.ndarray, growth: np.ndarray,
     """
     fig, ax = new_figure(
         "Growth-optimal short exposure against the leverage the products offered",
-        "Expected log growth per year",
+        "Expected log growth, % per year",
         xlabel="Short exposure to the index (fraction of capital)",
         figsize=(8.4, 4.8),
     )
     ok = np.isfinite(growth)
     ax.axhline(0.0, color=INK["muted"], lw=0.8)
-    ax.plot(f_grid[ok], growth[ok] * 252, color=PALETTE[0], lw=1.8, label="expected growth")
+    ax.plot(f_grid[ok], growth[ok] * 252 * 100, color=PALETTE[0], lw=1.8, label="expected growth")
     ax.axvline(f_star, color=PALETTE[2], lw=1.2, ls=(0, (1, 1.4)))
     ax.annotate(f"Kelly optimum {f_star:.2f}", xy=(f_star, 0),
                 xytext=(6, 12), textcoords="offset points",

@@ -555,3 +555,78 @@ half-year ticks; fixed for every figure. Tests: 200 passed, 2 skipped.
 
 Phase 09 — the tail model and survival (H3): GJR-GARCH with skewed-t innovations and
 conditional EVT on data ending 31 December 2017.
+
+---
+
+## Session 6 — 21 September 2026
+
+Phase 09 (tail model, termination probability, survival, Kelly) complete.
+**H3 not rejected, but its stated magnitude is not met. H4 rejected.**
+
+### The ex-ante model
+
+Skewed-t GJR-GARCH(1,1) on log returns ending 2017-12-31: same optimum from two seeds
+(to 6e-7), persistence 0.938, no ARCH left in the residuals (Ljung-Box p = 0.81/0.34),
+PIT uniform (KS p = 0.43). The asymmetry has the right sign for long VIX futures: an
+up-shock moves next-day variance by 0.28 times its square, a down-shock by 0.03.
+
+EVT threshold by the recorded rule on pre-2018 residuals: 0.925 quantile, 189
+exceedances, xi = 0.181. I had read 0.95 off the mean-excess plot; the coded linearity
+test is sharper and stops at 0.925. The rule governs; the full grid is reported.
+
+### What the model said, before the event
+
+Unconditionally, a -1x wipeout day at **1 in 79 years** (53-85 across the grid), and
+-0.5x at 1 in 685. Then day by day, parameters frozen, state updated: 1 in 2,163-3,877
+years through mid-January 2018; 1 in 105 after 29 January; **1 in 12.8 for 5 February,
+given data through 2 February**. Foreseeable over a product's life, a three-hundred-fold
+warning in the final week - and still about 1 in 3,200 trading days on the morning.
+
+### H3 and H4
+
+H3: none of the rejection conditions holds - the ordering is preserved at every
+threshold, the five-year survival gap is stable (12.1-14.0 points unbounded, 7.8-9.4
+capped), and 1 in 79 years is far from the 1-in-10,000 floor. But the hypothesis claimed
+the -1x probability was at least ten times the -0.5x one; it is **8.7 times** (5.3-9.4
+across the grid). Reported as not rejected with the magnitude unmet, not reworded.
+
+H4: rejected. Empirical Kelly 0.62 [0.05, 1.34] on the full sample; **1.11** [0.22,
+2.07] on pre-2018 data. Before the crash the historical record said a full -1x short
+was about growth-optimal.
+
+### Three things that were not what they first looked like
+
+* **Simulated survival vs in-sample averaging** (hazard ~1 in 24 vs 1 in 79 years) is
+  not noise. The model generates volatility spirals it never observed - simulated daily
+  volatility up to 6.9 against an observed maximum of 0.16 - and 81% of simulated
+  wipeouts happen inside them. Survival is now run unbounded and capped, and the pair
+  is reported.
+* **The model-based Kelly** (0.001, then 0.258, then 0.014 and 0.059 under the
+  pipeline's seed) is not an estimate at all: with an unbounded fitted tail, every short
+  has positive ruin probability and the model optimum is exactly zero; the simulated
+  number is just one over the largest draw.
+* **My own phase prompt was wrong.** It asserted calm-state tail risk "should" exceed
+  the unconditional risk; under any GARCH scale it cannot. Tested the question it was
+  reaching for instead - exceedance rates by volatility quintile - and found no
+  under-reaction in calm regimes (p = 0.56). Prompt corrected, property now a test.
+
+### Errors caught before they shipped
+
+* The Kelly figure's y-axis showed a peak of 33 "per year": the series was annualised
+  twice. Correct figure 13.1%.
+* A calm-quintile range written from a partial reading of the grid (931-3,991 years);
+  the table says 484-3,991. Every V16 figure was then re-checked against the pipeline.
+* The spiral diagnosis first came from an exploratory run; it now comes from the
+  pipeline (`simulation_diagnostics.csv`), so every reported number is reproducible.
+
+### Also
+
+`svcarry.econometrics.tailrisk` (spliced law, conditional exceedance, forward
+filtering, survival, simulated returns); ten tests including a look-ahead-by-
+perturbation test on the volatility filter, both load-bearing tests mutation-checked.
+Methodology M6, limitations L12-L14, validation V14-V19.
+
+### Next
+
+Phase 10 — forecasting and signals: realised variance, HAR forecasts, the variance risk
+premium and the term-structure signal.

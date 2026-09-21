@@ -578,11 +578,365 @@ def stage_mechanics(cfg) -> dict:
     return qc
 
 
+def stage_tail(cfg) -> dict:
+    """GJR-GARCH + conditional EVT: termination probabilities, survival, Kelly (H3, H4).
+
+    The ex-ante claim rests on the model fitted to data ending 2017-12-31, with its
+    EVT threshold chosen on pre-2018 residuals only. Everything is reported across
+    the full threshold grid. Two distinctions are kept visible throughout because
+    each changes the headline by a large factor:
+
+    * **In-sample averaging vs the model's own dynamics.** Averaging the one-day
+      conditional probability over the volatility states the data visited gives one
+      number; simulating the fitted recursion gives a larger one, because the model
+      generates volatility spirals far beyond anything observed. Survival is therefore
+      simulated twice - unbounded, and with volatility capped at the in-sample maximum.
+    * **Empirical vs model-based Kelly.** Under a fitted tail with xi > 0 every short
+      position has positive probability of total loss, so the model-implied
+      growth-optimal short is exactly zero and simulated estimates are just one over
+      the largest draw. Only the empirical Kelly is an estimate.
+    """
+    import numpy as np
+    import pandas as pd
+    from scipy import stats
+
+    from svcarry.econometrics.distributions import get_distribution
+    from svcarry.econometrics.evt import fit_gpd, mean_excess
+    from svcarry.econometrics.garch import GJRGarch
+    from svcarry.econometrics.kelly import growth_rate_curve, kelly_fraction
+    from svcarry.econometrics.tailrisk import (
+        SplicedInnovations, filter_sigma, simulate_first_passage, simulate_returns,
+        termination_table,
+    )
+
+    processed = ROOT / cfg.dotted("paths.processed")
+    tables = ROOT / cfg.dotted("paths.tables")
+    figdir = ROOT / cfg.dotted("paths.figures")
+    idx = pd.read_csv(_require(processed / "index_daily.csv", "the reconstructed index",
+                               "run: python scripts/run_pipeline.py --only index"),
+                      parse_dates=["date"]).set_index("date")
+    R = idx["ret"].dropna()
+    lr = np.log1p(R)
+    CUT = pd.Timestamp("2017-12-31")
+    GRID = [float(q) for q in cfg.dotted("tail.threshold_grid")]
+    SEED = int(cfg.dotted("tail.survival.seed"))
+    NPATH = int(cfg.dotted("tail.survival.n_paths"))
+    YEARS = int(cfg.dotted("tail.survival.years"))
+    wf = float(cfg.dotted("tail.wipeout_fraction"))
+    # One-day SIMPLE index return that removes `wf` of a product at leverage L.
+    TH = {"-1x": wf / 1.0, "-0.5x": wf / 0.5}          # 0.80 and 1.60
+
+    def ljung_box(x, lags):
+        x = np.asarray(x) - np.mean(x)
+        n, d = len(x), float(np.sum(x * x))
+        ac = np.array([np.sum(x[k:] * x[:-k]) / d for k in range(1, lags + 1)])
+        q = n * (n + 2) * np.sum(ac ** 2 / (n - np.arange(1, lags + 1)))
+        return float(q), float(stats.chi2.sf(q, lags))
+
+    def gpd_ks(z, g):
+        y = z[z > g.threshold] - g.threshold
+        c = (1 - (1 + g.xi * y / g.beta) ** (-1 / g.xi)) if abs(g.xi) > 1e-8 \
+            else 1 - np.exp(-y / g.beta)
+        return float(stats.kstest(c, "uniform").pvalue)
+
+    def me_xi(z, lo_q, hi_q):
+        th, me, _ = mean_excess(z, tail="upper", n_points=60, q_lo=0.80, q_hi=0.99)
+        qs = np.array([(z <= t).mean() for t in th])
+        m = (qs >= lo_q) & (qs <= hi_q)
+        if m.sum() < 3:
+            return np.nan
+        s = np.polyfit(th[m], me[m], 1)[0]
+        return s / (1 + s)
+
+    def choose_threshold(z, grid):
+        """The recorded rule (prompts/tasks/choose_evt_threshold.md): the lowest
+        threshold with >= 50 exceedances, xi within one se of the next two, KS on the
+        excesses p > 0.10, and inside the linear region of the mean excess - taken as
+        the lower and upper halves of [q, 0.99] implying xi within one se of each
+        other."""
+        rows = []
+        fits = {q: fit_gpd(z, q=q, tail="upper") for q in grid}
+        for i, q in enumerate(grid):
+            g = fits[q]
+            nxt = [fits[grid[j]].xi for j in (i + 1, i + 2) if j < len(grid)]
+            stable = len(nxt) == 2 and all(abs(g.xi - x) <= g.se_xi for x in nxt)
+            mid = q + (0.99 - q) / 2.0
+            a, b = me_xi(z, q, mid), me_xi(z, mid, 0.99)
+            linear = bool(np.isfinite(a) and np.isfinite(b) and abs(a - b) <= g.se_xi)
+            ks = gpd_ks(z, g)
+            rows.append({"q": q, "threshold": g.threshold, "n_exceed": g.n_exceed,
+                         "xi": g.xi, "se_xi": g.se_xi, "beta": g.beta, "ks_p": ks,
+                         "me_xi_lower_half": a, "me_xi_upper_half": b,
+                         "ok_n": g.n_exceed >= 50, "ok_stable": stable,
+                         "ok_ks": ks > 0.10, "ok_linear": linear})
+        t = pd.DataFrame(rows)
+        t["passes"] = t[["ok_n", "ok_stable", "ok_ks", "ok_linear"]].all(axis=1)
+        chosen = float(t.loc[t["passes"], "q"].min()) if t["passes"].any() else np.nan
+        t["chosen"] = t["q"] == chosen
+        return t, fits, chosen
+
+    # ---- 1. GARCH fits --------------------------------------------------------
+    samples = {"pre2018": lr[lr.index <= CUT], "full": lr}
+    fits, garch_rows = {}, []
+    for name, s in samples.items():
+        f0 = GJRGarch(dist=cfg.dotted("tail.garch_dist")).fit(s, n_starts=4, seed=0)
+        f1 = GJRGarch(dist=cfg.dotted("tail.garch_dist")).fit(s, n_starts=4, seed=1)
+        fits[name] = f0
+        z = f0.std_resid
+        pit = get_distribution(f0.dist).cdf(z, f0.dist_params)
+        q10, p10 = ljung_box(z ** 2, 10)
+        q20, p20 = ljung_box(z ** 2, 20)
+        row = {"sample": name, "start": str(s.index.min().date()),
+               "end": str(s.index.max().date()), "n": len(s),
+               "loglik": f0.loglik, "loglik_seed1": f1.loglik,
+               "max_param_diff_between_seeds": max(abs(f0.params[k] - f1.params[k])
+                                                   for k in f0.params),
+               "persistence": f0.persistence,
+               "uncond_vol_annual": float(np.sqrt(f0.uncond_var * 252)),
+               "lb_z2_10_p": p10, "lb_z2_20_p": p20,
+               "ks_pit_p": float(stats.kstest(pit, "uniform").pvalue),
+               "nu": float(f0.dist_params[0]), "lambda": float(f0.dist_params[1])}
+        for k, v in f0.params.items():
+            row[k] = v
+            row[f"se_{k}"] = f0.se_robust.get(k, np.nan)
+        garch_rows.append(row)
+    pd.DataFrame(garch_rows).to_csv(tables / "garch_fit.csv", index=False)
+
+    # ---- 2. EVT threshold, per sample, on that sample's residuals only ---------
+    evt, gpds, chosen_q = [], {}, {}
+    for name, f in fits.items():
+        t, g, q = choose_threshold(f.std_resid, GRID)
+        t.insert(0, "sample", name)
+        evt.append(t)
+        gpds[name], chosen_q[name] = g, q
+    evt = pd.concat(evt, ignore_index=True)
+    evt.to_csv(tables / "evt_thresholds.csv", index=False)
+    if not np.isfinite(chosen_q["pre2018"]):
+        raise SystemExit("no pre-2018 threshold satisfies the rule; report a range")
+
+    # ---- 3. termination probabilities, both fits x every threshold -------------
+    pre_state = filter_sigma(fits["pre2018"].params, lr[lr.index <= "2018-02-09"])
+    term = []
+    for name, f in fits.items():
+        insample = pd.Series(f.sigma, index=samples[name].index)
+        for q in GRID:
+            S = SplicedInnovations(f.dist, f.dist_params, gpds[name][q])
+            t = termination_table(insample, f.params["mu"], S, TH)
+            if name == "pre2018":
+                t2 = termination_table(pre_state, f.params["mu"], S, TH,
+                                       at_dates=["2018-01-12", "2018-02-05"])
+                t = pd.concat([t, t2[t2["state"].str.startswith("on ")]])
+            t.insert(0, "q", q)
+            t.insert(0, "fit", name)
+            t["headline_threshold"] = q == chosen_q[name]
+            term.append(t)
+    term = pd.concat(term, ignore_index=True)
+    term["state"] = term["state"].str.replace("on 2018-02-05",
+                                              "for 2018-02-05, data through 2018-02-02")
+    term.to_csv(tables / "termination_probabilities.csv", index=False)
+
+    # The model's warning, day by day, into February 2018 (parameters frozen at
+    # 2017-12-31; only the volatility state is updated as each day's data arrives).
+    fp = fits["pre2018"]
+    Sh = SplicedInnovations(fp.dist, fp.dist_params, gpds["pre2018"][chosen_q["pre2018"]])
+    path = pre_state.loc["2018-01-02":"2018-02-09"].to_frame("sigma_daily")
+    for k, c in TH.items():
+        from svcarry.econometrics.tailrisk import conditional_exceedance
+        p = conditional_exceedance(c, fp.params["mu"], path["sigma_daily"], Sh)
+        path[f"p_daily_{k}"] = p
+        path[f"return_period_years_{k}"] = 1.0 / (p * 252.0)
+    path["index_return"] = R.reindex(path.index)
+    path.to_csv(tables / "exante_warning_path.csv", index_label="date")
+
+    # ---- 4. is the scale well calibrated across volatility regimes? ------------
+    cal = []
+    for name, f in fits.items():
+        z = pd.Series(f.std_resid, index=samples[name].index)
+        sg = pd.Series(f.sigma, index=samples[name].index)
+        u = np.quantile(z, 0.95)
+        qb = pd.qcut(sg, 5, labels=["Q1 calm", "Q2", "Q3", "Q4", "Q5 turbulent"])
+        chi_p = float(stats.chi2_contingency(pd.crosstab(qb, z > u)).pvalue)
+        for k, g in z.groupby(qb, observed=True):
+            x = int((g > u).sum())
+            lo, hi = stats.binomtest(x, len(g)).proportion_ci(0.95)
+            cal.append({"sample": name, "sigma_quintile": str(k), "n": len(g),
+                        "exceed": x, "rate": x / len(g), "ci_low": lo, "ci_high": hi,
+                        "chi2_equal_rates_p": chi_p})
+    pd.DataFrame(cal).to_csv(tables / "evt_calibration_by_sigma.csv", index=False)
+
+    # ---- 5. survival, unbounded and capped, headline + across the grid ---------
+    cap = float(fp.sigma.max())
+    n_steps = 252 * YEARS
+    curves = {}
+    for label, c in (("unbounded", None), ("capped at in-sample max sigma", cap)):
+        sv = simulate_first_passage(fp.params, Sh, TH, n_paths=NPATH, n_steps=n_steps,
+                                    seed=SEED, sigma_cap=c)
+        sv.insert(0, "dynamics", label)
+        curves[label] = sv
+    surv = pd.concat(curves.values(), ignore_index=True)
+    surv.to_csv(tables / "survival_curves.csv", index=False)
+
+    # Where the simulated risk comes from: volatility states the data never visited.
+    rng = np.random.default_rng(SEED + 3)
+    npd = 4000
+    s2 = np.full(npd, fp.params["omega"] / (1 - fp.persistence))
+    e_prev = np.zeros(npd)
+    SIG = np.empty((npd, n_steps))
+    HIT = np.zeros((npd, n_steps), dtype=bool)
+    for t in range(n_steps):
+        s2 = (fp.params["omega"] + (fp.params["alpha"] + fp.params["gamma"] * (e_prev < 0))
+              * e_prev ** 2 + fp.params["beta"] * s2)
+        e = np.sqrt(s2) * Sh.ppf(rng.random(npd))
+        SIG[:, t] = np.sqrt(s2)
+        HIT[:, t] = fp.params["mu"] + e >= np.log1p(TH["-1x"])
+        e_prev = e
+    beyond = SIG > cap
+    first = np.argmax(HIT, axis=1)
+    anyhit = HIT.any(axis=1)
+    repeat = [HIT[i, first[i] + 1:first[i] + 21].any() for i in np.where(anyhit)[0]]
+    pd.DataFrame([{
+        "paths": npd, "days": n_steps, "seed": SEED + 3,
+        "insample_sigma_max": cap, "insample_sigma_p999": float(np.quantile(fp.sigma, 0.999)),
+        "sim_sigma_p999": float(np.quantile(SIG, 0.999)), "sim_sigma_max": float(SIG.max()),
+        "share_sim_days_beyond_insample_max": float(beyond.mean()),
+        "share_sim_wipeouts_beyond_insample_max": float((HIT & beyond).sum() / max(HIT.sum(), 1)),
+        "share_hit_paths_with_repeat_within_20d": float(np.mean(repeat)) if repeat else np.nan,
+    }]).to_csv(tables / "simulation_diagnostics.csv", index=False)
+
+    sg_rows = []
+    for q in GRID:
+        Sq = SplicedInnovations(fp.dist, fp.dist_params, gpds["pre2018"][q])
+        for label, c in (("unbounded", None), ("capped", cap)):
+            sv = simulate_first_passage(fp.params, Sq, TH, n_paths=NPATH // 2,
+                                        n_steps=n_steps, seed=SEED + 1, sigma_cap=c)
+            last = sv.iloc[-1]
+            sg_rows.append({"q": q, "dynamics": label,
+                            "surv5_-1x": last["survival_-1x"], "se_-1x": last["se_-1x"],
+                            "surv5_-0.5x": last["survival_-0.5x"],
+                            "se_-0.5x": last["se_-0.5x"],
+                            "gap_pp": (last["survival_-0.5x"] - last["survival_-1x"]) * 100})
+    pd.DataFrame(sg_rows).to_csv(tables / "survival_by_threshold.csv", index=False)
+
+    # ---- 6. Kelly ---------------------------------------------------------------
+    nboot = 1000
+    kel = []
+    variants = {"full sample": R, "pre-2018": R[R.index <= CUT],
+                "full sample without 2018-02-05": R.drop(pd.Timestamp("2018-02-05"))}
+    for lab, r in variants.items():
+        k = kelly_fraction(r, bootstrap=nboot, seed=SEED)
+        kel.append({"returns": lab, "kind": "empirical estimate", "n": k.n,
+                    "f_star": k.f_star, "ci_low": k.ci_low, "ci_high": k.ci_high,
+                    "ci_contains_1": bool(k.ci_low <= 1.0 <= k.ci_high),
+                    "ruin_bound": 1.0 / float(np.max(r)), "note": k.note or ""})
+    for lab, c in (("simulated, unbounded", None), ("simulated, capped", cap)):
+        rs = simulate_returns(fp.params, Sh, 500, 2520, seed=SEED + 2, sigma_cap=c).ravel()
+        k = kelly_fraction(rs)
+        kel.append({"returns": lab, "kind": "NOT an estimate: equals 1/max(simulated R)",
+                    "n": k.n, "f_star": k.f_star, "ci_low": np.nan, "ci_high": np.nan,
+                    "ci_contains_1": np.nan, "ruin_bound": 1.0 / float(rs.max()),
+                    "note": "the fitted tail has unbounded support, so every short "
+                            "position has positive ruin probability and the model-"
+                            "implied growth-optimal short is exactly zero"})
+    kel = pd.DataFrame(kel)
+    kel.to_csv(tables / "kelly.csv", index=False)
+
+    # ---- 7. jackknife the largest day of each sample ---------------------------
+    jk = []
+    for name, s in samples.items():
+        big = s.idxmax()
+        s2 = s.drop(big)
+        fj = GJRGarch(dist=cfg.dotted("tail.garch_dist")).fit(s2, n_starts=4, seed=0)
+        qj = chosen_q[name]
+        gj = fit_gpd(fj.std_resid, q=qj, tail="upper")
+        Sj = SplicedInnovations(fj.dist, fj.dist_params, gj)
+        tj = termination_table(pd.Series(fj.sigma, index=s2.index), fj.params["mu"], Sj, TH)
+        base = term[(term["fit"] == name) & (term["q"] == qj)
+                    & (term["state"] == "unconditional")].set_index("design")
+        kj = kelly_fraction(np.expm1(s2), bootstrap=0)
+        kb = kelly_fraction(np.expm1(s), bootstrap=0)
+        for _, row in tj[tj["state"] == "unconditional"].iterrows():
+            b = base.loc[row["design"], "p_daily"]
+            jk.append({"sample": name, "dropped": str(big.date()),
+                       "dropped_return": float(np.expm1(s[big])),
+                       "design": row["design"], "p_daily_with": b,
+                       "p_daily_without": row["p_daily"],
+                       "change_pct": (row["p_daily"] / b - 1.0) * 100,
+                       "rp_years_with": 1 / (b * 252), "rp_years_without": row["return_period_years"],
+                       "xi_with": gpds[name][qj].xi, "xi_without": gj.xi,
+                       "kelly_with": kb.f_star, "kelly_without": kj.f_star})
+    pd.DataFrame(jk).to_csv(tables / "tail_jackknife.csv", index=False)
+
+    # ---- 8. figures ------------------------------------------------------------
+    from svcarry.viz.figures import (
+        plot_gpd_qq, plot_kelly_growth_curve, plot_mean_excess, plot_survival_curves,
+    )
+    from svcarry.viz.style import save_figure
+
+    zp = fp.std_resid
+    th, me, se = mean_excess(zp, tail="upper", n_points=60, q_lo=0.80, q_hi=0.99)
+    save_figure(plot_mean_excess(th, me, se, chosen=gpds["pre2018"][chosen_q["pre2018"]].threshold),
+                figdir / "mean_excess.png")
+    g = gpds["pre2018"][chosen_q["pre2018"]]
+    exc = np.sort(zp[zp > g.threshold] - g.threshold)
+    pp = (np.arange(1, len(exc) + 1) - 0.5) / len(exc)
+    theo = g.beta / g.xi * ((1 - pp) ** (-g.xi) - 1)
+    save_figure(plot_gpd_qq(exc, theo), figdir / "qq_gpd.png")
+    sc = {}
+    bands = {}
+    for label, sv in curves.items():
+        short = "unbounded" if label == "unbounded" else "capped"
+        for k in TH:
+            nm = f"{k}, {short}"
+            sc[nm] = pd.Series(sv[f"survival_{k}"].to_numpy(), index=sv["years"].to_numpy())
+            bands[nm] = (sv[f"survival_{k}"] - 1.96 * sv[f"se_{k}"],
+                         sv[f"survival_{k}"] + 1.96 * sv[f"se_{k}"])
+    from svcarry.viz.style import PALETTE as _P, LINESTYLES as _LS
+    sty = {nm: {"color": _P[0] if nm.startswith("-1x") else _P[1],
+                "linestyle": _LS[0] if "unbounded" in nm else _LS[1]} for nm in sc}
+    save_figure(plot_survival_curves(sc, bands, styles=sty), figdir / "survival_curves.png")
+    fg, gr = growth_rate_curve(R.to_numpy(), f_grid=np.linspace(0.0, 1.03, 250))
+    kf = kel.set_index("returns").loc["full sample", "f_star"]
+    # growth_rate_curve returns DAILY expected log growth and the figure annualises
+    # it; passing an annualised series here multiplied by 252 twice (a peak of 33
+    # "per year" instead of 0.13), which is how this line came to be written.
+    save_figure(plot_kelly_growth_curve(fg, gr, f_star=kf,
+                                        marks={"-1x offered": 1.0, "-0.5x": 0.5}),
+                figdir / "kelly_growth_curve.png")
+    from svcarry.viz.figures import plot_exante_warning
+    save_figure(plot_exante_warning(path.loc[:"2018-02-07"]), figdir / "exante_warning.png")
+
+    # ---- summary ---------------------------------------------------------------
+    hq = chosen_q["pre2018"]
+    h = term[(term["fit"] == "pre2018") & (term["q"] == hq)].set_index(["state", "design"])
+    unc = term[(term["fit"] == "pre2018") & (term["state"] == "unconditional")]
+    rng = unc.groupby("design")["return_period_years"].agg(["min", "max"])
+    s5 = {lab: sv.iloc[-1] for lab, sv in curves.items()}
+    qc = {
+        "pre2018_threshold_q": hq, "full_threshold_q": chosen_q["full"],
+        "pre2018_xi": gpds["pre2018"][hq].xi,
+        "exante_rp_years_-1x_unconditional": float(h.loc[("unconditional", "-1x"), "return_period_years"]),
+        "exante_rp_years_-0.5x_unconditional": float(h.loc[("unconditional", "-0.5x"), "return_period_years"]),
+        "exante_rp_range_-1x_over_grid": [float(rng.loc["-1x", "min"]), float(rng.loc["-1x", "max"])],
+        "exante_rp_range_-0.5x_over_grid": [float(rng.loc["-0.5x", "min"]), float(rng.loc["-0.5x", "max"])],
+        "ratio_p_-1x_over_p_-0.5x_headline":
+            float(h.loc[("unconditional", "-1x"), "p_daily"] / h.loc[("unconditional", "-0.5x"), "p_daily"]),
+        "rp_years_-1x_for_2018-02-05": float(h.loc[("for 2018-02-05, data through 2018-02-02", "-1x"), "return_period_years"]),
+        "rp_years_-1x_on_2018-01-12": float(h.loc[("on 2018-01-12", "-1x"), "return_period_years"]),
+        "survival5_unbounded": {k: float(s5["unbounded"][f"survival_{k}"]) for k in TH},
+        "survival5_capped": {k: float(s5["capped at in-sample max sigma"][f"survival_{k}"]) for k in TH},
+        "kelly_full": kel.iloc[0][["f_star", "ci_low", "ci_high"]].tolist(),
+        "kelly_pre2018": kel.iloc[1][["f_star", "ci_low", "ci_high"]].tolist(),
+        "H4_rejected_ci_contains_1": bool(kel.iloc[0]["ci_contains_1"]),
+    }
+    print(json.dumps(qc, indent=1, default=str))
+    return qc
+
+
 RUNNERS = {
     "clean": stage_clean,
     "index": stage_index,
     "mechanics": stage_mechanics,
-    "tail": _not_yet("tail"),
+    "tail": stage_tail,
     "signals": _not_yet("signals"),
     "backtest": _not_yet("backtest"),
     "robust": _not_yet("robust"),

@@ -98,3 +98,43 @@ is reported and plotted but exceeds the entire front-month contract on 7 session
 Scope: SVXY and UVXY only, because they are the only geared products with disclosed
 anchors in the archived filings. XIV (-1x) and the other ETNs are excluded, so the
 estimate understates the complex. VIXY and VXX, at +1x, generate no rebalancing flow.
+
+## M6. Tail model, termination probabilities and survival
+
+**Filter.** Skewed-*t* GJR-GARCH(1,1) on daily index **log** returns (`svcarry.econometrics.garch`),
+with the asymmetry indicator on negative shocks. Fitted on data ending 2017-12-31 (the
+ex-ante model) and on the full sample (descriptive only). Four starts from each of two
+seeds; the two optima must agree.
+
+**Tail.** A Generalised Pareto distribution fitted to the upper tail of the standardised
+residuals, above a threshold chosen on pre-2018 residuals only by the rule in
+`prompts/tasks/choose_evt_threshold.md` (V15). The innovation law is spliced: the fitted
+skewed-*t*, rescaled, below the threshold; the GPD above it, carrying exactly the
+empirical exceedance mass (`svcarry.econometrics.tailrisk.SplicedInnovations`).
+
+**Termination.** A one-day index **simple** return of `w / |L|` removes a share `w` of a
+product at leverage `L`; with `w = 0.8`, that is 80% for -1x and 160% for -0.5x. The
+conversion to the model's log scale is done once, inside
+`conditional_exceedance`: `log(1.8) = 0.588`, `log(2.6) = 0.956`.
+
+- *Unconditional* probability: the one-day conditional probability averaged over every
+  day of the fitting sample - not evaluated at the average volatility, which would
+  understate it because the probability is convex in volatility.
+- *Calm*: the same average over the lowest quintile of conditional volatility.
+- *On a date*: parameters frozen at 2017-12-31, the volatility state filtered forward
+  through the previous close (`filter_sigma`), so every such number could have been
+  computed that morning.
+- Return period = 1 / (252 x one-day probability).
+
+**Survival.** First passage to a wipeout-sized day over five years, 20,000 paths, seed
+from configuration, run twice: with the model's own volatility dynamics, and with
+conditional volatility capped at its 2008-2017 maximum. The pair brackets the answer
+(V17). The grid comparison uses 10,000 paths per threshold.
+
+**Kelly.** `argmax E[ln(1 - f R)]` over short exposure `f` on daily simple returns, with
+`f < 1 / max R`; 1,000-replication stationary bootstrap, mean block 21 days. No
+model-based estimate is offered: with an unbounded fitted tail the model-implied
+optimum is exactly zero (V18).
+
+**Jackknife.** The largest day of each sample removed and every step refitted,
+threshold quantile held at the chosen value (V19).

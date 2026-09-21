@@ -93,8 +93,12 @@ reproducible.
 - Is the pre-2018 model genuinely pre-2018 — including the threshold choice and any
   parameter tuned by looking at the full sample?
 - Are log and simple returns kept straight everywhere? Check one number by hand.
-- Does the conditional-on-calm probability exceed the unconditional one? It should,
-  and if it does not, the conditioning is wrong.
+- Does the conditional-on-calm probability fall BELOW the unconditional one? Under a
+  GARCH scale it must, because the one-day tail probability rises with sigma; if it
+  does not, the conditioning is wrong. *(Corrected in Session 6: this line originally
+  asserted the reverse, which no GARCH model can produce. The question it was reaching
+  for - does the model under-state risk in calm regimes? - is a calibration test on
+  exceedance rates by volatility quintile; see docs/validation.md V14.)*
 - How many exceedances are above the threshold? Below about 50, the GPD standard
   errors are wide and the report must say so.
 - Is the Kelly calculation on simple returns with the solvency constraint enforced?

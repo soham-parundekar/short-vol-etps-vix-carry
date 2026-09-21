@@ -164,6 +164,40 @@ warning-level check, not as estimates of any one cost.
 
 ---
 
+## L12. The survival numbers depend on how far the variance dynamics are extrapolated
+
+Under its own dynamics the pre-2018 model generates volatility spirals it never
+observed - simulated daily volatility up to 6.9 against an observed maximum of 0.16 -
+and 81% of its simulated wipeouts happen inside them. Capping volatility at the
+observed maximum raises five-year survival from 81% to 90% (-1x) and from 94% to 99%
+(-0.5x). Neither version is the answer; the pair is reported.
+
+**What it bears on.** Every survival figure and the size of the survival gap between
+the designs (13 points unbounded, 9 capped). It does not bear on the ordering, which
+holds under both.
+
+---
+
+## L13. Tail probabilities in calm states are poorly determined
+
+Far into the tail, small differences in the GPD shape compound. The one-day wipeout
+probability in the calm quintile moves by a factor of 8 (-1x) to 25 (-0.5x) across the
+threshold grid, and on 12 January 2018 by a factor of 10 to 30. These are reported only
+as ranges. The unconditional figures move by less than a factor of three and are
+reported as points with their ranges.
+
+---
+
+## L14. Kelly cannot settle whether -1x was too much
+
+The empirical growth-optimal short exposure is estimated with an interval so wide
+([0.05, 1.34] on the full sample) that it contains 1.0 - so H4 is rejected - and a
+model with an unbounded upper tail implies an optimum of exactly zero. The answer turns
+on whether the index's upside is bounded, which the data cannot establish. Stated as a
+limit of the method, not of the sample.
+
+---
+
 ## L8. Open questions carried forward
 
 1. The 2016 and 2019 steps in the tracking-error series are unexplained (L1).

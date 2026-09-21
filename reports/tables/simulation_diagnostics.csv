@@ -1,0 +1,2 @@
+paths,days,seed,insample_sigma_max,insample_sigma_p999,sim_sigma_p999,sim_sigma_max,share_sim_days_beyond_insample_max,share_sim_wipeouts_beyond_insample_max,share_hit_paths_with_repeat_within_20d
+4000,1260,20260923,0.158338730093973,0.13686149668031342,0.41227836170075316,6.921876214525425,0.011183730158730159,0.8071065989847716,0.4126149802890933

@@ -59,5 +59,44 @@
   ],
   "seconds": 3.9,
   "finished_utc": "2026-09-21T05:12:14Z"
+ },
+ "tail": {
+  "pre2018_threshold_q": 0.925,
+  "full_threshold_q": 0.9,
+  "pre2018_xi": 0.18134850471559702,
+  "exante_rp_years_-1x_unconditional": 78.94368596960612,
+  "exante_rp_years_-0.5x_unconditional": 685.0043774273377,
+  "exante_rp_range_-1x_over_grid": [
+   53.03788008020457,
+   85.02450893780198
+  ],
+  "exante_rp_range_-0.5x_over_grid": [
+   279.2985243835558,
+   796.5637988477407
+  ],
+  "ratio_p_-1x_over_p_-0.5x_headline": 8.677126853325156,
+  "rp_years_-1x_for_2018-02-05": 12.78718831533865,
+  "rp_years_-1x_on_2018-01-12": 3877.2393801614858,
+  "survival5_unbounded": {
+   "-1x": 0.81075,
+   "-0.5x": 0.93745
+  },
+  "survival5_capped": {
+   "-1x": 0.8992,
+   "-0.5x": 0.9857
+  },
+  "kelly_full": [
+   0.6228797015472844,
+   0.0517516069568202,
+   1.3383618474900623
+  ],
+  "kelly_pre2018": [
+   1.1142183569345667,
+   0.2186057690142606,
+   2.0660181010500045
+  ],
+  "H4_rejected_ci_contains_1": true,
+  "seconds": 249.3,
+  "finished_utc": "2026-09-21T05:49:17Z"
  }
 }

@@ -1,0 +1,6 @@
+returns,kind,n,f_star,ci_low,ci_high,ci_contains_1,ruin_bound,note
+full sample,empirical estimate,4710,0.6228797015472844,0.0517516069568202,1.3383618474900623,True,1.0405544147843944,
+pre-2018,empirical estimate,2518,1.1142183569345667,0.2186057690142606,2.0660181010500045,True,3.057298515874508,
+full sample without 2018-02-05,empirical estimate,4709,0.8553594199433334,0.21630973704778164,1.4522602719804576,True,2.3597767633965003,
+"simulated, unbounded",NOT an estimate: equals 1/max(simulated R),1260000,0.013626030801787333,,,,0.014927142737335612,"the fitted tail has unbounded support, so every short position has positive ruin probability and the model-implied growth-optimal short is exactly zero"
+"simulated, capped",NOT an estimate: equals 1/max(simulated R),1260000,0.058909664479904,,,,0.05946964818096106,"the fitted tail has unbounded support, so every short position has positive ruin probability and the model-implied growth-optimal short is exactly zero"
