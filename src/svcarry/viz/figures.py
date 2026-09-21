@@ -37,6 +37,9 @@ __all__ = [
     "plot_decay_blocks",
     "plot_asset_bounds",
     "plot_exante_warning",
+    "plot_vrp_timeseries",
+    "plot_har_forecast_vs_realised",
+    "plot_signal_state",
     "plot_mean_excess",
     "plot_gpd_qq",
     "plot_survival_curves",
@@ -276,6 +279,167 @@ def plot_exante_warning(path: pd.DataFrame, event: str = "2018-02-05",
     fig.tight_layout()
     add_source(fig, source + " GJR-GARCH(1,1), skewed-t body, GPD upper tail at the "
                "0.925 quantile. Return period = 1 / (252 x one-day probability).")
+    return fig
+
+
+def plot_vrp_timeseries(panel: pd.DataFrame, source: str = _SOURCE):
+    """Implied against forecast volatility, and the premium between them.
+
+    Top: VIX and the HAR forecast of realised volatility over the next 21 trading
+    days, both annualised, in percentage points. Bottom: the variance risk premium
+    in annualised variance, drawn in squared volatility points (VIX^2 units) so that
+    a value of 100 means, for example, 20^2 against 17.3^2. Days when the premium
+    is negative are marked; those are the days the VRP filter keeps the strategy out.
+    """
+    import matplotlib.pyplot as plt
+
+    from .style import apply_style
+
+    apply_style()
+    p = panel.dropna(subset=["vrp"])
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(10, 6.6), sharex=True,
+                                 gridspec_kw={"height_ratios": [1.2, 1.0]})
+    s0, s1 = series_style(0), series_style(1)
+    a1.plot(p.index, p["vix"], lw=0.8, label="VIX (implied, 30 calendar days)", **s0)
+    a1.plot(p.index, p["har_forecast_vol_pct"], lw=0.8,
+            label="HAR forecast of realised vol, next 21 days", **s1)
+    a1.set_yscale("log")
+    a1.set_yticks([10, 20, 40, 80])
+    a1.set_yticklabels(["10", "20", "40", "80"])
+    a1.set_ylabel("annualised volatility, % (log scale)")
+    a1.legend(loc="upper right")
+    a1.set_title("Implied volatility against the real-time forecast", loc="left",
+                 color=INK["primary"], fontsize=10.5)
+    v = p["vrp"] * 1e4
+    a2.fill_between(v.index, 0, v.clip(lower=0), color=PALETTE[2], lw=0, alpha=0.6,
+                    label="premium positive (filter on)")
+    a2.fill_between(v.index, 0, v.clip(upper=0), color=PALETTE[7], lw=0, alpha=0.8,
+                    label="premium negative (filter off)")
+    a2.axhline(0, color=INK["muted"], lw=0.8)
+    lo, hi = np.nanpercentile(v, [0.5, 99.5])
+    a2.set_ylim(min(lo, -50) * 1.1, hi * 1.1)
+    clipped = int(((v < a2.get_ylim()[0]) | (v > a2.get_ylim()[1])).sum())
+    a2.set_ylabel("VIX$^2$ - forecast, (vol points)$^2$")
+    a2.legend(loc="upper right")
+    a2.set_title(f"Variance risk premium ({(p['vrp'] > 0).mean():.0%} of days positive; "
+                 f"axis clipped on {clipped} days)", loc="left", color=INK["primary"],
+                 fontsize=10.5)
+    format_date_axis(a2)
+    fig.suptitle("Variance risk premium: VIX$^2$ against a real-time HAR forecast",
+                 x=0.01, ha="left", color=INK["primary"], fontsize=12)
+    fig.tight_layout()
+    add_source(fig, source + " Realised variance: SPY overnight squared return plus "
+               "Rogers-Satchell intraday range. Log-HAR(1,5,22), expanding window, "
+               "refit every 21 days, trained only on outcomes already realised.")
+    return fig
+
+
+def plot_har_forecast_vs_realised(forecast: pd.Series, realised: pd.Series,
+                                  trailing: pd.Series, stats: "dict | None" = None,
+                                  source: str = _SOURCE):
+    """Each forecast against the volatility that then occurred.
+
+    Left: the time series, annualised volatility over the next 21 trading days, log
+    scale. Right: realised against forecast, one point per day, with the 45-degree
+    line; points above it are months that turned out more volatile than forecast. The
+    trailing 21-day realised volatility - the benchmark the model has to beat - is
+    drawn faintly for comparison.
+    """
+    import matplotlib.pyplot as plt
+
+    from .style import apply_style
+
+    apply_style()
+    df = pd.DataFrame({"f": forecast, "y": realised, "t": trailing}).dropna()
+    vol = lambda x: np.sqrt(x * 252.0) * 100.0          # noqa: E731
+    fig = plt.figure(figsize=(11, 4.8))
+    gs = fig.add_gridspec(1, 3)
+    a1 = fig.add_subplot(gs[0, :2])
+    a2 = fig.add_subplot(gs[0, 2])
+    s0, s1, s2 = series_style(0), series_style(1), series_style(2)
+    a1.plot(df.index, vol(df["y"]), lw=0.7, label="realised, next 21 days", **s1)
+    a1.plot(df.index, vol(df["f"]), lw=0.9, label="HAR forecast (made 21 days earlier)", **s0)
+    a1.set_yscale("log")
+    a1.set_yticks([5, 10, 20, 40, 80])
+    a1.set_yticklabels(["5", "10", "20", "40", "80"])
+    a1.set_ylabel("annualised volatility, % (log scale)")
+    a1.legend(loc="upper right")
+    a1.set_title("Forecast and outcome", loc="left", color=INK["primary"], fontsize=10.5)
+    format_date_axis(a1)
+    a2.scatter(vol(df["t"]), vol(df["y"]), s=3, color=INK["muted"], alpha=0.25, lw=0,
+               label="trailing 21-day RV")
+    a2.scatter(vol(df["f"]), vol(df["y"]), s=3, color=s0["color"], alpha=0.35, lw=0,
+               label="HAR forecast")
+    lim = [4, 110]
+    a2.plot(lim, lim, color=INK["secondary"], lw=1.0, ls=(0, (4, 3)))
+    a2.set_xscale("log"); a2.set_yscale("log")
+    a2.set_xlim(lim); a2.set_ylim(lim)
+    for ax in (a2,):
+        ax.set_xticks([5, 10, 20, 40, 80]); ax.set_xticklabels(["5", "10", "20", "40", "80"])
+        ax.set_yticks([5, 10, 20, 40, 80]); ax.set_yticklabels(["5", "10", "20", "40", "80"])
+    a2.set_xlabel("forecast, % (log)")
+    a2.set_ylabel("realised, % (log)")
+    a2.legend(loc="upper left", markerscale=4)
+    ttl = "Realised against forecast"
+    if stats:
+        ttl += (f"\nOOS R$^2$ {stats['oos_r2']:.2f}, MZ slope {stats['mz_beta']:.2f}"
+                f" (trailing RV: {stats['trail_r2']:.2f}, {stats['trail_mz']:.2f})")
+    a2.set_title(ttl, loc="left", color=INK["primary"], fontsize=10)
+    fig.suptitle("HAR forecasts of 21-day realised volatility, out of sample",
+                 x=0.01, ha="left", color=INK["primary"], fontsize=12)
+    fig.tight_layout()
+    add_source(fig, source + " R$^2$ and Mincer-Zarnowitz slope computed on variance, "
+               "not volatility; the axes show volatility for readability.")
+    return fig
+
+
+def plot_signal_state(panel: pd.DataFrame, threshold: float = 1.0, source: str = _SOURCE):
+    """The two slope measures and the resulting position state.
+
+    Top: ``cm30/cm90`` from the interpolated futures curve (the signal) and
+    ``VIX/VIX3M`` (the robustness variant), with the threshold; above the line the
+    curve is inverted and the contango filter is off. Bottom: one strip per day,
+    showing whether the strategy is allowed in and, if not, which filter kept it out.
+    """
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Patch
+
+    from .style import apply_style
+
+    apply_style()
+    p = panel.dropna(subset=["signal"])
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(10, 5.8), sharex=True,
+                                 gridspec_kw={"height_ratios": [2.2, 0.8]})
+    s0, s1 = series_style(0), series_style(1)
+    a1.plot(panel.index, panel["slope_cm"], lw=0.7, label="cm30 / cm90 (signal)", **s0)
+    a1.plot(panel.index, panel["slope_vix3m"], lw=0.6, alpha=0.8,
+            label="VIX / VIX3M (robustness)", **s1)
+    a1.axhline(threshold, color=INK["primary"], lw=1.0, ls=(0, (4, 3)))
+    a1.set_ylabel("short / long implied volatility")
+    a1.legend(loc="upper right")
+    a1.set_title(f"Term-structure slope (above the black line at {threshold:g} the curve "
+                 "is inverted and the filter is off)", loc="left", color=INK["primary"],
+                 fontsize=10.5)
+    # hues not used in the top panel, so no colour means two things
+    cmap = {"none": PALETTE[2], "contango": PALETTE[7], "vrp": PALETTE[3],
+            "both": INK["secondary"]}
+    lab = {"none": "invested", "contango": "out: curve inverted",
+           "vrp": "out: premium negative", "both": "out: both"}
+    for k, c in cmap.items():
+        d = p.index[p["binding"] == k]
+        a2.vlines(d, 0, 1, color=c, lw=0.6)
+    a2.set_yticks([])
+    a2.set_ylim(0, 1)
+    a2.legend(handles=[Patch(color=cmap[k], label=f"{lab[k]} ({(p['binding'] == k).mean():.0%})")
+                       for k in cmap], loc="upper center", ncol=4, fontsize=8.5,
+              bbox_to_anchor=(0.5, -0.35), frameon=False)
+    a2.set_title("Signal state (share of days)", loc="left", color=INK["primary"], fontsize=10.5)
+    format_date_axis(a2)
+    fig.suptitle("Entry filters: term-structure slope and variance risk premium",
+                 x=0.01, ha="left", color=INK["primary"], fontsize=12)
+    fig.tight_layout()
+    add_source(fig, source + " cm30 interpolated from spot VIX and the front future on "
+               "the ~12 days a year when no listed contract is shorter than 30 days.")
     return fig
 
 

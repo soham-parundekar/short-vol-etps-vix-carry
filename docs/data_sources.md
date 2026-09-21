@@ -122,8 +122,8 @@ the alpha regression's sample will be stated accordingly rather than quietly sho
 | **Primary** | Yahoo Finance chart API, `https://query2.finance.yahoo.com/v8/finance/chart/<symbol>` |
 | **Fallback** | Stooq, `https://stooq.com/q/d/l/?s=<symbol>.us&i=d` |
 | **Symbols** | `VXX`, `VIXY`, `SVXY`, `UVXY`, `SVIX`, `SPY`, `^GSPC`, `^VIX` |
-| **Status** | Endpoint patterns confirmed; bulk pull pending |
-| **Used for** | Index tracking validation, the leverage-decay test, the VXX factor, OHLC for range-based realised variance |
+| **Status** | **Retrieved** (Yahoo) through 2026-09-18: `SPY` and `^GSPC` from 2004-01-02, `VIXY` from 2011-01-04, `SVXY` and `UVXY` from 2011-10-04, `VXX` (Series B) from 2018-01-25, `SVIX` from 2022-03-30 |
+| **Used for** | Index tracking validation, the leverage-decay test, the VXX factor, and **SPY** OHLC for range-based realised variance (`^GSPC` is retrieved but not used for it: its opening print is stale, `docs/methodology.md` M7) |
 
 **The split hazard, and why it gets its own paragraph.** VXX and UVXY have each been
 reverse-split many times — a long-volatility product that decays 50–80% a year has to

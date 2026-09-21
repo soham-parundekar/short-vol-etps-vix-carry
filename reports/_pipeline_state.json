@@ -98,5 +98,91 @@
   "H4_rejected_ci_contains_1": true,
   "seconds": 249.3,
   "finished_utc": "2026-09-21T05:49:17Z"
+ },
+ "signals": {
+  "proxy": "SPY rs_overnight",
+  "proxy_ann_vol_pct": 19.10656345002615,
+  "yang_zhang_window_check": {
+   "corr_with_rolling_proxy": 0.9992062541656085,
+   "mean_ratio_yz_over_proxy": 0.9919888271694387
+  },
+  "burn_in_first_signal": "2008-01-25",
+  "oos_first": "2008-01-25",
+  "oos_last": "2026-08-19",
+  "oos_n": 4671,
+  "oos_r2": 0.2849283413075381,
+  "oos_r2_vs_expanding_mean": 0.30283924770872084,
+  "rmse_har_vs_trailing": [
+   0.07540848807194997,
+   0.08646650369162252
+  ],
+  "qlike_har_vs_trailing": [
+   0.36518484827590086,
+   0.4632869999352203
+  ],
+  "dm_t_mse": -1.142269134890256,
+  "dm_t_qlike": -4.079146735153692,
+  "mz_beta": 0.9083640367471664,
+  "mz_beta_se": 0.14809994845814375,
+  "trailing_mz_beta": 0.5299044160455884,
+  "correlations": {
+   "forecast_vs_outcome": 0.539321840059308,
+   "trailing_vs_outcome": 0.5300819648874849,
+   "forecast_vs_same_day_proxy": 0.6287013141984588,
+   "log_forecast_vs_log_outcome": 0.7211179867749519
+  },
+  "am_over_gm_21d_mean": 1.504926293330881,
+  "retransformation": {
+   "first_refit_train_rows": 979,
+   "first_refit_resid_skew": 1.099330153575611,
+   "first_refit_normal_factor": 1.1120174719170524,
+   "first_refit_smearing_factor": 1.1348269610120287,
+   "oos_mean_forecast_over_mean_outcome": 0.88128686458666,
+   "oos_median_forecast_over_outcome": 1.2613177918636143,
+   "smearing_vrp_positive_share": 0.8171355498721228,
+   "smearing_invested": 0.691389599317988
+  },
+  "vrp_hand_check": {
+   "date": "2018-01-12",
+   "vix_close_raw_line": "01/12/2018,9.740000,10.310000,9.540000,10.160000",
+   "vix": 10.16,
+   "refit_date": "2017-12-27",
+   "coefficients": [
+    -1.4710406530292437,
+    0.08225464918839293,
+    0.3192120132298804,
+    0.41606181659486713
+   ],
+   "resid_var": 0.3653252830667967,
+   "forecast_daily_var": 2.55251539015407e-05,
+   "forecast_ann_vol_pct": 8.020186271644977,
+   "vrp_by_hand": 0.003890221216811744,
+   "vrp_panel": 0.003890221216811744,
+   "agree": true
+  },
+  "vrp_positive_share": 0.874467178175618,
+  "vrp_median_ann_var": 0.007748628489550862,
+  "cm30_spot_anchored_days": 234,
+  "slope_agreement_overlap": 0.9172123479887746,
+  "slope_agreement_on_anchored_days": 0.9146919431279621,
+  "slope_overlap_days": 4276,
+  "slope_ratio_corr": 0.8131201969230738,
+  "coverage_after_burn_in": 0.9993610223642172,
+  "contango_on": 0.8307757885763001,
+  "vrp_on": 0.874467178175618,
+  "invested": 0.7384910485933504,
+  "signals_agree": 0.7717391304347826,
+  "binding": {
+   "contango": 0.13597612958226768,
+   "vrp": 0.0922847399829497,
+   "both": 0.03324808184143223
+  },
+  "undefined_after_burn_in": [
+   "2015-04-03",
+   "2018-12-05",
+   "2025-01-09"
+  ],
+  "seconds": 3.7,
+  "finished_utc": "2026-09-21T06:15:37Z"
  }
 }

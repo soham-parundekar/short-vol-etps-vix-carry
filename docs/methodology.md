@@ -138,3 +138,92 @@ optimum is exactly zero (V18).
 
 **Jackknife.** The largest day of each sample removed and every step refitted,
 threshold quantile held at the chosen value (V19).
+
+## M7. Realised variance, HAR forecasts and the entry signals
+
+**The variance proxy.** Daily variance is `o_t^2 + RS_t`: the squared overnight log
+return `ln(O_t / C_{t-1})` plus the Rogers-Satchell intraday range estimator, on
+**SPY** OHLC (`svcarry.econometrics.realized.daily_variance_proxy`, method
+`rs_overnight`, fixed in configuration before any data was retrieved). Three
+decisions, each with its evidence in `reports/tables/variance_proxy_comparison.csv`:
+
+1. *SPY, not the S&P 500 index.* The phase prompt says "SPX OHLC". The index's opening
+   print equals the previous close on 14% of days (SPY: 0.9%), because it is computed
+   from constituents that have not yet traded; its overnight return is therefore
+   mostly missing, and `rs_overnight` on the index averages 64% of close-to-close
+   variance. SPY's opening auction is a real price. SPY's dividends put a small drop
+   into the overnight return on ex-dates; removing it changes mean annual variance by
+   0.01%.
+2. *A range estimator, not squared returns.* Squared close-to-close returns are
+   unbiased but very noisy: the daily log-variance has a standard deviation of 2.49
+   against 1.25 for `rs_overnight`, and first-order autocorrelation 0.28 against 0.57
+   (measurement noise attenuates the autocorrelation of a persistent series).
+   `parkinson_overnight` and `gk_overnight` score marginally better on that criterion
+   (0.60, 0.59); the drift-independent Rogers-Satchell choice was fixed in advance and
+   the differences are small, so it is kept.
+3. *Not Yang-Zhang.* Yang-Zhang is a window estimator with no single-day value; the
+   daily series uses its components - overnight plus Rogers-Satchell - directly. A
+   21-day Yang-Zhang on the same data correlates 0.999 with the 21-day average of the
+   proxy, at a 0.8% lower level.
+
+The proxy averages 19.1% annualised, 4.6% above close-to-close variance. The gap is in
+the intraday leg (Rogers-Satchell exceeds the squared open-to-close return by 14%),
+consistent with intraday mean reversion or microstructure in highs and lows; the cause
+is not established. Its direction understates the premium (L16).
+
+**The HAR model.** Corsi's HAR with daily, weekly and monthly components (1, 5, 22
+days), horizon `h = 21` trading days, estimated in logs. The **target** is the log of
+the *arithmetic* average variance over `t+1 .. t+h`; the predictors are averages of
+daily log variance. Forecasts are retransformed by `exp(mu + sigma^2 / 2)`, with
+`sigma^2` the training residual variance. (Log-target correction: see V20a.)
+
+- *In sample* (`har_fit.csv`): descriptive only, Newey-West errors at 20 lags
+  (`max(h - 1, rule of thumb)`), since consecutive targets share 20 of 21 days.
+- *Real time* (`svcarry.econometrics.har.har_oos_forecast`): expanding window from
+  1,000 feature rows (first forecast 25 January 2008), refit every 21 trading days,
+  trained only on rows dated at least `h + 1` rows before the forecast date, so every
+  training target was fully realised. Forecasts run to the last day of the sample,
+  since a real-time forecast needs only today's predictors.
+
+**Evaluation** (`svcarry.econometrics.forecast_eval`; `har_oos_diagnostics.csv`). Out-of-
+sample R^2 against the evaluation-sample mean (a hindsight constant, so a conservative
+bar) and against the real-time expanding mean; RMSE and MAE in annualised variance;
+Patton's QLIKE; a Mincer-Zarnowitz regression with HAC errors; Diebold-Mariano tests
+against the trailing 21-day RV on both losses. Benchmarks: trailing 21-day RV (the
+no-change forecast of the monthly average), today's RV (the no-change forecast of the
+daily series), the expanding mean, and two variants - a level HAR and a smearing
+retransformation. Full sample and three sub-periods.
+
+**The variance risk premium.**
+
+    VRP_t = (VIX_t / 100)^2 - 252 * forecast_t
+
+in annualised variance. Converted in one place (`svcarry.strategy.signals.vrp`), tested
+by hand in a unit test and on a real date against the raw Cboe file (V22). VIX is a
+30-calendar-day measure annualised on 365 days; the forecast covers 21 trading days
+annualised on 252. Over 30 calendar days the equivalent multiplier is
+`21 x 365 / 30 = 255.5`, 1.4% above 252, so the premium is overstated by about 0.0005
+in annualised variance at typical levels, against a median VRP of 0.0077. Not adjusted;
+stated, with the proxy's opposite and larger effect, in L16.
+
+**The term-structure signal.** `cm30 / cm90` from the interpolated futures curve is the
+primary measure (fixed in the phase prompt, committed 3db0269 before any data was
+retrieved), because VIX3M begins only on 18 September 2009. `VIX / VIX3M` is the
+robustness variant.
+
+The interpolated curve leaves `cm30` missing whenever no listed contract is shorter
+than 30 days - the few sessions after each monthly expiry that is followed by a
+five-week cycle, 234 sessions in all (5.0%). On those days `cm30` is interpolated
+between the curve's observable zero-maturity point, spot VIX (a future expiring today
+settles to it), and the front contract (`spot_anchored_front`). Only missing values are
+filled, each is flagged in `cm30_spot_anchored`, and the two slope measures agree on
+91.5% of filled days against 91.7% overall. Left unfilled, coverage would sit at 95.0%,
+the edge of the prompt's pass band, and the strategy would be forced flat on a
+calendar pattern rather than a market state.
+
+**Signals.** Contango on when `slope < 1.0`; VRP on when `VRP > 0.0`; combined by
+requiring both. Thresholds from `config/config.yaml`, fixed in commit 2bdeb31
+(07:40:36 UTC, 20 September 2026), 50 minutes before the first data retrieval
+(08:30:04 UTC). A missing input gives a missing signal - no position - never a default.
+Every signal is indexed by the date it is observable and is lagged by the backtest
+(`signal_lag = 1`), never pre-lagged here.

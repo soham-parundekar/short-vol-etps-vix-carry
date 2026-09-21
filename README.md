@@ -18,16 +18,19 @@ what a crash would cost.
 
 | | |
 |---|---|
-| **Research design** | Fixed and committed. Five hypotheses, each with a stated rejection criterion |
-| **Analysis library** | Complete and tested — **164 tests passing** |
-| **Data acquisition** | Code complete; endpoints individually verified; **bulk pull not yet run** |
-| **Empirical results** | **None yet.** No number in this repository is reported from data |
+| **Research design** | Fixed and committed before any data was retrieved. Five hypotheses, each with a stated rejection criterion |
+| **Analysis library** | Complete and tested — **228 tests passing**, 2 skipped (cross-checks against packages not installed) |
+| **Data** | Retrieved by `scripts/fetch_data.py`; 338 files, each with URL, retrieval time and SHA-256 in `data/raw/_manifest.json` |
+| **Phases complete** | 07 index validation · 08 mechanics and flows · 09 tail risk and survival · 10 forecasting and signals |
+| **Hypotheses so far** | H1 **rejected** · H2 **not rejected** (25% of front-month open interest at the lower asset bound) · H3 **not rejected, magnitude unmet** (8.7x, not 10x) · H4 **rejected** · H5 pending (Phase 11) |
 
-The execution environment used to build this repository is refused at its egress proxy
-for `cdn.cboe.com`, Yahoo Finance, FRED, `sec.gov` and PyPI. The pipeline therefore has
-not been run. That constraint is recorded rather than worked around: nothing here
-substitutes a convenient data source for a correct one, and no placeholder result
-appears anywhere. See `docs/project_log.md` for the full environment record.
+Every number above is traced in `docs/validation.md`, with what remains imperfect in
+`docs/limitations.md` and the sequence of work - including errors caught and what they
+were worth - in `docs/project_log.md`.
+
+The environment used to build this repository could not reach the data hosts or PyPI
+through its egress proxy. The data was therefore fetched on the author's own machine by
+the same script, and every file re-hashed against the manifest on arrival.
 
 One consequence is visible throughout and is arguably an improvement: with `arch` and
 `statsmodels` uninstallable, **every estimator is implemented in this repository** —

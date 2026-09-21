@@ -96,6 +96,72 @@ def test_oos_forecast_has_predictive_power():
     assert 0.6 < s["mz_beta"] < 1.4, s
 
 
+def _noisy_proxy(n=4000, seed=7):
+    """A persistent latent variance observed through a one-day proxy as noisy as a
+    range estimator: log-proxy noise sd 1.0 around the latent log variance."""
+    rng = np.random.default_rng(seed)
+    lat = _rv_series(n, seed=seed).to_numpy()
+    noise = np.exp(rng.normal(-0.5, 1.0, n))        # E[noise] = 1: unbiased proxy
+    idx = pd.bdate_range("2005-01-03", periods=n)
+    return pd.Series(lat * noise, index=idx, name="rv")
+
+
+def test_log_target_is_log_of_the_arithmetic_average():
+    """The log model must forecast the average VARIANCE, not the average log."""
+    rv = _noisy_proxy(600)
+    f = har_features(rv, horizon=21, log=True)
+    t = f.index[200]
+    pos = rv.index.get_loc(t)
+    window = rv.iloc[pos + 1: pos + 22]
+    assert f.loc[t, "y"] == pytest.approx(np.log(window.mean()), rel=1e-12)
+    assert f.loc[t, "y"] > np.log(window).mean() + 0.1, \
+        "on a noisy proxy the log of the mean is well above the mean of the logs"
+
+
+def test_log_forecast_is_unbiased_for_the_level_of_average_variance():
+    """Retransformed forecasts should match realised average variance on average.
+    Targeting the geometric mean instead would fall short by roughly exp(sd^2/2)."""
+    rv = _noisy_proxy(5000, seed=8)
+    fc = har_oos_forecast(rv, horizon=21, log=True, train_min=1200, refit_every=21)
+    e = fc.errors()
+    ratio = fc.forecast.reindex(e.index).mean() / fc.realised.reindex(e.index).mean()
+    assert 0.9 < ratio < 1.1, ratio
+    gm = np.exp(np.log(rv).rolling(21).mean().shift(-21)).reindex(e.index)
+    assert gm.mean() < 0.8 * fc.realised.reindex(e.index).mean()
+
+
+def test_forecasts_run_to_the_end_of_the_sample():
+    """A real-time forecast needs only today's predictors; the last h dates must get
+    a forecast even though their outcome is not yet known."""
+    rv = _rv_series(1500, seed=9)
+    fc = har_oos_forecast(rv, horizon=21, log=True, train_min=900, refit_every=21)
+    assert fc.forecast.index[-1] == rv.index[-1]
+    assert fc.realised.iloc[-21:].isna().all()
+    assert fc.realised.iloc[:-21].notna().all()
+
+
+def test_no_lookahead_at_the_end_of_the_sample():
+    """Appending future days must not change any forecast already made."""
+    rv = _rv_series(2000, seed=10)
+    short = har_oos_forecast(rv.iloc[:1700], horizon=21, log=True, train_min=900,
+                             refit_every=21)
+    full = har_oos_forecast(rv, horizon=21, log=True, train_min=900, refit_every=21)
+    common = short.forecast.index
+    assert np.array_equal(short.forecast.to_numpy(),
+                          full.forecast.reindex(common).to_numpy())
+
+
+def test_smearing_and_normal_retransforms_agree_under_normal_residuals():
+    """On a series whose log residuals are normal the two corrections coincide;
+    they may differ only when the residuals are not normal."""
+    rv = _rv_series(3000, seed=11)            # Gaussian shocks in logs
+    a = har_oos_forecast(rv, horizon=1, log=True, train_min=900, retransform="normal")
+    b = har_oos_forecast(rv, horizon=1, log=True, train_min=900, retransform="smearing")
+    assert np.allclose(a.forecast, b.forecast, rtol=0.01)
+    with pytest.raises(ValueError):
+        har_oos_forecast(rv, horizon=1, log=True, train_min=900, retransform="x")
+
+
 def test_coefficients_are_refit_on_schedule():
     rv = _rv_series(2000, seed=6)
     fc = har_oos_forecast(rv, horizon=21, log=True, train_min=900, refit_every=50)

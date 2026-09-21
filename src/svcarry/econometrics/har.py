@@ -24,6 +24,18 @@ and ``tests/test_har.py`` includes a leakage test that fails if it is relaxed.
 A log specification is also provided. Volatility is strongly right-skewed, so the
 log model is better behaved; forecasts are retransformed with the standard
 lognormal (Jensen) correction ``exp(mu + sigma^2 / 2)``.
+
+**What the log model forecasts.** In the log specification the target is
+``log`` of the *arithmetic* average variance over ``t+1 .. t+h`` - not the average
+of the daily logs. The two differ by far more than a rounding error: the exponential
+of an average of logs is a *geometric* mean, and for a noisy one-day range proxy
+(daily log-variance sd about 1.25 on SPY) the arithmetic mean over 21 days is on
+average 1.47 times the geometric one. A variance risk premium needs the expected
+arithmetic average - integrated variance is a sum - so a geometric-mean target would
+understate expected variance by about a third and overstate the premium by the same
+amount. The predictors, being information rather than the quantity forecast, are
+averages of daily log variance (robust to a single noisy day); only the target is on
+the arithmetic scale.
 """
 
 from __future__ import annotations
@@ -44,6 +56,7 @@ def har_features(
     lags: tuple[int, int, int] = (1, 5, 22),
     log: bool = False,
     floor: float | None = 1e-10,
+    dropna_target: bool = True,
 ) -> pd.DataFrame:
     """Build the HAR design matrix and target.
 
@@ -64,11 +77,17 @@ def har_features(
         are floored at this value before taking logs. Applied *only* in the log
         specification, and the number of affected observations is attached to the
         returned frame's ``.attrs``.
+    dropna_target
+        Drop rows whose target is not yet observable (the last ``horizon`` dates).
+        Set to False to keep them - with ``y`` missing - so a real-time forecast can
+        still be made on those dates from their predictors.
 
     Returns
     -------
     DataFrame with columns ``y, rv_d, rv_w, rv_m`` indexed by the date ``t`` at which
-    the forecast would be made. Rows with any missing value are dropped.
+    the forecast would be made. In the log specification ``y`` is
+    ``log(mean(rv[t+1 .. t+h]))``; see the module docstring for why it is not
+    ``mean(log rv)``. Rows with a missing predictor are always dropped.
     """
     rv = pd.Series(rv).astype(float).sort_index()
     d, w, m = lags
@@ -84,12 +103,16 @@ def har_features(
     rv_w = x.rolling(w).mean()
     rv_m = x.rolling(m).mean()
 
-    # forward average over t+1 .. t+h, aligned to date t
-    fwd = x.rolling(horizon).mean().shift(-horizon)
+    # Forward ARITHMETIC average of variance over t+1 .. t+h, aligned to date t, and
+    # logged afterwards in the log specification. (Averaging the logs instead would
+    # target the geometric mean; see the module docstring.)
+    level = rv.clip(lower=floor) if (log and floor is not None) else rv
+    fwd = level.rolling(horizon).mean().shift(-horizon)
+    if log:
+        fwd = np.log(fwd)
 
-    out = pd.DataFrame(
-        {"y": fwd, "rv_d": rv_d, "rv_w": rv_w, "rv_m": rv_m}
-    ).dropna()
+    out = pd.DataFrame({"y": fwd, "rv_d": rv_d, "rv_w": rv_w, "rv_m": rv_m})
+    out = out.dropna() if dropna_target else out.dropna(subset=["rv_d", "rv_w", "rv_m"])
     out.attrs["log"] = log
     out.attrs["horizon"] = horizon
     out.attrs["n_floored"] = n_floored
@@ -127,6 +150,7 @@ class HARForecast:
     log: bool
     train_min: int
     refit_every: int
+    resid_var: "pd.Series | None" = None   # training residual variance, per refit
 
     def errors(self) -> pd.Series:
         return (self.realised - self.forecast).dropna()
@@ -160,6 +184,7 @@ def har_oos_forecast(
     train_min: int = 1000,
     refit_every: int = 21,
     start: str | pd.Timestamp | None = None,
+    retransform: str = "normal",
 ) -> HARForecast:
     """Strictly real-time expanding-window HAR forecasts.
 
@@ -173,10 +198,15 @@ def har_oos_forecast(
     3. The forecast uses predictors dated ``t``.
 
     Returns a :class:`HARForecast` with the forecast series on the *original*
-    (variance, not log) scale, including the lognormal retransformation correction
-    when ``log=True``.
+    (variance, not log) scale, including a retransformation correction when
+    ``log=True``: ``retransform="normal"`` multiplies by ``exp(sigma^2 / 2)``, exact
+    if the log residuals are normal; ``"smearing"`` multiplies by the mean of the
+    exponentiated training residuals (Duan 1983), which needs no distributional
+    assumption. Both use training residuals only. Forecasts run to the last date with predictors, including the
+    final ``horizon`` dates whose outcome is not yet known (``realised`` is missing
+    there), because a real-time forecast needs only today's predictors.
     """
-    feats = har_features(rv, horizon=horizon, lags=lags, log=log)
+    feats = har_features(rv, horizon=horizon, lags=lags, log=log, dropna_target=False)
     if start is not None:
         first_idx = feats.index.searchsorted(pd.Timestamp(start))
     else:
@@ -190,8 +220,10 @@ def har_oos_forecast(
 
     preds: dict[pd.Timestamp, float] = {}
     coefs: dict[pd.Timestamp, np.ndarray] = {}
+    s2s: dict[pd.Timestamp, float] = {}
     beta = None
     sigma2 = 0.0
+    smear = 1.0
     last_fit = -10 ** 9
 
     for i in range(first_idx, len(dates)):
@@ -202,15 +234,28 @@ def har_oos_forecast(
             continue
         if (i - last_fit) >= refit_every or beta is None:
             Xtr, ytr = X[:cutoff], y[:cutoff]
+            # Rows before the cutoff have realised targets by construction; a missing
+            # one can only come from a gap inside the variance series itself.
+            ok = np.isfinite(ytr)
+            Xtr, ytr = Xtr[ok], ytr[ok]
             Xd = np.column_stack([np.ones(len(Xtr)), Xtr])
             beta, *_ = np.linalg.lstsq(Xd, ytr, rcond=None)
             resid = ytr - Xd @ beta
             sigma2 = float(resid @ resid) / max(len(ytr) - Xd.shape[1], 1)
+            smear = float(np.mean(np.exp(resid)))
             coefs[t] = beta.copy()
+            s2s[t] = sigma2
             last_fit = i
         xt = np.concatenate([[1.0], X[i]])
         mu = float(xt @ beta)
-        preds[t] = float(np.exp(mu + 0.5 * sigma2)) if log else mu
+        if not log:
+            preds[t] = mu
+        elif retransform == "normal":
+            preds[t] = float(np.exp(mu + 0.5 * sigma2))
+        elif retransform == "smearing":
+            preds[t] = float(np.exp(mu) * smear)
+        else:
+            raise ValueError(f"unknown retransform {retransform!r}")
 
     fc = pd.Series(preds, name="har_forecast").sort_index()
     real = feats["y"].reindex(fc.index)
@@ -226,4 +271,5 @@ def har_oos_forecast(
         log=log,
         train_min=train_min,
         refit_every=refit_every,
+        resid_var=pd.Series(s2s, name="resid_var").sort_index(),
     )

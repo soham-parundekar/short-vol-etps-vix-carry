@@ -818,6 +818,130 @@ any earlier day did.
 
 ---
 
+## V20. The variance proxy
+
+`variance_proxy_comparison.csv`. SPY `rs_overnight`: 5,713 days from 5 January 2004,
+no non-positive values, 19.1% annualised (close-to-close 18.7%), daily log-variance sd
+1.25 and AR(1) 0.57 against 2.49 and 0.28 for squared returns. The S&P 500 index's open
+equals the previous close on 14% of days, and its overnight leg carries 10.5% of
+close-to-close variance against SPY's 36%: the index's open is stale and is not used.
+Yang-Zhang (21-day window) against the 21-day average proxy: correlation 0.999, level
+ratio 0.992. **Pass.**
+
+### V20a. The log target - a defect found and fixed before any result used it
+
+The committed log-HAR averaged the daily **logs** over `t+1 .. t+h` and exponentiated
+the forecast, which targets the *geometric* mean of daily variance. A variance risk
+premium needs the arithmetic mean. On a proxy this noisy the two are far apart: over the
+evaluation sample the 21-day arithmetic mean is on average **1.50 times** the geometric.
+The model's own evaluation could not see it, because it compared the forecast with the
+geometric mean too.
+
+What it was worth, re-running the committed code on the same data: forecasts 31% lower,
+**61%** of realised average variance on average; VRP positive on **99.0%** of days
+(fixed: 87.4%), median VRP 0.0152 (fixed: 0.0077), combined signal on 82.5% of days
+(fixed: 73.8%). The VRP filter would have been almost inert while appearing to work.
+
+Fixed in `har_features`: the target is `log(mean(rv))`; predictors unchanged. Tests
+(each fails on the old code, checked): the target equals the log of the arithmetic
+window mean; retransformed forecasts are unbiased for the level of average variance on
+a noisy simulated proxy (ratio within 10%, where the geometric target falls 20% short);
+forecasts extend to the last sample date.
+
+## V21. HAR forecasts out of sample
+
+4,671 forecasts, 25 January 2008 to 19 August 2026 (the last 21 forecasts have no
+outcome yet). `har_oos_diagnostics.csv`, full sample:
+
+| Model | RMSE (ann. var.) | QLIKE | OOS R^2 (eval mean / expanding) | MZ slope (se) |
+|---|---|---|---|---|
+| **HAR log (primary)** | **0.0754** | 0.365 | **0.285 / 0.303** | **0.91 (0.15)** |
+| HAR level | 0.0868 | 0.351 | 0.053 / 0.077 | 0.53 (0.09) |
+| HAR log, smearing (not adopted) | 0.0757 | 0.358 | 0.278 / 0.296 | 0.86 (0.14) |
+| Trailing 21-day RV | 0.0865 | 0.463 | 0.060 / 0.083 | 0.53 (0.12) |
+| Today's RV (random walk) | 0.1223 | 1.325 | -0.880 / -0.833 | 0.32 (0.05) |
+| Expanding mean | 0.0903 | 0.788 | -0.026 / 0 | - |
+
+| Check | Result | Verdict |
+|---|---|---|
+| Look-ahead (perturbation, three tests) | bit-identical before the cut-off | **Pass** |
+| OOS R^2 > 0.25 | 0.285 | **Pass**, narrowly |
+| Beats trailing RV | RMSE 13% lower, QLIKE 21% lower | **Pass** - but Diebold-Mariano is significant on QLIKE (t = -4.08) and **not** on MSE (t = -1.14) |
+| MZ slope within 0.2 of 1 | 0.91, t(slope = 1) = -0.62 | **Pass** |
+| Leak signature | corr(forecast, outcome) 0.54 vs 0.53 for trailing RV; in logs 0.72 | Pass: nothing a leak would produce |
+
+**Where the headline is weaker.** By sub-period the pass does not hold uniformly:
+
+| Period | OOS R^2 (eval mean) | MZ slope | RMSE vs trailing RV |
+|---|---|---|---|
+| 2008-2012 | 0.32 | 0.86 | 0.101 vs 0.100 - no better |
+| 2013-2019 | 0.005 | **0.51** | 0.020 vs 0.023 |
+| 2020-2026 | 0.15 | 0.92 | 0.089 vs 0.114 |
+
+In the calm 2013-2019 period the forecast barely beats a hindsight constant (against the
+real-time expanding mean it reaches 0.57) and is over-dispersed: MZ slope 0.51. In
+2008-2012 it does no better than trailing RV on MSE. The full-sample pass is carried by
+QLIKE in every period and by MSE in the two later ones. Recorded rather than resolved:
+the thresholds were fixed in advance and are not re-tuned.
+
+**Level bias.** The forecast's mean is 12% below the mean outcome, while its median is
+26% above the typical outcome: the right skew of variance. The log residuals are
+right-skewed (skewness 1.2 full sample; already 1.10 in the first training window), so
+the normal-theory retransformation understates the conditional mean; Duan's smearing
+factor is 9% larger on the full sample. Smearing was not the pre-specified method and
+the primary passes its criteria, so it is not adopted; it is carried to Phase 12 as a
+robustness variant (VRP positive 81.7% of days, invested 69.1%). L15.
+
+## V22. VRP units, by hand
+
+`vrp_hand_check` in the pipeline record, 12 January 2018: raw Cboe line
+`01/12/2018,9.740000,10.310000,9.540000,10.160000`, so VIX = 10.16 and implied variance
+0.010323. The forecast rebuilt by hand from the proxy and the coefficients refitted on
+27 December 2017 (const -1.471, 0.0823, 0.3192, 0.4161; residual variance 0.3653):
+daily variance 2.5525e-5, 8.02% annualised, 0.006432 in annualised variance.
+VRP = 0.010323 - 0.006432 = **0.003890**, equal to the panel value to machine precision.
+The pipeline raises if the two ever differ. A unit test does the same at VIX = 20.
+
+VRP is positive on **87.4%** of days (pass: a clear majority), median 0.0077 - in
+volatility terms, VIX about 2 points above a 17% forecast.
+
+## V23. The two slope measures
+
+On the 4,276 days where both exist, `cm30/cm90` and `VIX/VIX3M` give the same contango
+state on **91.7%** (pass, >= 90%); on the 211 overlap days where `cm30` is spot-anchored,
+91.5%. The ratios themselves correlate 0.81: they agree about the sign more than about
+the level; `VIX/VIX3M` runs on average 0.036 below `cm30/cm90`.
+
+## V24. Signal statistics and coverage
+
+After the burn-in (first signal 25 January 2008), `signal_statistics.csv`:
+
+| | Share of days |
+|---|---|
+| Combined signal defined (coverage) | **99.94%** (pass) - undefined on 3 days when the equity market was shut and futures traded: 3 Apr 2015, 5 Dec 2018, 9 Jan 2025 |
+| Contango on | 83.1% |
+| VRP on | 87.4% |
+| **Invested (both on)** | **73.8%** - inside the 30-90% band |
+| The two filters agree | 77.2% |
+| Out, contango alone binding | 13.6% |
+| Out, VRP alone binding | 9.2% |
+| Out, both | 3.3% |
+
+The filters are not redundant: each is the only binding constraint on a material share
+of days. By year the invested share ranges from 40% (2008) and 53% (2020) to 97%
+(2017) (`signal_statistics_by_year.csv`).
+
+**Parameter provenance** (look-ahead audit, step 5): threshold 1.0, VRP minimum 0.0,
+`rs_overnight`, log HAR, horizon, lags, burn-in and refit interval all appear in
+`config/config.yaml` at commit 2bdeb31 (07:40:36 UTC); the primary slope measure in the
+Phase 10 prompt at commit 3db0269 (08:01:09 UTC); the first data retrieval in the
+manifest is 08:30:04 UTC. Nothing was changed after. The config comment naming
+VIX/VIX3M contradicted the prompt; the comment was corrected, not the value.
+**Timing table** (step 2): `timing_audit.csv`, no row where use precedes availability.
+The shift test (step 3) needs the backtest and belongs to Phase 11.
+
+---
+
 ## Open items
 
 1. The 2016 and 2019 steps in V6 are not explained.
@@ -825,3 +949,7 @@ any earlier day did.
 3. Post-October-2020 slopes are 0.985 (VIXY), 0.991 (SVXY), 0.971 (UVXY) — close to
    but not equal to one. Whether the residual 1-3% is product tracking difficulty,
    fee drag mis-attributed to the slope, or remaining index noise is not resolved.
+4. The HAR forecast is weak in 2013-2019 (OOS R^2 0.005, MZ slope 0.51) and no better
+   than trailing RV on MSE in 2008-2012 (V21).
+5. The retransformation understates the conditional mean by about 9% (V21, L15);
+   smearing is carried to Phase 12.

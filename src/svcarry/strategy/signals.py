@@ -27,7 +27,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-__all__ = ["contango_signal", "vrp", "vrp_signal", "combine_signals", "SignalSet"]
+__all__ = ["contango_signal", "vrp", "vrp_signal", "combine_signals", "SignalSet",
+           "spot_anchored_front", "build_signal_panel", "signal_statistics"]
 
 
 def contango_signal(
@@ -121,3 +122,103 @@ def combine_signals(
         raise ValueError(f"unknown rule {rule!r}")
     out[df.isna().any(axis=1)] = np.nan
     return out.rename("signal")
+
+
+def spot_anchored_front(cm: pd.Series, spot: pd.Series, front_price: pd.Series,
+                        front_days: pd.Series, maturity: int = 30) -> "tuple[pd.Series, pd.Series]":
+    """Fill the constant-maturity point where no listed future is shorter than it.
+
+    The interpolated curve leaves ``cm30`` missing when the shortest live contract
+    is more than 30 days out - about three sessions after every monthly expiry that
+    is followed by a five-week cycle, some twelve sessions a year. On those days the
+    zero-maturity point of the curve is observable: a future expiring today settles
+    to the VIX, so spot VIX is the curve at ``tau = 0``, and ``cm30`` is interpolated
+    between it and the front contract,
+
+        cm30 = VIX + (F1 - VIX) * 30 / tau1.
+
+    Only missing values are touched; the second series flags them.
+    """
+    cm = pd.Series(cm, dtype=float)
+    fill = cm.isna() & (front_days > maturity) & spot.notna() & front_price.notna()
+    out = cm.copy()
+    out[fill] = spot[fill] + (front_price[fill] - spot[fill]) * maturity / front_days[fill]
+    return out, fill.rename("spot_anchored")
+
+
+def build_signal_panel(
+    rv: pd.Series, curve: pd.DataFrame, *, horizon: int = 21,
+    lags: tuple = (1, 5, 22), log: bool = True, train_min: int = 1000,
+    refit_every: int = 21, contango_threshold: float = 1.0, vrp_min: float = 0.0,
+    periods_per_year: int = 252,
+):
+    """Every series that feeds the entry decision, on the index's trading calendar.
+
+    ``rv``     daily variance proxy on the equity calendar.
+    ``curve``  index-dated frame with ``vix, vix3m, cm30, cm90, f1, days_to_exp1``.
+
+    Returns ``(panel, har)``. Each row of ``panel`` uses information available at
+    that date's close and nothing later; the realised outcome the forecast is judged
+    against lives only in ``har.realised`` and is deliberately kept out of the panel,
+    so a later stage cannot pick it up by accident. Nothing is forward-filled: on a
+    date when the equity market was shut but futures traded, the forecast is missing
+    and so is the signal.
+    """
+    from svcarry.econometrics.har import har_oos_forecast
+
+    har = har_oos_forecast(rv, horizon=horizon, lags=tuple(lags), log=log,
+                           train_min=train_min, refit_every=refit_every)
+    idx = curve.index
+    p = pd.DataFrame(index=idx)
+    p["rv_proxy"] = rv.reindex(idx)
+    p["har_forecast"] = har.forecast.reindex(idx)
+    p["har_forecast_ann_var"] = p["har_forecast"] * periods_per_year
+    p["har_forecast_vol_pct"] = np.sqrt(p["har_forecast_ann_var"]) * 100.0
+    p["vix"] = curve["vix"]
+    p["vix3m"] = curve.get("vix3m")
+    p["iv_ann_var"] = (p["vix"] / 100.0) ** 2
+    # the one place units are converted: VIX in percentage points, forecast daily
+    p["vrp"] = vrp(p["vix"], p["har_forecast"], periods_per_year=periods_per_year).reindex(idx)
+    cm30, anchored = spot_anchored_front(curve["cm30"], curve["vix"], curve["f1"],
+                                         curve["days_to_exp1"])
+    p["cm30"] = cm30
+    p["cm30_spot_anchored"] = anchored
+    p["cm90"] = curve["cm90"]
+    p["slope_cm"] = p["cm30"] / p["cm90"]
+    p["slope_vix3m"] = p["vix"] / p["vix3m"]
+    p["sig_contango"] = contango_signal(p["slope_cm"], contango_threshold)
+    p["sig_contango_vix3m"] = contango_signal(p["slope_vix3m"], contango_threshold)
+    p["sig_vrp"] = vrp_signal(p["vrp"], vrp_min)
+    p["signal"] = combine_signals({"c": p["sig_contango"], "v": p["sig_vrp"]}, rule="all")
+    c, v = p["sig_contango"], p["sig_vrp"]
+    bind = pd.Series("none", index=idx, dtype=object)
+    bind[(c == 0) & (v == 1)] = "contango"
+    bind[(c == 1) & (v == 0)] = "vrp"
+    bind[(c == 0) & (v == 0)] = "both"
+    bind[p["signal"].isna()] = "undefined"
+    p["binding"] = bind
+    return p, har
+
+
+def signal_statistics(panel: pd.DataFrame, start=None) -> pd.DataFrame:
+    """Fractions of days each signal is on, binds, and agrees, after ``start``."""
+    p = panel.loc[start:] if start is not None else panel
+    d = p.dropna(subset=["signal"])
+    rows = [
+        ("days after burn-in", len(p), np.nan),
+        ("days with the combined signal defined", len(d), len(d) / len(p)),
+        ("contango (cm30/cm90) on", int(d["sig_contango"].sum()), d["sig_contango"].mean()),
+        ("VRP on", int(d["sig_vrp"].sum()), d["sig_vrp"].mean()),
+        ("combined on (invested)", int(d["signal"].sum()), d["signal"].mean()),
+        ("both signals agree", int((d["sig_contango"] == d["sig_vrp"]).sum()),
+         (d["sig_contango"] == d["sig_vrp"]).mean()),
+    ]
+    for b in ("contango", "vrp", "both"):
+        n = int((d["binding"] == b).sum())
+        rows.append((f"off, binding constraint: {b}", n, n / len(d)))
+    o = p.dropna(subset=["sig_contango", "sig_contango_vix3m"])
+    agree = (o["sig_contango"] == o["sig_contango_vix3m"])
+    rows.append(("cm30/cm90 and VIX/VIX3M agree (overlap)", int(agree.sum()), agree.mean()))
+    rows.append(("VIX/VIX3M on (overlap)", int(o["sig_contango_vix3m"].sum()),
+                 o["sig_contango_vix3m"].mean()))
+    return pd.DataFrame(rows, columns=["statistic", "days", "fraction"])

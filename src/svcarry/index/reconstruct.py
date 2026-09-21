@@ -228,10 +228,14 @@ def carry_measures(
                        between the two held contracts. Negative in contango, which is
                        the state that pays a short-volatility position.
     ``basis_f1_vix``   ``F1 / VIX - 1``, how far the front future sits above spot.
-    ``slope_vix3m``    ``VIX / VIX3M``, the signal used by the strategy. Below one
-                       means the implied-volatility curve is upward sloping.
-    ``slope_cm``       ``cm30 / cm90`` from the interpolated futures curve, which is
-                       available for the whole sample even where VIX3M is not.
+    ``slope_vix3m``    ``VIX / VIX3M``. Below one means the implied-volatility curve
+                       is upward sloping. The strategy's robustness variant.
+    ``slope_cm``       ``cm30 / cm90`` from the interpolated futures curve, available
+                       from 2008 where VIX3M starts only in September 2009. The
+                       strategy's primary slope measure is built from this, with the
+                       gaps after some expiries filled in
+                       :func:`svcarry.strategy.signals.spot_anchored_front`; this
+                       column is left unfilled.
 
     Every column is computed from data observable at that day's close, so the
     strategy code can lag them by one day without further thought.

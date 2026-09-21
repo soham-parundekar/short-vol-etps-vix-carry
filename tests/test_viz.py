@@ -253,3 +253,48 @@ def test_every_figure_has_a_source_note():
     idx = _series(300, 7)
     fig = F.plot_index_vs_products(idx, {"VIXY": idx * 1.01})
     assert any("Source:" in t.get_text() for t in fig.texts)
+
+
+def _signal_panel(n=800, seed=3):
+    rng = np.random.default_rng(seed)
+    idx = _idx(n)
+    vix = pd.Series(18 * np.exp(np.cumsum(rng.normal(0, 0.03, n))), index=idx)
+    fc = (vix / 100 / 1.15) ** 2 / 252
+    p = pd.DataFrame({"vix": vix, "har_forecast": fc,
+                      "har_forecast_vol_pct": np.sqrt(252 * fc) * 100}, index=idx)
+    p["vrp"] = (p["vix"] / 100) ** 2 - 252 * p["har_forecast"] + rng.normal(0, 0.004, n)
+    p["slope_cm"] = 0.92 + rng.normal(0, 0.06, n)
+    p["slope_vix3m"] = p["slope_cm"] + rng.normal(0, 0.03, n)
+    c = (p["slope_cm"] < 1).astype(float)
+    v = (p["vrp"] > 0).astype(float)
+    p["signal"] = c * v
+    p["binding"] = np.select([(c == 1) & (v == 1), (c == 0) & (v == 1), (c == 1) & (v == 0)],
+                             ["none", "contango", "vrp"], "both")
+    return p
+
+
+def test_vrp_figure_states_share_positive_and_clipping():
+    fig = F.plot_vrp_timeseries(_signal_panel())
+    ax_top, ax_bot = fig.axes[:2]
+    assert ax_top.get_yscale() == "log" and _has_legend(ax_top)
+    assert "of days positive" in ax_bot.get_title(loc="left")
+    assert "clipped" in ax_bot.get_title(loc="left")
+
+
+def test_har_figure_draws_the_45_degree_line_and_benchmark():
+    p = _signal_panel()
+    y = p["har_forecast"] * np.exp(np.random.default_rng(0).normal(0, 0.4, len(p)))
+    fig = F.plot_har_forecast_vs_realised(p["har_forecast"], y, p["har_forecast"] * 1.1,
+                                          stats={"oos_r2": 0.3, "mz_beta": 0.9,
+                                                 "trail_r2": 0.1, "trail_mz": 0.5})
+    sc = fig.axes[1]
+    assert any(list(ln.get_xdata()) == [4, 110] for ln in sc.get_lines())
+    assert "MZ slope 0.90" in sc.get_title(loc="left")
+
+
+def test_signal_state_shows_threshold_and_every_state_share():
+    fig = F.plot_signal_state(_signal_panel(), threshold=1.0)
+    top, strip = fig.axes[:2]
+    assert any(np.allclose(ln.get_ydata(), 1.0) for ln in top.get_lines())
+    labels = [t.get_text() for t in strip.get_legend().get_texts()]
+    assert len(labels) == 4 and all("%" in s for s in labels)

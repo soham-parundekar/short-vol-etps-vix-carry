@@ -630,3 +630,91 @@ Methodology M6, limitations L12-L14, validation V14-V19.
 
 Phase 10 — forecasting and signals: realised variance, HAR forecasts, the variance risk
 premium and the term-structure signal.
+
+---
+
+## Session 7 — 21 September 2026
+
+**Phase 10 — realised variance, HAR forecasts and the entry signals.** Complete.
+
+### The result
+
+Real-time log-HAR forecasts of 21-day realised variance, 4,671 of them from January 2008:
+out-of-sample R^2 **0.285** (0.303 against the real-time expanding mean), Mincer-
+Zarnowitz slope **0.91** (se 0.15), RMSE 13% and QLIKE 21% below trailing RV. The QLIKE
+gain is significant (Diebold-Mariano t = -4.08); the MSE gain is not (t = -1.14). VRP
+positive on **87.4%** of days. `cm30/cm90` and `VIX/VIX3M` agree on **91.7%** of their
+overlap. Contango on 83.1%, VRP on 87.4%, **invested 73.8%**, coverage 99.94%.
+
+### The defect that mattered: the log model forecast the wrong mean
+
+Before building the VRP I checked what the committed log-HAR was forecasting. Its target
+averaged the daily **logs** of variance over the next 21 days; exponentiated, that is a
+geometric mean. The VRP needs the arithmetic mean, and on a one-day range proxy (daily
+log sd 1.25) the arithmetic mean is 1.5 times the geometric. The model's own
+evaluation compared its forecast with the same geometric mean, so every diagnostic
+looked fine.
+
+Re-running the committed code on the same data: forecasts at 61% of realised average
+variance, VRP positive on **99.0%** of days rather than 87.4%, median VRP doubled. The
+VRP filter would have been off on one day in a hundred - inert, while its statistics
+looked healthy. Fixed in the target only; three tests added, each confirmed to fail on
+the old code.
+
+### Two further decisions, and one I did not make
+
+* **SPY, not the index, for OHLC.** The index's open equals the prior close on 14% of
+  days; its overnight leg carries a tenth of close-to-close variance. The prompt said
+  "SPX OHLC"; the deviation is in M7.
+* **Spot-anchoring `cm30`.** The interpolated `cm30` is missing on 234 sessions (5.0%)
+  where no contract is inside 30 days - after expiries followed by five-week cycles.
+  Spot VIX is the curve's zero-maturity point, so those days are interpolated from it;
+  flagged, and agreement with `VIX/VIX3M` is unchanged (91.5% vs 91.7%). Without it
+  coverage would be 95.0% and the strategy forced flat on a calendar pattern.
+* **Not adopted: smearing.** The log residuals are right-skewed (1.2; already 1.10 in
+  the first training window), so the normal-theory retransformation leaves forecasts
+  12% low in mean. Duan's smearing would be the better estimator of the conditional
+  mean. But the method was fixed in advance, the primary passes its criteria, and the
+  OOS results were already in front of me - adopting it now would be the kind of change
+  the phase prompt forbids. It goes to Phase 12 as a variant (VRP positive 81.7%,
+  invested 69.1%).
+
+### Where the forecast is weak
+
+2013-2019: OOS R^2 0.005, MZ slope 0.51. 2008-2012: no better than trailing RV on MSE.
+The full-sample pass is real but narrow (0.285 against a 0.25 bar) and carried by the
+crisis periods on MSE and by QLIKE everywhere.
+
+### Errors caught before they shipped
+
+* I first wrote that the proxy's 4.6% excess over close-to-close variance came from a
+  negative overnight/intraday covariance. Checked: the covariance is positive. The
+  excess is in the intraday range (+14% over squared open-to-close); cause open.
+* I first wrote that the proxy and day-count effects both understate the VRP. The day
+  count overstates it (0.0005); the proxy understates it (0.0017); net 0.001.
+* Two numbers in V23 were written from memory (a "five point" slope gap; "2.5 vol
+  points"); the tables say 0.036 and 2.0.
+
+### Also
+
+`svcarry.econometrics.forecast_eval` (QLIKE, metrics, Diebold-Mariano);
+`build_signal_panel`, `spot_anchored_front`, `signal_statistics`; `stage_signals`; three
+figures; `har_oos_forecast` gains `retransform` and runs to the sample end; the VRP is
+rebuilt by hand, forecast included, from the raw Cboe line on every run. Tests: seven for
+the panel (the look-ahead perturbation test mutation-checked against two injected
+leaks), five for HAR, three for forecast evaluation, three for the figures. Suite:
+228 passed, 2 skipped. Methodology M7, validation V20-V24,
+limitations L15-L17. The config comment naming `VIX/VIX3M` as the signal contradicted
+the pre-data prompt; the comment was corrected, the value untouched.
+
+### Handoff to Phase 11
+
+Signals are defined from **25 January 2008** (first tradeable close, with the one-day
+lag, 28 January 2008). The combined signal is on **73.8%** of days after that, from 40%
+(2008) to 97% (2017); undefined on three equity-market holidays, where it means no
+position. `signals_daily.csv` holds no realised outcome; the evaluation series is in
+`har_oos_forecasts.csv` and must not be joined into the backtest.
+
+### Next
+
+Phase 11 — the backtest and H5.

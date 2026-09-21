@@ -932,12 +932,292 @@ def stage_tail(cfg) -> dict:
     return qc
 
 
+def stage_signals(cfg) -> dict:
+    """Realised variance, real-time HAR forecasts, VRP and term-structure signals.
+
+    Order matters and is the order of the phase prompt: choose the variance proxy
+    (and show why), fit the HAR in sample for description only, produce real-time
+    forecasts, judge them against naive benchmarks, and only then build signals.
+    Thresholds come from configuration, fixed in commit 2bdeb31 before any data was
+    retrieved; nothing here is tuned.
+    """
+    import numpy as np
+    import pandas as pd
+
+    from svcarry.data.cboe import load_cboe_index
+    from svcarry.data.prices import load_prices
+    from svcarry.econometrics.forecast_eval import diebold_mariano, forecast_metrics, qlike
+    from svcarry.econometrics.har import fit_har, har_features
+    from svcarry.econometrics.realized import (
+        close_to_close, daily_variance_proxy, garman_klass, overnight, parkinson,
+        rogers_satchell, yang_zhang,
+    )
+    from svcarry.strategy.signals import build_signal_panel, signal_statistics
+
+    processed = ROOT / cfg.dotted("paths.processed")
+    tables = ROOT / cfg.dotted("paths.tables")
+    figdir = ROOT / cfg.dotted("paths.figures")
+    idx = pd.read_csv(_require(processed / "index_daily.csv", "the reconstructed index",
+                               "run: python scripts/run_pipeline.py --only index"),
+                      parse_dates=["date"]).set_index("date")
+    H = int(cfg.dotted("forecast.har_horizon"))
+    LAGS = tuple(int(x) for x in cfg.dotted("forecast.har_lags"))
+    LOG = bool(cfg.dotted("forecast.har_log"))
+    TMIN = int(cfg.dotted("forecast.har_train_min"))
+    REFIT = int(cfg.dotted("forecast.har_refit_every"))
+    METHOD = str(cfg.dotted("forecast.rv_method"))
+    THR = float(cfg.dotted("strategy.contango_threshold"))
+    VMIN = float(cfg.dotted("strategy.vrp_min"))
+
+    # ---- 1. the variance proxy -------------------------------------------------
+    spy = load_prices("SPY")
+    rows = []
+    sources = {"SPY": spy}
+    try:
+        sources["^GSPC"] = load_prices("^GSPC")
+    except FileNotFoundError:
+        pass
+    ests = {
+        "close_to_close": close_to_close, "parkinson (intraday only)": parkinson,
+        "garman_klass (intraday only)": garman_klass,
+        "rogers_satchell (intraday only)": rogers_satchell,
+        "overnight only": overnight,
+        "parkinson_overnight": lambda d: daily_variance_proxy(d, "parkinson_overnight"),
+        "gk_overnight": lambda d: daily_variance_proxy(d, "gk_overnight"),
+        "rs_overnight": lambda d: daily_variance_proxy(d, "rs_overnight"),
+    }
+    for src, df in sources.items():
+        df = df.loc[:, ["open", "high", "low", "close"]].dropna()
+        cc_mean = float(close_to_close(df).dropna().mean())
+        open_eq_prev = float((df["open"] == df["close"].shift(1)).iloc[1:].mean())
+        for name, fn in ests.items():
+            x = fn(df).dropna()
+            pos = x[x > 0]
+            rows.append({
+                "source": src, "estimator": name, "n": len(x),
+                "first": str(x.index.min().date()),
+                "ann_vol_pct": float(np.sqrt(252 * x.mean()) * 100),
+                "mean_over_close_to_close": float(x.mean() / cc_mean),
+                "share_nonpositive": float((x <= 0).mean()),
+                "sd_log_daily": float(np.log(pos).std()),
+                "ar1_daily": float(x.autocorr(1)),
+                "share_open_equals_prev_close": open_eq_prev,
+                "used": bool(src == "SPY" and name == METHOD),
+            })
+    comp = pd.DataFrame(rows)
+    comp.to_csv(tables / "variance_proxy_comparison.csv", index=False)
+    rv = daily_variance_proxy(spy, METHOD).dropna()
+    if (rv <= 0).any():
+        raise ValueError(f"{int((rv <= 0).sum())} non-positive variance proxies")
+    yz = yang_zhang(spy[["open", "high", "low", "close"]], window=H).dropna()
+    rv_m = rv.rolling(H).mean().reindex(yz.index)
+    yz_check = {"corr_with_rolling_proxy": float(np.corrcoef(yz, rv_m)[0, 1]),
+                "mean_ratio_yz_over_proxy": float(yz.mean() / rv_m.mean())}
+
+    # ---- 2. HAR in sample, descriptive only -------------------------------------
+    fit_rows = []
+    for spec, lg in (("log (primary)", True), ("level", False)):
+        f = har_features(rv, horizon=H, lags=LAGS, log=lg)
+        r = fit_har(f)
+        naive = fit_har(f, cov_type="homoskedastic")
+        for j, nm in enumerate(r.names):
+            fit_rows.append({"spec": spec, "term": nm, "coef": float(r.params[j]),
+                             "se_hac": float(r.bse[j]), "t_hac": float(r.tvalues[j]),
+                             "p_hac": float(r.pvalues[j]), "se_ols": float(naive.bse[j]),
+                             "hac_lags": r.lags, "n": r.nobs, "r2": float(r.rsquared),
+                             "first": str(f.index.min().date()), "last": str(f.index.max().date())})
+    pd.DataFrame(fit_rows).to_csv(tables / "har_fit.csv", index=False)
+
+    # ---- 3. the panel: real-time forecasts, VRP, slopes, signals -----------------
+    curve = idx[["vix", "vix3m", "cm30", "cm90", "f1", "days_to_exp1"]]
+    panel, har = build_signal_panel(rv, curve, horizon=H, lags=LAGS, log=LOG,
+                                    train_min=TMIN, refit_every=REFIT,
+                                    contango_threshold=THR, vrp_min=VMIN)
+    burn_in = panel["signal"].first_valid_index()
+
+    # ---- 4. out-of-sample evaluation against naive benchmarks --------------------
+    from svcarry.econometrics.har import har_oos_forecast
+    y = har.realised
+    bench = {
+        f"HAR log (primary)": har.forecast,
+        "HAR level": har_oos_forecast(rv, H, LAGS, False, TMIN, REFIT).forecast,
+        "HAR log, smearing (not adopted)": har_oos_forecast(
+            rv, H, LAGS, True, TMIN, REFIT, retransform="smearing").forecast,
+        f"trailing {H}-day RV": rv.rolling(H).mean(),
+        "random walk (today's RV)": rv,
+        "expanding mean": rv.expanding().mean(),
+    }
+    common = y.dropna().index
+    for f in bench.values():
+        common = common.intersection(f.dropna().index)
+    periods = {"full": (None, None), "2008-2012": ("2008", "2012"),
+               "2013-2019": ("2013", "2019"), "2020-2026": ("2020", "2026")}
+    diag = []
+    trail = bench[f"trailing {H}-day RV"]
+    for per, (a, b) in periods.items():
+        c = common[(common >= pd.Timestamp(a or "1900")) & (common <= pd.Timestamp(f"{b}-12-31" if b else "2100"))]
+        for name, f in bench.items():
+            m = forecast_metrics(f.reindex(c), y.reindex(c), H,
+                                 baseline=bench["expanding mean"].reindex(c))
+            if name != f"trailing {H}-day RV":
+                e_a = (y.reindex(c) - f.reindex(c)) ** 2
+                e_b = (y.reindex(c) - trail.reindex(c)) ** 2
+                q_a = pd.Series(qlike(y.reindex(c), f.reindex(c)), index=c)
+                q_b = pd.Series(qlike(y.reindex(c), trail.reindex(c)), index=c)
+                dm1, dm2 = diebold_mariano(e_a, e_b, H), diebold_mariano(q_a, q_b, H)
+                m.update({"dm_mse_t_vs_trailing": dm1["t_stat"], "dm_mse_p": dm1["p_value"],
+                          "dm_qlike_t_vs_trailing": dm2["t_stat"], "dm_qlike_p": dm2["p_value"]})
+            diag.append({"period": per, "model": name, **m})
+    diag = pd.DataFrame(diag)
+    diag.to_csv(tables / "har_oos_diagnostics.csv", index=False)
+    pd.DataFrame({"har_forecast": har.forecast, "realised_next_h": y,
+                  "trailing_rv": trail.reindex(har.forecast.index),
+                  "rv_proxy": rv.reindex(har.forecast.index)}).to_csv(
+        processed / "har_oos_forecasts.csv", index_label="date")
+    har.coefficients.to_csv(tables / "har_coefficient_path.csv", index_label="refit_date")
+    full = diag[diag["period"] == "full"].set_index("model")
+    prim, trl = full.loc["HAR log (primary)"], full.loc[f"trailing {H}-day RV"]
+    # the leak signature: a forecast should not track its outcome implausibly well
+    cc = pd.DataFrame({"f": har.forecast, "y": y, "t": trail, "r": rv}).loc[common]
+    corr = {"forecast_vs_outcome": float(cc["f"].corr(cc["y"])),
+            "trailing_vs_outcome": float(cc["t"].corr(cc["y"])),
+            "forecast_vs_same_day_proxy": float(cc["f"].corr(cc["r"])),
+            "log_forecast_vs_log_outcome": float(np.log(cc["f"]).corr(np.log(cc["y"])))}
+    # retransformation: were the log residuals already non-normal at the first refit?
+    from scipy import stats as _st
+    from svcarry.econometrics.har import fit_har as _fit
+    f_all = har_features(rv, horizon=H, lags=LAGS, log=True)
+    t0 = har.forecast.index[0]
+    first_train = f_all.iloc[: f_all.index.searchsorted(t0) - H]
+    r0 = _fit(first_train).resid
+    smear_fc = bench["HAR log, smearing (not adopted)"]
+    vrp_smear = (panel["vix"] / 100.0) ** 2 - 252.0 * smear_fc.reindex(panel.index)
+    inv_smear = ((panel["sig_contango"] == 1) & (vrp_smear > VMIN)).loc[burn_in:][
+        panel["signal"].loc[burn_in:].notna()].mean()
+    retrans = {
+        "first_refit_train_rows": int(len(first_train)),
+        "first_refit_resid_skew": float(_st.skew(r0)),
+        "first_refit_normal_factor": float(np.exp(r0.var(ddof=4) / 2)),
+        "first_refit_smearing_factor": float(np.mean(np.exp(r0))),
+        "oos_mean_forecast_over_mean_outcome": float(har.forecast.loc[common].mean() / y.loc[common].mean()),
+        "oos_median_forecast_over_outcome": float((har.forecast.loc[common] / y.loc[common]).median()),
+        "smearing_vrp_positive_share": float((vrp_smear.dropna() > 0).mean()),
+        "smearing_invested": float(inv_smear),
+    }
+    am_over_gm = float((rv.rolling(H).mean() / np.exp(np.log(rv).rolling(H).mean())).loc[common].mean())
+
+    # ---- 5. VRP by hand, from the raw Cboe file ---------------------------------
+    hand_date = pd.Timestamp("2018-01-12")
+    raw = (ROOT / "data/raw/cboe/indices/VIX_History.csv").read_text(encoding="utf-8").splitlines()
+    line = next(ln for ln in raw if ln.startswith(hand_date.strftime("%m/%d/%Y")))
+    vix_raw = float(line.split(",")[-1])
+    # the forecast itself, rebuilt from the proxy and the coefficients in force
+    refit = har.coefficients.index[har.coefficients.index <= hand_date].max()
+    b = har.coefficients.loc[refit].to_numpy()
+    lrv = np.log(rv.loc[:hand_date])
+    x = np.array([1.0, lrv.iloc[-LAGS[0]:].mean(), lrv.iloc[-LAGS[1]:].mean(),
+                  lrv.iloc[-LAGS[2]:].mean()])
+    fc_raw = float(np.exp(x @ b + 0.5 * har.resid_var.loc[refit]))
+    if abs(fc_raw / har.forecast.loc[hand_date] - 1.0) > 1e-12:
+        raise ValueError("HAR forecast could not be rebuilt by hand")
+    by_hand = (vix_raw / 100.0) ** 2 - 252.0 * fc_raw
+    hand = {"date": str(hand_date.date()), "vix_close_raw_line": line, "vix": vix_raw,
+            "refit_date": str(refit.date()), "coefficients": b.tolist(),
+            "resid_var": float(har.resid_var.loc[refit]),
+            "forecast_daily_var": fc_raw, "forecast_ann_vol_pct": float(np.sqrt(252 * fc_raw) * 100),
+            "vrp_by_hand": by_hand, "vrp_panel": float(panel.loc[hand_date, "vrp"]),
+            "agree": bool(abs(by_hand - panel.loc[hand_date, "vrp"]) < 1e-12)}
+    if not hand["agree"]:
+        raise ValueError(f"VRP hand check failed: {hand}")
+
+    # ---- 6. signal statistics ---------------------------------------------------
+    stats_ = signal_statistics(panel, start=burn_in)
+    stats_.to_csv(tables / "signal_statistics.csv", index=False)
+    post = panel.loc[burn_in:].dropna(subset=["signal"])
+    by_year = post.groupby(post.index.year).agg(
+        days=("signal", "size"), invested=("signal", "mean"),
+        contango_on=("sig_contango", "mean"), vrp_on=("sig_vrp", "mean"))
+    by_year.to_csv(tables / "signal_statistics_by_year.csv", index_label="year")
+    ov = panel.dropna(subset=["slope_cm", "slope_vix3m"])
+    agree = float((panel["sig_contango"] == panel["sig_contango_vix3m"])[ov.index].mean())
+    agree_filled = float((panel["sig_contango"] == panel["sig_contango_vix3m"])[
+        ov.index[ov["cm30_spot_anchored"]]].mean())
+
+    # ---- 7. timing table (look-ahead audit, step 2) -------------------------------
+    lag = int(cfg.dotted("strategy.signal_lag"))
+    timing = pd.DataFrame([
+        ("SPY open/high/low/close", "t", "close of t (4:00 pm ET)", f"close of t+{lag}"),
+        ("rv_proxy (overnight + Rogers-Satchell)", "t", "close of t", f"close of t+{lag}"),
+        ("HAR predictors rv_d, rv_w, rv_m", "t", "close of t (windows end at t)", f"close of t+{lag}"),
+        ("HAR coefficients", "refit date t", f"close of t; trained on rows s <= t-{H}-1, whose "
+         f"targets end by t-1", f"close of t+{lag}"),
+        ("HAR forecast", "t", "close of t", f"close of t+{lag}"),
+        ("VIX close", "t", "4:15 pm ET on t", f"close of t+{lag}"),
+        ("VIX3M close", "t", "4:15 pm ET on t", f"close of t+{lag} (robustness only)"),
+        ("VX settlements -> cm30, cm90", "t", "3:15 pm CT to 2020-10-23; 3:00 pm CT after",
+         f"close of t+{lag}"),
+        ("VRP, slopes, signals", "t", "latest of the above: 4:15 pm ET on t", f"close of t+{lag}"),
+        ("realised_next_h (evaluation only)", "t", f"close of t+{H}", "never used in a decision"),
+    ], columns=["input", "indexed_by", "available", "first_used"])
+    timing["use_precedes_availability"] = False
+    timing.to_csv(tables / "timing_audit.csv", index=False)
+
+    # ---- 8. outputs --------------------------------------------------------------
+    panel.to_csv(processed / "signals_daily.csv", index_label="date")
+    from svcarry.viz.figures import (
+        plot_har_forecast_vs_realised, plot_signal_state, plot_vrp_timeseries,
+    )
+    from svcarry.viz.style import save_figure
+    save_figure(plot_vrp_timeseries(panel), figdir / "vrp_timeseries.png")
+    save_figure(plot_har_forecast_vs_realised(
+        har.forecast.reindex(common), y.reindex(common), trail.reindex(common),
+        stats={"oos_r2": prim["oos_r2_vs_eval_mean"], "mz_beta": prim["mz_beta"],
+               "trail_r2": trl["oos_r2_vs_eval_mean"], "trail_mz": trl["mz_beta"]}),
+        figdir / "har_forecast_vs_realised.png")
+    save_figure(plot_signal_state(panel, THR), figdir / "signal_state.png")
+
+    st = stats_.set_index("statistic")["fraction"]
+    qc = {
+        "proxy": f"SPY {METHOD}", "proxy_ann_vol_pct": float(np.sqrt(252 * rv.mean()) * 100),
+        "yang_zhang_window_check": yz_check,
+        "burn_in_first_signal": str(burn_in.date()),
+        "oos_first": str(common.min().date()), "oos_last": str(common.max().date()),
+        "oos_n": int(len(common)),
+        "oos_r2": float(prim["oos_r2_vs_eval_mean"]),
+        "oos_r2_vs_expanding_mean": float(prim["oos_r2_vs_expanding_mean"]),
+        "rmse_har_vs_trailing": [float(prim["rmse_ann_var"]), float(trl["rmse_ann_var"])],
+        "qlike_har_vs_trailing": [float(prim["qlike"]), float(trl["qlike"])],
+        "dm_t_mse": float(prim["dm_mse_t_vs_trailing"]), "dm_t_qlike": float(prim["dm_qlike_t_vs_trailing"]),
+        "mz_beta": float(prim["mz_beta"]), "mz_beta_se": float(prim["mz_beta_se"]),
+        "trailing_mz_beta": float(trl["mz_beta"]),
+        "correlations": corr, "am_over_gm_21d_mean": am_over_gm,
+        "retransformation": retrans,
+        "vrp_hand_check": hand,
+        "vrp_positive_share": float((panel["vrp"].dropna() > 0).mean()),
+        "vrp_median_ann_var": float(panel["vrp"].median()),
+        "cm30_spot_anchored_days": int(panel["cm30_spot_anchored"].sum()),
+        "slope_agreement_overlap": agree, "slope_agreement_on_anchored_days": agree_filled,
+        "slope_overlap_days": int(len(ov)),
+        "slope_ratio_corr": float(ov["slope_cm"].corr(ov["slope_vix3m"])),
+        "coverage_after_burn_in": float(st["days with the combined signal defined"]),
+        "contango_on": float(st["contango (cm30/cm90) on"]),
+        "vrp_on": float(st["VRP on"]),
+        "invested": float(st["combined on (invested)"]),
+        "signals_agree": float(st["both signals agree"]),
+        "binding": {b: float(st[f"off, binding constraint: {b}"]) for b in ("contango", "vrp", "both")},
+        "undefined_after_burn_in": [str(d.date()) for d in
+                                    panel.loc[burn_in:].index[panel.loc[burn_in:, "signal"].isna()]],
+    }
+    print(json.dumps(qc, indent=1, default=str))
+    return qc
+
+
 RUNNERS = {
     "clean": stage_clean,
     "index": stage_index,
     "mechanics": stage_mechanics,
     "tail": stage_tail,
-    "signals": _not_yet("signals"),
+    "signals": stage_signals,
     "backtest": _not_yet("backtest"),
     "robust": _not_yet("robust"),
     "figures": _not_yet("figures"),

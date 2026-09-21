@@ -198,6 +198,51 @@ limit of the method, not of the sample.
 
 ---
 
+## L15. The forecast is biased low in level, and weak in calm years
+
+Out of sample the HAR forecast's mean is 12% below the mean outcome. The log residuals
+are right-skewed, so the normal-theory retransformation understates the conditional
+mean; a smearing correction would raise forecasts by about 9% and cut the share of
+VRP-positive days from 87.4% to 81.7%. And the forecast's skill is uneven: in 2013-2019
+it barely beats a hindsight constant and its Mincer-Zarnowitz slope is 0.51; in
+2008-2012 it is no better than trailing RV on squared error.
+
+**What it bears on.** The VRP filter's on/off state on marginal days, and so the
+invested share. Not the sign of the premium on most days: the median gap is 2 volatility
+points. Smearing is a Phase 12 robustness variant.
+
+---
+
+## L16. The realised-variance proxy is not the variance the VIX prices
+
+VIX squared is a risk-neutral expectation over 30 calendar days of the S&P 500's
+variance. The forecast is of a range-based proxy on SPY over 21 trading days: a
+different instrument (SPY, because the index's opening print is stale), a different
+estimator (4.6% above close-to-close variance on average, from the intraday range), and
+a different day count (252 against an equivalent 255.5, 1.4%). The instrument makes
+no measurable difference (close-to-close volatility 18.7% on SPY and on the index). The
+estimator **understates** the premium by about 0.0017 in annualised variance at the
+sample-average level; the day count **overstates** it by about 0.0005. Net, about 0.001
+understated, against a median premium of 0.0077.
+
+**What it bears on.** The level of the VRP, and a few marginal signal days. A
+close-to-close proxy is a Phase 12 robustness variant.
+
+---
+
+## L17. The contango signal is filled on 5% of days
+
+`cm30` does not exist on 234 sessions (5.0%) because no listed contract is shorter than
+30 days; there it is interpolated from spot VIX. The fill is flagged and agrees with
+`VIX/VIX3M` as often as unfilled days do (91.5% vs 91.7%), but it is a construction,
+not an observation. Weekly VX contracts, listed since 2015, would observe the point
+directly; they are not in the archive this project uses.
+
+**What it bears on.** The contango state on those sessions. Phase 12 reports the
+strategy with those sessions forced flat.
+
+---
+
 ## L8. Open questions carried forward
 
 1. The 2016 and 2019 steps in the tracking-error series are unexplained (L1).
@@ -207,3 +252,6 @@ limit of the method, not of the sample.
 3. The decay intercepts (L11).
 4. Whether the H2 threshold is met on the six large 2016-2018 up-moves where it is
    met only at the upper asset bound (L10).
+5. Why the intraday range exceeds the squared open-to-close return by 14% on SPY
+   (L16): intraday mean reversion and microstructure in highs and lows are both
+   consistent with it.

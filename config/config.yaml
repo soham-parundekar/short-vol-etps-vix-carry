@@ -116,7 +116,12 @@ forecast:
 
 strategy:
   # Short exposure to the reconstructed short-term VIX futures index.
-  contango_threshold: 1.0       # trade only when VIX / VIX3M < this
+  # Trade only when the curve slope is below this. The slope is cm30/cm90 from the
+  # interpolated futures curve (primary; VIX/VIX3M is the robustness variant, since
+  # VIX3M starts 2009-09-18). This comment said VIX/VIX3M until Phase 10; the value
+  # never changed, and the primary measure was fixed in the Phase 10 prompt
+  # (commit 3db0269) before any data was retrieved. See docs/methodology.md M7.
+  contango_threshold: 1.0
   vrp_min: 0.0                  # require a positive variance risk premium
   vol_target: 0.15              # annualised
   vol_lookback: 21

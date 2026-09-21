@@ -1,0 +1,11 @@
+input,indexed_by,available,first_used,use_precedes_availability
+SPY open/high/low/close,t,close of t (4:00 pm ET),close of t+1,False
+rv_proxy (overnight + Rogers-Satchell),t,close of t,close of t+1,False
+"HAR predictors rv_d, rv_w, rv_m",t,close of t (windows end at t),close of t+1,False
+HAR coefficients,refit date t,"close of t; trained on rows s <= t-21-1, whose targets end by t-1",close of t+1,False
+HAR forecast,t,close of t,close of t+1,False
+VIX close,t,4:15 pm ET on t,close of t+1,False
+VIX3M close,t,4:15 pm ET on t,close of t+1 (robustness only),False
+"VX settlements -> cm30, cm90",t,3:15 pm CT to 2020-10-23; 3:00 pm CT after,close of t+1,False
+"VRP, slopes, signals",t,latest of the above: 4:15 pm ET on t,close of t+1,False
+realised_next_h (evaluation only),t,close of t+21,never used in a decision,False
