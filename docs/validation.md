@@ -385,11 +385,14 @@ and they agree with each other to within **2.25 percentage points** on what the 
 did. They agree with each other and disagree with the 4:15 p.m. settlement by a factor
 of three. In log terms, **57.5% of the day's move happened after 4:00 p.m. ET**.
 
-This is V6's asynchronicity in its most extreme instance, and the raw contract data
-shows the mechanism: the February-2018 VX contract opened at 16.15, ranged from 15.20
-to 33.35, and **closed at 33.20 - its high of the day**, on 567,407 lots. That is the
-shape of forced buying into the settlement window, which is the rebalancing mechanism
-Phase 08 is about.
+This is V6's asynchronicity in its most extreme instance. The raw contract data is
+consistent with it: the February-2018 VX contract opened at 16.15, ranged from 15.20
+to 33.35, and **closed at 33.20 - its high of the day**, on 567,407 lots. A close at
+the high on heavy volume is consistent with concentrated buying into the settlement
+window, and V13 shows the geared funds' mechanical demand that day was at least a
+quarter of front-month open interest. Daily data cannot say who did the buying, so
+this is stated as consistent with the rebalancing account, not as a demonstration of
+it. (An earlier draft called it "forced buying"; that was stronger than the evidence.)
 
 **And the filings say so directly.** ProShares' own prospectus:
 
@@ -499,6 +502,145 @@ contain the fee contains something better:
 With creations suspended, the arbitrage that holds an ETN to its indicative value is
 switched off. VXX's 2022-2026 daily tracking error is 101 bp against VIXY's 28 bp over
 the identical window, and the issuer's own filing says why.
+
+---
+
+## V11. The price series against disclosed per-share NAV
+
+**Proposition.** The split-adjusted product returns used throughout are right,
+including across the SVXY 2-for-1 split and the VIXY/UVXY 1-for-4 reverse splits of
+July 2017.
+
+**Test.** The ProShares 10-K states each fund's per-share NAV at four year-ends. A
+ratio of per-share NAVs is invariant to splits, so it is directly comparable to the
+cumulative split-adjusted return over the same year - a comparison the split handling
+cannot pass by accident, because a mishandled split is an error of a factor of 2 or 4.
+
+**Result.** Nine comparisons (three funds, three years). Eight agree to within 0.8
+percentage points over a full year; the ninth, SVXY in 2017, to 2.8 points on a +179%
+year. The residual is what the 4:15 p.m. NAV strike against the 4:00 p.m. closing
+price predicts (V6).
+
+### V11a. A trap in the anchors themselves
+
+Converting the 10-K's share counts into the price series' share basis by applying the
+recorded split history gave share counts wrong by exactly the product of the
+intervening split ratios - a factor of 2 for SVXY and about 1,900 for UVXY. The
+filing had already restated every row onto its own share basis; applying the splits
+again counted them twice. It was caught because each anchor states the share count
+twice (as a count, and implicitly as net assets over price) and the two disagreed.
+`svcarry.etp.assets` now takes net assets over price wherever a value is disclosed,
+which needs no split arithmetic at all, and requires every valued anchor to imply the
+same basis.
+
+---
+
+## V12. The leverage-decay identity (H2, mechanical part)
+
+`ln(V_T/V_0) - L ln(I_T/I_0)` regressed on realised variance over non-overlapping
+21-day blocks; theory says the slope is `-(L^2-L)/2`. Overlapping blocks with HAC
+errors and a 63-day horizon are run as cross-checks. Full table:
+`reports/tables/leverage_decay.csv`.
+
+| Product | L | Slope | Theory | Verdict |
+|---|---|---|---|---|
+| VIXY | +1 | -0.030 | 0 | pass |
+| VXX | +1 | +0.004 | 0 | pass |
+| SVXY | -1, full window | **-2.846** | -1.000 | **fail** |
+| SVXY | -1, excl. Feb-2018 block | -1.087 | -1.000 | pass |
+| SVXY | -0.5 | -0.403 | -0.375 | pass |
+| UVXY | +2, full window | -0.732 | -1.000 | warn |
+| UVXY | +2, excl. Feb-2018 block | -0.946 | -1.000 | pass |
+| UVXY | +1.5 | -0.384 | -0.375 | pass |
+| SVIX | -1 | -1.171 | -1.000 | warn, benchmark mismatch (L9) |
+
+### V12a. One block, and why it is not deleted
+
+The 21-day and 63-day estimates for pre-2018 SVXY disagree (-2.85 against -1.08),
+which the phase prompt names as the sign that block length is doing work it should
+not. Leave-one-block-out locates it: **dropping the single block containing 5-6
+February 2018 moves the SVXY slope by +1.76**; the next most influential block moves
+it by 0.11. Two documented causes, neither a data error:
+
+1. **The identity is an approximation.** Over that block, exact discrete rebalancing
+   `prod(1 + L r)` and the continuous-time identity differ by **27.8 percentage
+   points** at L = -1, against 2.3 points in a typical block. A +96% day is not a
+   small return.
+2. **The measurement gap takes three sessions to close.** VIXY - a +1x fund with no
+   rebalancing to do - trails the index by 61.9 points after one session, 15.3 after
+   two, 3.7 after three, and about 1 thereafter.
+
+So the block is reported both ways, with these diagnostics beside it
+(`decay_influence.csv`, `decay_approximation_error.csv`, `figures/decay_blocks.png`).
+With it excluded, the 21-day and 63-day estimates agree: -1.087 and -1.075.
+
+### V12b. The documented de-levering, visible in prices
+
+Pooled regression with a post-break interaction at 2018-02-28:
+
+| | step at the break | theory | t vs 0 | t vs theory | post-break slope |
+|---|---|---|---|---|---|
+| SVXY -1 to -0.5 | +0.685 | +0.625 | **13.4** | 1.17 | -0.403 (theory -0.375) |
+| UVXY +2 to +1.5 | +0.562 | +0.625 | **7.0** | -0.78 | -0.384 (theory -0.375) |
+
+(pre-window excluding the February 2018 block; with it included the break is still
+significant, t = 6.0 and 4.9, but the step is contaminated by V12a.) The break is at
+the date the filings give and of the size theory predicts.
+
+### V12c. Intercepts - partially met
+
+The phase criterion asks the intercept to recover the fee within 100 bp a year. With
+the slope held at theory (so the intercept cannot absorb slope error), six of seven
+products sit 0.2-2.7 points from minus the fee; adding the collateral T-bill yield
+improves some and worsens others. The intercept is not separately identified from
+collateral yield, trading costs and the ER/TR distinction in this regression, and is
+reported as **warn** (`decay_intercepts.csv`). SVIX's -8.75%/yr is not evidence about
+the identity at all: SVIX tracks a different index (L9).
+
+---
+
+## V13. Rebalancing flows (H2)
+
+**Dimensional check, 5 February 2018, lower bound**
+
+| Step | Value |
+|---|---|
+| SVXY assets | $431.4m, L(L-1) = 2.00, flow $829.2m |
+| UVXY assets | $531.2m, L(L-1) = 2.00, flow $1,021.1m |
+| index return | +96.10% |
+| aggregate | $1,850.3m |
+| / ($1,000 x F1 = 33.225) | **55,690 contracts** |
+| front-month open interest | 222,804 contracts -> **25.0%** |
+| front-two open interest | 510,632 contracts -> 10.9% |
+
+Open interest is that of the specific contracts the index held that day - the front
+month, and separately the front two.
+
+**Plausibility.** The lower bound never exceeds 100% of front-month open interest; its
+maximum over the whole anchored window is the 25.0% of 5 February 2018. The upper bound
+exceeds the entire contract on 7 sessions, which marks it as uninformative wherever a
+fund's share count moved sharply between annual anchors - it is plotted separately
+and never used for the claim.
+
+**H2, against its pre-registered rule.** Rejected only if the flow is below 10% of
+front-month open interest under both bounds on the largest up-moves of 2016-2018. Of
+the ten largest in the anchored window, none is below at both bounds, so **H2 is not
+rejected**. Stated at its actual strength: it is supported at the lower bound on 4 of
+the 10 (including the largest, 5 February 2018, at 25.0%), and indeterminate - above
+10% only at the upper bound - on the other 6. The lower bound covers SVXY and UVXY
+only; XIV, the largest -1x product on that day, is excluded, so it understates the
+complex.
+
+**What this does not show.** That the flow caused the move. Daily data establishes that
+the mechanical demand was large relative to the open interest that had to absorb it,
+and V9 shows the price rising into the settlement window; it cannot separate that
+demand from the other buyers in the same fifteen minutes.
+
+**The de-levering, as a counterfactual.** Holding 5 February's assets and shock fixed
+and changing only the coefficient from 2.0 to 0.75 cuts the lower-bound trade from
+55,690 to 20,884 contracts - from 25.0% to 9.4% of front-month open interest. The 62.5%
+reduction is arithmetic, not an estimate; what the counterfactual adds is that the
+same shock would have landed just below the 10% threshold H2 uses.
 
 ---
 

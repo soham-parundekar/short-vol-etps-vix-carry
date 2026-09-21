@@ -474,3 +474,84 @@ Four things surfaced that would not have otherwise:
 
 Phase 08 — ETP mechanics. The rebalancing identity ΔE = L(L−1)·A·r, the decay
 identity, and the flow estimates. 5 February 2018 is already the worked example.
+
+---
+
+## Session 5 — 21 September 2026
+
+Phase 08 (leveraged-product mechanics and rebalancing flows) complete. H2 is not
+rejected, and is supported unconditionally on the day that matters most.
+
+### The decay identity holds — except in one block, for two documented reasons
+
+Slopes land on theory for every product and regime once one 21-day block is handled:
+SVXY −0.5× −0.403 (theory −0.375), UVXY +1.5× −0.384 (−0.375), SVXY −1× −1.087 (−1.000),
+UVXY +2× −0.946 (−1.000), VIXY and VXX within 0.03 of zero.
+
+The pre-2018 21-day and 63-day estimates first disagreed (−2.85 vs −1.08 for SVXY).
+Leave-one-block-out found the cause: the block holding 5–6 February 2018 moves the
+slope by +1.76, against 0.11 for the next most influential. Two separable reasons,
+neither a data error: the identity is a continuous-time approximation that errs by
+27.8 points at a +96% day (2.3 in a normal block), and the 4:00/4:15 measurement gap
+takes three sessions to close — shown with VIXY, a +1× fund with nothing to rebalance,
+which still trailed the index by 61.9 points after one session. The block is reported
+both ways, not deleted.
+
+The documented de-levering is visible in prices at the documented date: step +0.685
+for SVXY (theory +0.625, t = 13.4) and +0.562 for UVXY (theory +0.625, t = 7.0), both
+statistically indistinguishable from theory.
+
+### Assets: bounded, and a trap found by cross-checking
+
+The ProShares 10-K gives net assets and share counts at four year-ends, and share
+counts on 26 February 2018. First, the price series was validated against the
+disclosed per-share NAVs: nine split-invariant comparisons, eight within 0.8 points
+over a full year. Then two bugs in the bounding, both caught by checks rather than by
+eye:
+
+* Re-applying the split history to the 10-K's share counts double-counted splits the
+  filing had already restated — off by a factor of ~1,900 for UVXY. Caught because
+  each anchor states the share count two ways and they disagreed.
+* Two of the four year-ends fall on weekends, and the bracketing check skipped any
+  anchor not in the trading calendar — half the anchors unverified while the check
+  passed. Caught by looking at the figure. Anchors now sit on the NAV session.
+
+### Flows and H2
+
+5 February 2018, lower asset bound: $1.85bn → 55,690 contracts → **25.0% of
+front-month open interest** (10.9% of the front two). It is the largest day in the
+whole anchored window, and the lower bound excludes XIV. The upper bound exceeds the
+entire contract on 7 sessions and is plotted separately, never used for the claim.
+
+Against the pre-registered rule, H2 is not rejected. At its real strength: supported at
+the lower bound on 4 of the 10 largest up-moves of 2016–2018, indeterminate (upper
+bound only) on 6. Same shock with the post-2018 coefficients: 25.0% → 9.4% — a
+62.5% cut that is arithmetic, not an estimate.
+
+### Two findings from the filings
+
+* **SVIX tracks a different index.** Its benchmark is priced from a 3:45–4:00 p.m.
+  average, not the settlement. Its −8.75%/yr intercept is a benchmark mismatch, not
+  evidence about the identity. Now a verified filing term (28/28) and L9.
+* Intercepts are not separately identified from collateral yield, fees and trading
+  costs (L11); reported as a warning, not as cost estimates.
+
+### A correction
+
+In Session 4 and in the Phase 07 commit messages I described the February-2018
+contract closing at its high as "forced buying into the settlement window". The data
+shows a close at the high on heavy volume; it cannot show who bought or that they were
+forced to. `docs/validation.md` V9 now says "consistent with", and this entry records
+the correction rather than editing the earlier one. Found by the causal-language audit
+the phase prompt requires.
+
+### Also
+
+`docs/methodology.md` written (M1–M5), `docs/limitations.md` gains L9–L11, validation
+gains V11–V13. The shared date-axis helper printed every year twice when it chose
+half-year ticks; fixed for every figure. Tests: 200 passed, 2 skipped.
+
+### Next
+
+Phase 09 — the tail model and survival (H3): GJR-GARCH with skewed-t innovations and
+conditional EVT on data ending 31 December 2017.

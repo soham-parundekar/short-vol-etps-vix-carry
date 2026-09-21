@@ -265,10 +265,323 @@ def _not_yet(name: str):
     return _stage
 
 
+def stage_mechanics(cfg) -> dict:
+    """Leverage decay, the February 2018 de-levering, and rebalancing flows.
+
+    Three deliberate choices, each of which changes what may be claimed.
+
+    *The decay regression is reported with and without the block containing
+    5 February 2018.* That single block moves the SVXY slope by 1.76 where the next
+    most influential moves it by 0.11, for two documented reasons: the identity is a
+    continuous-rebalancing approximation and errs by 28 percentage points at a +96%
+    daily move, and the index-product measurement gap (``docs/validation.md`` V6, V9)
+    takes about three sessions to wash out. Neither is a data error, so the block is
+    not deleted - it is reported both ways with the diagnostics that explain it.
+
+    *Assets are bounded, never point estimated.* See :mod:`svcarry.etp.assets`.
+
+    *The flow conclusion is stated at the LOWER bound.* The band is wide in the weeks
+    around Volmageddon, and the upper bound is not merely imprecise but implausible
+    there - it implies more than the whole front-month open interest on seven
+    sessions. The lower bound never does, and it also excludes XIV and every other
+    non-ProShares product, so it understates the complex twice over.
+    """
+    import numpy as np
+    import pandas as pd
+
+    from svcarry.data.prices import load_prices, split_adjusted_returns
+    from svcarry.econometrics.hac import ols
+    from svcarry.etp.assets import asset_bounds, load_anchors
+    from svcarry.etp.mechanics import (
+        block_influence, decay_blocks, decay_regression,
+        identity_approximation_error, theoretical_decay,
+    )
+
+    processed = ROOT / cfg.dotted("paths.processed")
+    tables = ROOT / cfg.dotted("paths.tables")
+    tables.mkdir(parents=True, exist_ok=True)
+
+    index_path = _require(processed / "index_daily.csv", "the reconstructed index",
+                          "run: python scripts/run_pipeline.py --only index")
+    idx = pd.read_csv(index_path, parse_dates=["date"]).set_index("date")
+    r_idx = idx["ret"]
+    panel = pd.read_csv(ROOT / cfg.dotted("paths.interim") / "vx_panel.csv",
+                        parse_dates=["date", "expiry"])
+
+    BREAK = pd.Timestamp(cfg.dotted("products.SVXY.leverage_change_date"))
+    # The block containing 5-6 February 2018 ends here; a pre-break window stopping
+    # before it isolates the effect without discarding anything from the full run.
+    PRE_CLEAN_END = pd.Timestamp("2018-01-31")
+
+    SPECS = [
+        ("VIXY", 1.0, None, None), ("VXX", 1.0, None, None),
+        ("SVXY", -1.0, None, BREAK - pd.Timedelta(days=1)),
+        ("SVXY", -0.5, BREAK, None),
+        ("UVXY", 2.0, None, BREAK - pd.Timedelta(days=1)),
+        ("UVXY", 1.5, BREAK, None),
+        ("SVIX", -1.0, None, None),
+    ]
+    rets = {}
+    for sym, *_ in SPECS:
+        if sym not in rets:
+            try:
+                rets[sym] = split_adjusted_returns(load_prices(sym))
+            except Exception as exc:
+                print(f"  [mechanics] no prices for {sym}: {str(exc)[:70]}")
+
+    # ---- 1. decay regression -------------------------------------------------
+    rows = []
+    for sym, L, lo, hi in SPECS:
+        if sym not in rets:
+            continue
+        base = pd.concat({"p": rets[sym], "i": r_idx}, axis=1, sort=False).dropna()
+        variants = [("full", lo, hi)]
+        if hi is not None and hi > PRE_CLEAN_END:
+            variants.append(("ex_feb2018", lo, PRE_CLEAN_END))
+        for label, a, b in variants:
+            d = base
+            if a is not None:
+                d = d[d.index >= a]
+            if b is not None:
+                d = d[d.index <= b]
+            for H in (21, 63):
+                for over in (False, True):
+                    try:
+                        if over:
+                            B = decay_blocks(d["p"], d["i"], L, H, overlapping=True)
+                            f = ols(B["y"].to_numpy(), B[["x"]].to_numpy(),
+                                    names=["rv"], cov_type="HAC", lags=2 * H)
+                            slope, se, n, r2 = (float(f.params[1]), float(f.bse[1]),
+                                                int(f.nobs), float(f.rsquared))
+                            icpt = float(f.params[0]) * 252.0 / H
+                        else:
+                            res = decay_regression(d["p"], d["i"], leverage=L, horizon=H)
+                            slope, se, n, r2 = res.slope, res.slope_se, res.n, res.rsquared
+                            icpt = res.intercept_annual
+                    except ValueError:
+                        continue
+                    theo = theoretical_decay(L)
+                    rows.append({
+                        "symbol": sym, "leverage": L, "window": label,
+                        "start": str(d.index.min().date()), "end": str(d.index.max().date()),
+                        "horizon": H, "blocks": "overlapping" if over else "non_overlapping",
+                        "n": n, "slope": slope, "se": se, "theoretical": theo,
+                        "t_vs_theory": (slope - theo) / se if se > 0 else np.nan,
+                        "intercept_annual": icpt, "rsquared": r2,
+                        "fee_config": cfg.dotted(f"products.{sym}.fee", np.nan),
+                    })
+    decay = pd.DataFrame(rows)
+    decay.to_csv(tables / "leverage_decay.csv", index=False)
+
+    # ---- 2. what one block does, and why -------------------------------------
+    inf_rows, app_rows = [], []
+    for sym, L in (("SVXY", -1.0), ("UVXY", 2.0)):
+        if sym not in rets:
+            continue
+        d = pd.concat({"p": rets[sym], "i": r_idx}, axis=1, sort=False).dropna()
+        d = d[d.index < BREAK]
+        inf = block_influence(d["p"], d["i"], L, 21)
+        full = inf.attrs["full_slope"]
+        for _, row in inf.head(5).iterrows():
+            inf_rows.append({"symbol": sym, "leverage": L, "full_slope": full,
+                             "block_end": str(pd.Timestamp(row["end"]).date()),
+                             "slope_without": row["slope_without"],
+                             "delta": row["delta"], "block_realised_var": row["block_x"]})
+    WINDOWS = {"2018-02-07_volmageddon": ("2018-01-09", "2018-02-07"),
+               "2016-07-08_typical": ("2016-06-09", "2016-07-08"),
+               "2020-03-20_covid": ("2020-02-21", "2020-03-20"),
+               "2024-08-16_yen_carry": ("2024-07-18", "2024-08-16")}
+    for name, (a, b) in WINDOWS.items():
+        for L in (-1.0, 2.0, -0.5, 1.5):
+            e = identity_approximation_error(L, r_idx.loc[a:b])
+            app_rows.append({"window": name, **e})
+    pd.DataFrame(inf_rows).to_csv(tables / "decay_influence.csv", index=False)
+    pd.DataFrame(app_rows).to_csv(tables / "decay_approximation_error.csv", index=False)
+
+    # ---- 3. the de-levering as a structural break ----------------------------
+    brk = []
+    for sym, L0, L1 in (("SVXY", -1.0, -0.5), ("UVXY", 2.0, 1.5)):
+        if sym not in rets:
+            continue
+        base = pd.concat({"p": rets[sym], "i": r_idx}, axis=1, sort=False).dropna()
+        for label, pre_end in (("full", BREAK - pd.Timedelta(days=1)),
+                               ("ex_feb2018", PRE_CLEAN_END)):
+            pre = decay_blocks(base[base.index <= pre_end]["p"],
+                               base[base.index <= pre_end]["i"], L0, 21)
+            post = decay_blocks(base[base.index >= BREAK]["p"],
+                                base[base.index >= BREAK]["i"], L1, 21)
+            pre["post"], post["post"] = 0.0, 1.0
+            B = pd.concat([pre, post])
+            X = np.column_stack([B["x"], B["post"], B["x"] * B["post"]])
+            f = ols(B["y"].to_numpy(), X, names=["rv", "post", "rv_x_post"],
+                    cov_type="HC1")
+            exp = theoretical_decay(L1) - theoretical_decay(L0)
+            brk.append({
+                "symbol": sym, "pre_window": label, "n": int(f.nobs),
+                "leverage_before": L0, "leverage_after": L1, "break_date": str(BREAK.date()),
+                "slope_pre": float(f.params[1]), "theory_pre": theoretical_decay(L0),
+                "step": float(f.params[3]), "step_se": float(f.bse[3]), "theory_step": exp,
+                "t_step_vs_zero": float(f.tvalues[3]),
+                "t_step_vs_theory": (float(f.params[3]) - exp) / float(f.bse[3]),
+                "slope_post": float(f.params[1] + f.params[3]),
+                "theory_post": theoretical_decay(L1),
+            })
+    pd.DataFrame(brk).to_csv(tables / "leverage_break.csv", index=False)
+
+    # ---- 4. assets, bounded --------------------------------------------------
+    anchors = load_anchors(ROOT / cfg.dotted("paths.reference")
+                           / "product_asset_anchors.csv")
+    bounds, asset_frames = {}, []
+    for sym in sorted(anchors["symbol"].unique()):
+        if sym not in rets:
+            continue
+        px = load_prices(sym)
+        b = asset_bounds(anchors[anchors["symbol"] == sym],
+                         px["adjclose"].astype(float), px.attrs["splits"])
+        bounds[sym] = b
+        f = b.loc[~b["extrapolated"], ["assets_lower", "assets_central",
+                                       "assets_upper", "is_anchor"]].copy()
+        f.insert(0, "symbol", sym)
+        asset_frames.append(f)
+    assets_out = pd.concat(asset_frames).rename_axis("date")
+    assets_out.to_csv(processed / "product_assets_bounds.csv")
+
+    # ---- 5. flows ------------------------------------------------------------
+    m = panel.set_index(["date", "expiry"])["open_interest"]
+    oi1 = pd.Series([m.get((d, pd.Timestamp(idx.at[d, "exp1"])), np.nan)
+                     for d in idx.index], index=idx.index)
+    oi2 = pd.Series([m.get((d, pd.Timestamp(idx.at[d, "exp2"])), np.nan)
+                     for d in idx.index], index=idx.index)
+
+    GEARED = {s: (cfg.dotted(f"products.{s}.leverage"),
+                  cfg.dotted(f"products.{s}.leverage_after"))
+              for s in ("SVXY", "UVXY") if s in bounds}
+    dates = idx.index
+    inside = pd.Series(True, index=dates)
+    for s in GEARED:
+        inside &= (bounds[s]["extrapolated"].reindex(dates) == False)  # noqa: E712
+
+    flows = pd.DataFrame(index=dates)
+    flows["index_return"] = r_idx
+    flows["front_settle"] = idx["f1"]
+    flows["oi_front"] = oi1
+    flows["oi_front_two"] = oi1 + oi2
+    for k in ("lower", "central", "upper"):
+        tot = pd.Series(0.0, index=dates)
+        for s, (L0, L1) in GEARED.items():
+            A = bounds[s][f"assets_{k}"].reindex(dates)
+            L = pd.Series(np.where(dates >= BREAK, float(L1), float(L0)), index=dates)
+            per = L * (L - 1.0) * A * r_idx
+            if k == "lower":
+                flows[f"flow_{s}"] = per.where(inside)
+            tot = tot.add(per.fillna(0.0), fill_value=0.0)
+        flows[f"flow_{k}"] = tot.where(inside)
+        flows[f"contracts_{k}"] = flows[f"flow_{k}"] / (1000.0 * flows["front_settle"])
+        flows[f"share_oi_front_{k}"] = flows[f"contracts_{k}"].abs() / flows["oi_front"]
+        flows[f"share_oi_front_two_{k}"] = (flows[f"contracts_{k}"].abs()
+                                            / flows["oi_front_two"])
+    flows = flows[flows["flow_lower"].notna()]
+    flows.to_csv(tables / "rebalancing_flows.csv", index_label="date")
+
+    # ---- 6. the de-levering counterfactual: same shock, new coefficient -------
+    day = pd.Timestamp("2018-02-05")
+    coef_before = {s: L0 * (L0 - 1.0) for s, (L0, _) in GEARED.items()}
+    coef_after = {s: float(L1) * (float(L1) - 1.0) for s, (_, L1) in GEARED.items()}
+    cf = []
+    if day in flows.index:
+        for k in ("lower", "upper"):
+            base = sum(bounds[s].at[day, f"assets_{k}"] for s in GEARED)
+            f_before = sum(coef_before[s] * bounds[s].at[day, f"assets_{k}"]
+                           for s in GEARED) * r_idx[day]
+            f_after = sum(coef_after[s] * bounds[s].at[day, f"assets_{k}"]
+                          for s in GEARED) * r_idx[day]
+            ctr_b = f_before / (1000.0 * idx.at[day, "f1"])
+            ctr_a = f_after / (1000.0 * idx.at[day, "f1"])
+            cf.append({"bound": k, "date": str(day.date()), "assets_usd": base,
+                       "coef_before": 2.0, "coef_after": 0.75,
+                       "flow_before_usd": f_before, "flow_after_usd": f_after,
+                       "contracts_before": ctr_b, "contracts_after": ctr_a,
+                       "share_oi_front_before": abs(ctr_b) / oi1[day],
+                       "share_oi_front_after": abs(ctr_a) / oi1[day],
+                       "reduction": 1.0 - coef_after["SVXY"] / coef_before["SVXY"]})
+    pd.DataFrame(cf).to_csv(tables / "delevering_counterfactual.csv", index=False)
+
+    # ---- 7. figures ----------------------------------------------------------
+    from types import SimpleNamespace
+
+    from svcarry.viz.figures import (
+        plot_asset_bounds, plot_decay_blocks, plot_decay_regression,
+        plot_flow_vs_open_interest,
+    )
+    from svcarry.viz.style import save_figure
+
+    figdir = ROOT / cfg.dotted("paths.figures")
+    nb = decay[(decay["blocks"] == "non_overlapping") & (decay["horizon"] == 21)]
+    dot = {}
+    for _, row in nb.iterrows():
+        lab = f"{row['symbol']} {row['leverage']:+g}x" + (
+            "  excl. Feb-2018 block" if row["window"] == "ex_feb2018" else "")
+        dot[lab] = SimpleNamespace(slope=row["slope"], slope_se=row["se"],
+                                   theoretical=row["theoretical"])
+    save_figure(plot_decay_regression(dot), figdir / "decay_regression.png")
+
+    panels = []
+    for sym, L, lo, hi, flag in (
+        ("SVXY", -1.0, None, BREAK - pd.Timedelta(days=1), "2018-02-07"),
+        ("SVXY", -0.5, BREAK, None, None),
+        ("UVXY", 2.0, None, BREAK - pd.Timedelta(days=1), "2018-02-07"),
+        ("UVXY", 1.5, BREAK, None, None),
+    ):
+        if sym not in rets:
+            continue
+        d = pd.concat({"p": rets[sym], "i": r_idx}, axis=1, sort=False).dropna()
+        if lo is not None:
+            d = d[d.index >= lo]
+        if hi is not None:
+            d = d[d.index <= hi]
+        era = "before" if hi is not None else "after"
+        panels.append({"title": f"{sym} at {L:+g}x ({era} 28 Feb 2018)",
+                       "blocks": decay_blocks(d["p"], d["i"], L, 21),
+                       "theory": theoretical_decay(L), "flag": flag})
+    save_figure(plot_decay_blocks(panels), figdir / "decay_blocks.png")
+
+    save_figure(plot_flow_vs_open_interest(flows["share_oi_front_lower"],
+                                           flows["share_oi_front_upper"],
+                                           annotate="2018-02-05"),
+                figdir / "flow_vs_open_interest.png")
+    save_figure(plot_asset_bounds({s: bounds[s] for s in ("SVXY", "UVXY", "VIXY")
+                                   if s in bounds}, anchors),
+                figdir / "product_assets_with_anchors.png")
+
+    lo_max_oi = float(flows["share_oi_front_lower"].max())
+    up_over = int((flows["share_oi_front_upper"] > 1.0).sum())
+    qc = {
+        "decay_rows": int(len(decay)),
+        "anchored_window": [str(flows.index.min().date()), str(flows.index.max().date())],
+        "anchored_sessions": int(len(flows)),
+        "feb_2018_flow_lower_usd": float(flows.at[day, "flow_lower"]) if day in flows.index else None,
+        "feb_2018_contracts_lower": float(flows.at[day, "contracts_lower"]) if day in flows.index else None,
+        "feb_2018_share_front_oi_lower": float(flows.at[day, "share_oi_front_lower"]) if day in flows.index else None,
+        "feb_2018_share_front_two_oi_lower": float(flows.at[day, "share_oi_front_two_lower"]) if day in flows.index else None,
+        "lower_bound_max_share_front_oi": lo_max_oi,
+        "lower_bound_ever_over_100pct_oi": bool(lo_max_oi > 1.0),
+        "upper_bound_sessions_over_100pct_oi": up_over,
+        "outputs": ["reports/tables/leverage_decay.csv",
+                    "reports/tables/decay_influence.csv",
+                    "reports/tables/decay_approximation_error.csv",
+                    "reports/tables/leverage_break.csv",
+                    "reports/tables/rebalancing_flows.csv",
+                    "reports/tables/delevering_counterfactual.csv",
+                    "data/processed/product_assets_bounds.csv"],
+    }
+    print(json.dumps(qc, indent=1, default=str))
+    return qc
+
+
 RUNNERS = {
     "clean": stage_clean,
     "index": stage_index,
-    "mechanics": _not_yet("mechanics"),
+    "mechanics": stage_mechanics,
     "tail": _not_yet("tail"),
     "signals": _not_yet("signals"),
     "backtest": _not_yet("backtest"),

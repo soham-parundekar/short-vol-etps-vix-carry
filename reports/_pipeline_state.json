@@ -33,5 +33,31 @@
   ],
   "seconds": 6.6,
   "finished_utc": "2026-09-20T18:15:53Z"
+ },
+ "mechanics": {
+  "decay_rows": 36,
+  "anchored_window": [
+   "2014-12-31",
+   "2018-02-26"
+  ],
+  "anchored_sessions": 794,
+  "feb_2018_flow_lower_usd": 1850299936.3137586,
+  "feb_2018_contracts_lower": 55689.99055872863,
+  "feb_2018_share_front_oi_lower": 0.24995058687783264,
+  "feb_2018_share_front_two_oi_lower": 0.10906090992873269,
+  "lower_bound_max_share_front_oi": 0.24995058687783264,
+  "lower_bound_ever_over_100pct_oi": false,
+  "upper_bound_sessions_over_100pct_oi": 7,
+  "outputs": [
+   "reports/tables/leverage_decay.csv",
+   "reports/tables/decay_influence.csv",
+   "reports/tables/decay_approximation_error.csv",
+   "reports/tables/leverage_break.csv",
+   "reports/tables/rebalancing_flows.csv",
+   "reports/tables/delevering_counterfactual.csv",
+   "data/processed/product_assets_bounds.csv"
+  ],
+  "seconds": 3.9,
+  "finished_utc": "2026-09-21T05:12:14Z"
  }
 }

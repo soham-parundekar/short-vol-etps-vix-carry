@@ -236,6 +236,15 @@ CHECKS: tuple[Check, ...] = (
           r"SVIX\s+pays\s+the\s+Sponsor\s+a\s+management\s+fee[^.]{0,220}?"
           r"1\.35\s*%\s*per\s+annum",
           "0.0135", "products.SVIX.fee"),
+    Check("vs_trust_svix_424b3", "SVIX benchmark is its own index, priced 3:45-4:00 p.m.",
+          # SVIX does NOT track the S&P 500 VIX Short-Term Futures Index. Its benchmark
+          # is Volatility Shares' Short VIX Futures Index, computed from a 15-minute
+          # average of futures prices rather than from the settlement. Every SVIX
+          # comparison against the reconstructed S&P index is therefore a benchmark
+          # mismatch, recorded in docs/limitations.md L9.
+          r"calculated\s+daily\s+at\s+4:00\s+p\.m\.\s*\(Eastern\s+time\)\s+from\s+the\s+"
+          r"average\s+price\s+of\s+the\s+VIX\s+futures\s+contracts\s+between\s+3[.:]45",
+          "3:45-4:00 p.m. average, not the settlement"),
     Check("vs_trust_svix_424b3", "SVIX has no acceleration clause (ETF, not ETN)",
           r"commodity\s+pool|series\s+of\s+(?:the\s+)?(?:VS\s+)?Trust",
           "fund structure, not a note"),

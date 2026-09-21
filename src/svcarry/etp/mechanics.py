@@ -58,7 +58,10 @@ __all__ = [
     "rebalancing_trade",
     "wipeout_threshold",
     "theoretical_decay",
+    "decay_blocks",
     "decay_regression",
+    "block_influence",
+    "identity_approximation_error",
     "contracts_equivalent",
     "aggregate_rebalancing_flow",
 ]
@@ -244,6 +247,101 @@ def decay_regression(
         rsquared=float(res.rsquared),
         horizon=horizon,
     )
+
+
+def decay_blocks(
+    product_returns: pd.Series,
+    index_returns: pd.Series,
+    leverage: float,
+    horizon: int = 21,
+    overlapping: bool = False,
+) -> pd.DataFrame:
+    """The regression's own observations, so they can be inspected rather than trusted.
+
+    Returns one row per block with ``y`` (the dependent variable
+    ``ln(V_T/V_0) - L ln(I_T/I_0)``), ``x`` (realised variance over the block) and the
+    block's end date. :func:`decay_regression` fits exactly these points; exposing
+    them is what makes the influence diagnostic below possible.
+    """
+    df = pd.DataFrame({"p": pd.Series(product_returns).astype(float),
+                       "i": pd.Series(index_returns).astype(float)}).dropna()
+    lp, li = np.log1p(df["p"]), np.log1p(df["i"])
+    rv = li ** 2
+    if overlapping:
+        out = pd.DataFrame({
+            "y": lp.rolling(horizon).sum() - leverage * li.rolling(horizon).sum(),
+            "x": rv.rolling(horizon).sum(),
+        }).dropna()
+        out.index.name = "end"
+        return out
+    n = len(df) // horizon
+    cut = n * horizon
+    g = np.repeat(np.arange(n), horizon)
+    B = pd.DataFrame({"lp": lp.iloc[:cut].to_numpy(), "li": li.iloc[:cut].to_numpy(),
+                      "rv": rv.iloc[:cut].to_numpy(), "g": g, "end": df.index[:cut]})
+    a = B.groupby("g").agg(lp=("lp", "sum"), li=("li", "sum"), rv=("rv", "sum"),
+                           end=("end", "max"))
+    out = pd.DataFrame({"y": a["lp"] - leverage * a["li"], "x": a["rv"]})
+    out.index = pd.DatetimeIndex(a["end"], name="end")
+    return out
+
+
+def block_influence(
+    product_returns: pd.Series,
+    index_returns: pd.Series,
+    leverage: float,
+    horizon: int = 21,
+) -> pd.DataFrame:
+    """Leave-one-block-out slopes, sorted by how far each moves the estimate.
+
+    A decay regression run over a sample containing one enormous day is dominated by
+    the block holding it: realised variance enters as the regressor, so that block
+    sits at ten times the usual ``x`` and carries correspondingly high leverage in
+    the statistical sense. Reporting the slope without this diagnostic hides whether
+    the result is a property of the sample or of one observation.
+
+    Returns ``end, slope_without, delta`` with the full-sample slope in
+    ``.attrs['full_slope']``.
+    """
+    B = decay_blocks(product_returns, index_returns, leverage, horizon)
+    y, x = B["y"].to_numpy(), B["x"].to_numpy()
+    full = float(ols(y, x, names=["rv"], cov_type="HC1").params[1])
+    rows = []
+    for k in range(len(y)):
+        m = np.ones(len(y), dtype=bool)
+        m[k] = False
+        s = float(ols(y[m], x[m], names=["rv"], cov_type="HC1").params[1])
+        rows.append({"end": B.index[k], "slope_without": s, "delta": s - full,
+                     "block_x": float(x[k])})
+    out = pd.DataFrame(rows).sort_values("delta", key=np.abs, ascending=False)
+    out.attrs["full_slope"] = full
+    return out.reset_index(drop=True)
+
+
+def identity_approximation_error(leverage: float, index_returns) -> dict:
+    """How far the continuous-rebalancing identity is from discrete daily rebalancing.
+
+    The identity ``V_T/V_0 = (I_T/I_0)^L exp(-(1/2)(L^2-L) sum ln(1+r)^2)`` is derived
+    in continuous time and is accurate only while daily returns are small. What a
+    daily-rebalanced fund actually does is ``prod(1 + L r_t)``, exactly.
+
+    On an ordinary month of VIX futures returns the two agree to a couple of
+    percentage points. Over the block containing 5 February 2018 - a +96% day - they
+    differ by 28 percentage points at ``L = -1``. That is a limitation of the
+    identity, not a defect in the data, and it is the reason the decay regression
+    must be reported with and without that block rather than silently fitted through
+    it.
+    """
+    r = np.asarray(pd.Series(index_returns).dropna(), dtype=float)
+    li = np.log1p(r)
+    exact = float(np.prod(1.0 + leverage * r) - 1.0)
+    approx = float(
+        np.exp(leverage * li.sum() - 0.5 * (leverage ** 2 - leverage) * (li ** 2).sum())
+        - 1.0
+    )
+    return {"leverage": leverage, "n": int(r.size),
+            "max_abs_daily_return": float(np.abs(r).max()) if r.size else np.nan,
+            "exact": exact, "approx": approx, "error_pp": (approx - exact) * 100.0}
 
 
 def contracts_equivalent(

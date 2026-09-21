@@ -226,16 +226,33 @@ def shade_windows(ax, windows: "dict[str, tuple]", label: bool = True, alpha: fl
             )
 
 
-def format_date_axis(ax, fmt: str = "%Y") -> None:
+def format_date_axis(ax, fmt: str | None = None) -> None:
+    """Date ticks that never repeat a label.
+
+    The previous version paired an automatic locator with a fixed ``%Y`` format, so
+    whenever the locator chose half-yearly ticks every year was printed twice. The
+    concise formatter labels each tick at the resolution it actually has. Pass
+    ``fmt`` only for a deliberately fixed format.
+    """
     import matplotlib.dates as mdates
 
-    ax.xaxis.set_major_formatter(mdates.DateFormatter(fmt))
-    ax.xaxis.set_major_locator(mdates.AutoDateLocator(minticks=4, maxticks=10))
+    loc = mdates.AutoDateLocator(minticks=4, maxticks=10)
+    ax.xaxis.set_major_locator(loc)
+    ax.xaxis.set_major_formatter(
+        mdates.DateFormatter(fmt) if fmt else mdates.ConciseDateFormatter(loc)
+    )
 
 
-def add_source(fig, text: str) -> None:
-    """Source / method note, bottom left, in muted ink."""
-    fig.text(0.0, -0.02, text, fontsize=8, color=INK["muted"], ha="left", va="top")
+def add_source(fig, text: str, width: int = 150) -> None:
+    """Source / method note, bottom left, in muted ink, wrapped.
+
+    Wrapped because figures are saved with a tight bounding box: a single long line
+    widens the canvas to fit it and leaves the plot occupying half the image.
+    """
+    import textwrap
+
+    fig.text(0.0, -0.02, textwrap.fill(text, width), fontsize=8, color=INK["muted"],
+             ha="left", va="top")
 
 
 def save_figure(fig, path: str | Path, also_pdf: bool = False) -> Path:

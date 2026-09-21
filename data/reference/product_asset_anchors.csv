@@ -1,0 +1,38 @@
+# Directly disclosed net assets and share counts for the ProShares VIX funds.
+#
+# Source: ProShares Trust II annual report on Form 10-K for the year ended
+# 31 December 2017 (CIK 1415311), archived as
+# references/filings/ProSharesTrustII_10K_FY2017.htm and hash-verified in
+# data/raw/_manifest.json. Every figure below is quoted from that document; none is
+# interpolated, inferred or estimated. Extracted and checked by
+# scripts/extract_filing_terms.py and reports/tables/filing_terms.csv.
+#
+# The year-end rows come from each fund's "Fund Performance" table in Item 7
+# (NAV beginning/end of period, shares outstanding beginning/end of period, per-share
+# NAV). The 2018-02-26 rows come from the 10-K cover page, which states the number of
+# outstanding units as of that date but not their value; nav_usd is therefore blank
+# and the bounding code values them at the market price of the day.
+#
+# These are the ANCHORS. Between and beyond them, assets are bounded, never point
+# estimated - see prompts/tasks/estimate_product_assets.md and docs/methodology.md.
+#
+# Validation of the price series against these: the ratio of per-share NAV between
+# two anchors is invariant to splits, so it is directly comparable to the cumulative
+# split-adjusted return over the same window. Nine such comparisons (3 funds x 3
+# years) agree to within 0.8 percentage points in 8 cases and 2.8 points in the
+# ninth, on a +179% year. See docs/validation.md V11.
+symbol,date,nav_usd,shares_outstanding,nav_per_share,source
+SVXY,2014-12-31,506556124,16500080,30.70,10-K FY2017 Item 7 fund performance table
+SVXY,2015-12-31,642811361,25300080,25.41,10-K FY2017 Item 7 fund performance table
+SVXY,2016-12-31,228075387,5000000,45.62,10-K FY2017 Item 7 fund performance table
+SVXY,2017-12-31,770163871,6050000,127.30,10-K FY2017 Item 7 fund performance table
+SVXY,2018-02-26,,58100000,,10-K FY2017 cover page: units outstanding as of 2018-02-26
+UVXY,2014-12-31,351789953,28040,12546.00,10-K FY2017 Item 7 fund performance table
+UVXY,2015-12-31,547708740,195025,2808.40,10-K FY2017 Item 7 fund performance table
+UVXY,2016-12-31,515758754,2965383,173.93,10-K FY2017 Item 7 fund performance table
+UVXY,2017-12-31,394035141,38127238,10.33,10-K FY2017 Item 7 fund performance table
+UVXY,2018-02-26,,23327238,,10-K FY2017 cover page: units outstanding as of 2018-02-26
+VIXY,2014-12-31,111459325,266241,418.64,10-K FY2017 Item 7 fund performance table
+VIXY,2015-12-31,105272823,397491,264.84,10-K FY2017 Item 7 fund performance table
+VIXY,2016-12-31,174160146,2052363,84.86,10-K FY2017 Item 7 fund performance table
+VIXY,2017-12-31,137741560,5901317,23.34,10-K FY2017 Item 7 fund performance table

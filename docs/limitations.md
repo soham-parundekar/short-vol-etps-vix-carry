@@ -120,9 +120,56 @@ rule out a common one.
 
 ---
 
+## L9. SVIX does not track the index this project reconstructs
+
+SVIX's benchmark is Volatility Shares' own Short VIX Futures Index, which the
+prospectus describes as "calculated daily at 4:00 p.m. (Eastern time) from the average
+price of the VIX futures contracts between 3.45 p.m. and 4:00 p.m." - a fifteen-minute
+average, not the settlement price the S&P index and this reconstruction use. Every
+SVIX comparison against the reconstructed index is therefore a benchmark mismatch.
+
+**What it bears on.** SVIX's tracking error, its decay slope (-1.17 against -1.00) and
+especially its decay intercept (-8.75%/yr with the slope held at theory). None of
+those is evidence for or against the leverage-decay identity. SVIX is kept in the
+tables, labelled, because the comparison is still informative about how closely a
+differently-priced short-volatility product follows the S&P construction.
+
+---
+
+## L10. The flow result covers a window and two funds
+
+Assets can be bounded only between disclosed anchors, which currently run from
+31 December 2014 to 26 February 2018 (794 sessions), and only for SVXY and UVXY among
+the geared products. Nothing is claimed outside that window. XIV - the largest -1x
+product on 5 February 2018 - and the other ETNs are excluded.
+
+**Consequence.** The lower-bound flow understates the complex by construction, which
+makes it a conservative basis for H2. The upper bound is not informative wherever a
+fund's share count moved sharply between annual anchors: it exceeds the whole
+front-month contract on 7 sessions, and on 6 of the 10 largest up-moves of 2016-2018
+the H2 threshold is met only at that bound.
+
+**What would improve it.** Later ProShares 10-Ks (to extend the window past February
+2018) and a daily shares-outstanding source (to replace the bounding assumption in
+`docs/methodology.md` M4 with observations).
+
+---
+
+## L11. The decay intercept is not separately identified
+
+The intercept of the decay regression absorbs the fee, the yield on collateral, the
+ER/TR distinction, trading costs and any slope error together. Holding the slope at
+theory removes the last; the others remain confounded. Intercepts are reported as a
+warning-level check, not as estimates of any one cost.
+
+---
+
 ## L8. Open questions carried forward
 
 1. The 2016 and 2019 steps in the tracking-error series are unexplained (L1).
 2. Post-October-2020 slopes are 0.985, 0.991 and 0.971 rather than 1.000. Whether the
    residual 1-3% is product tracking difficulty, fee drag mis-attributed to the
    slope, or remaining index noise is not resolved.
+3. The decay intercepts (L11).
+4. Whether the H2 threshold is met on the six large 2016-2018 up-moves where it is
+   met only at the upper asset bound (L10).

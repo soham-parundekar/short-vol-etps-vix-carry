@@ -34,6 +34,8 @@ __all__ = [
     "plot_term_structure",
     "plot_decay_regression",
     "plot_flow_vs_open_interest",
+    "plot_decay_blocks",
+    "plot_asset_bounds",
     "plot_mean_excess",
     "plot_gpd_qq",
     "plot_survival_curves",
@@ -169,29 +171,153 @@ def plot_decay_regression(results: "dict[str, object]", source: str = _SOURCE):
 def plot_flow_vs_open_interest(
     share_lower: pd.Series, share_upper: pd.Series, index_return: pd.Series | None = None,
     windows: "dict[str, tuple] | None" = None, source: str = _SOURCE,
+    annotate: "pd.Timestamp | str | None" = None,
 ):
     """Mechanical rebalancing demand as a share of front-month open interest.
 
-    Drawn as a band between the lower and upper asset bounds, because assets
-    outstanding are inferred rather than observed for most of the sample. A single
-    line here would claim a precision the inputs do not support.
+    Two panels, one axis each. The top panel is the LOWER asset bound, which carries
+    the claim. The bottom panel is the upper bound against a reference at 100% of
+    open interest. They are separated because the upper bound, built from annual
+    anchors, exceeds the entire front-month contract whenever a fund's share count
+    moved sharply between year-ends - which marks it as uninformative there, not the
+    trade as that large - and on a shared axis it would flatten the line the
+    conclusion rests on. There is deliberately no midpoint: the midpoint of a bound
+    known to be implausible at one end is not an estimate of anything.
     """
-    fig, ax = new_figure(
-        "End-of-day rebalancing demand from leveraged and inverse VIX products",
-        "Implied trade as a share of front-month open interest",
-        figsize=(9.5, 4.8),
-    )
+    import matplotlib.pyplot as plt
+
+    from .style import apply_style
+
+    apply_style()
+    lo = share_lower.dropna() * 100.0
+    up = share_upper.reindex(lo.index) * 100.0
+    fig, (a1, a2) = plt.subplots(2, 1, figsize=(10.0, 6.8), sharex=True,
+                                 gridspec_kw={"height_ratios": [1.15, 1.0]})
     if windows:
-        shade_windows(ax, windows)
-    ax.axhline(0.0, color=INK["muted"], lw=0.8)
-    ax.fill_between(share_lower.index, share_lower.values, share_upper.values,
-                    color=PALETTE[0], alpha=0.30, lw=0,
-                    label="range implied by the asset bounds")
-    mid = (share_lower + share_upper) / 2.0
-    ax.plot(mid.index, mid.values, color=PALETTE[0], lw=1.0, label="midpoint")
-    ax.legend(loc="upper left")
-    format_date_axis(ax)
-    add_source(fig, source + " Assets outstanding bounded between disclosed anchors; see docs/methodology.md.")
+        shade_windows(a1, windows)
+    a1.plot(lo.index, lo.values, color=PALETTE[0], lw=1.4)
+    a1.set_ylim(0, max(30.0, float(np.nanmax(lo.values)) * 1.18))
+    a1.set_title("Lower asset bound - the figure the conclusion rests on",
+                 loc="left", color=INK["primary"], fontsize=10.5)
+    a1.set_ylabel("% of front-month OI")
+    if annotate is not None:
+        d = pd.Timestamp(annotate)
+        if d in lo.index:
+            a1.plot([d], [lo[d]], "o", ms=8, color=PALETTE[0], mec=INK["surface"],
+                    mew=2, zorder=4)
+            a1.annotate(f"{d:%-d %b %Y}: {lo[d]:.1f}%", xy=(d, lo[d]),
+                        xytext=(-10, 4), textcoords="offset points", ha="right",
+                        fontsize=9.5, color=INK["primary"])
+    n_over = int((up > 100.0).sum())
+    a2.axhline(100.0, color=INK["muted"], lw=1.0, ls=(0, (4, 3)))
+    a2.annotate("the whole front-month contract", xy=(lo.index[0], 100.0),
+                xytext=(4, 4), textcoords="offset points", fontsize=8.5,
+                color=INK["muted"], va="bottom")
+    a2.plot(up.index, up.values, color=PALETTE[1], lw=1.0)
+    a2.set_title(f"Upper asset bound - exceeds the whole contract on {n_over} sessions, "
+                 "so not informative where share counts moved between anchors",
+                 loc="left", color=INK["primary"], fontsize=10.5)
+    a2.set_ylabel("% of front-month OI")
+    format_date_axis(a2)
+    fig.suptitle("End-of-day rebalancing demand from the ProShares geared VIX funds",
+                 x=0.01, ha="left", color=INK["primary"], fontsize=12)
+    fig.tight_layout()
+    add_source(fig, source + " SVXY and UVXY only: XIV and every other product is "
+               "excluded, so the lower bound understates the complex. Assets bounded "
+               "between ProShares 10-K anchors; see docs/methodology.md.")
+    return fig
+
+
+def plot_decay_blocks(panels: "list[dict]", source: str = _SOURCE):
+    """The decay regression's own observations, one panel per product and era.
+
+    Each dict carries ``title``, ``blocks`` (frame with ``x``, ``y`` indexed by block
+    end), ``theory`` (slope), and optionally ``flag`` (a block-end date to ring and
+    label). Two lines per panel: the theoretical slope, and the least-squares fit.
+    Seeing the points is what makes the influence of a single block undeniable; a
+    coefficient table alone would hide it.
+    """
+    import matplotlib.pyplot as plt
+
+    from .style import apply_style
+
+    apply_style()
+    n = len(panels)
+    ncol = 2
+    nrow = int(np.ceil(n / ncol))
+    fig, axes = plt.subplots(nrow, ncol, figsize=(10.0, 3.9 * nrow), squeeze=False)
+    for k, pnl in enumerate(panels):
+        ax = axes[k // ncol][k % ncol]
+        B = pnl["blocks"]
+        x, y = B["x"].to_numpy(), B["y"].to_numpy()
+        ax.scatter(x, y, s=34, color=PALETTE[0], edgecolor=INK["surface"],
+                   linewidth=1.2, zorder=3, label="21-day block")
+        xs = np.linspace(0.0, float(np.nanmax(x)) * 1.04, 50)
+        a_th = float(np.nanmean(y - pnl["theory"] * x))
+        ax.plot(xs, a_th + pnl["theory"] * xs, color=INK["secondary"], lw=1.6,
+                zorder=2, label="theoretical slope")
+        b, a = np.polyfit(x, y, 1)
+        ax.plot(xs, a + b * xs, color=PALETTE[1], lw=1.6, ls=(0, (5, 2)), zorder=2,
+                label="least-squares fit")
+        if pnl.get("flag") is not None:
+            f = pd.Timestamp(pnl["flag"])
+            if f in B.index:
+                ax.scatter([B.at[f, "x"]], [B.at[f, "y"]], s=150, facecolor="none",
+                           edgecolor=INK["primary"], linewidth=1.4, zorder=4)
+                ax.annotate("block holding\n5-6 Feb 2018", xy=(B.at[f, "x"], B.at[f, "y"]),
+                            xytext=(-12, 0), textcoords="offset points", ha="right",
+                            va="center", fontsize=8.5, color=INK["primary"])
+        ax.set_title(pnl["title"], color=INK["primary"], fontsize=10.5)
+        ax.set_xlabel("realised variance over the block")
+        if k % ncol == 0:
+            ax.set_ylabel(r"$\ln(V_T/V_0) - L\,\ln(I_T/I_0)$")
+    for k in range(n, nrow * ncol):
+        axes[k // ncol][k % ncol].set_visible(False)
+    axes[0][0].legend(loc="lower left", fontsize=8.5)
+    fig.suptitle("Leverage decay by 21-day block: theory against fit",
+                 x=0.01, ha="left", color=INK["primary"], fontsize=12)
+    fig.tight_layout()
+    add_source(fig, source)
+    return fig
+
+
+def plot_asset_bounds(bounds: "dict[str, pd.DataFrame]",
+                      anchors: pd.DataFrame, source: str = _SOURCE):
+    """Net assets per product: the band between the bounds, with the disclosed
+    anchors on top. A band that does not visibly pass through every anchor is wrong,
+    which is the check this figure exists to make easy."""
+    import matplotlib.pyplot as plt
+
+    from .style import SEQUENTIAL, apply_style
+
+    apply_style()
+    syms = list(bounds)
+    fig, axes = plt.subplots(len(syms), 1, figsize=(9.5, 2.9 * len(syms)), sharex=True)
+    axes = np.atleast_1d(axes)
+    for ax, s in zip(axes, syms):
+        b = bounds[s]
+        b = b[~b["extrapolated"]]
+        ax.fill_between(b.index, b["assets_lower"] / 1e9, b["assets_upper"] / 1e9,
+                        color=SEQUENTIAL[2], lw=0, label="bounded range", zorder=1)
+        ax.plot(b.index, b["assets_lower"] / 1e9, color=PALETTE[0], lw=1.4,
+                label="lower bound", zorder=2)
+        a = anchors[anchors["symbol"] == s]
+        vals = []
+        for _, row in a.iterrows():
+            d = pd.Timestamp(row["date"])
+            v = b["assets_central"].asof(d) if d >= b.index.min() else np.nan
+            vals.append((d, row["nav_usd"] / 1e9 if np.isfinite(row["nav_usd"]) else v / 1e9))
+        ax.scatter([d for d, _ in vals], [v for _, v in vals], s=46, color=INK["primary"],
+                   edgecolor=INK["surface"], linewidth=1.4, zorder=4,
+                   label="disclosed anchor (10-K)")
+        ax.set_ylabel("$bn")
+        ax.set_title(s, loc="left", color=INK["primary"], fontsize=10.5)
+    axes[0].legend(loc="upper left", fontsize=8.5)
+    fig.suptitle("Net assets: bounded between disclosed anchors, never point-estimated",
+                 x=0.01, ha="left", color=INK["primary"], fontsize=12)
+    format_date_axis(axes[-1])
+    fig.tight_layout()
+    add_source(fig, source + " Anchors: ProShares Trust II 10-K FY2017.")
     return fig
 
 

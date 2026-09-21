@@ -126,14 +126,28 @@ def test_decay_regression_marks_theory():
     assert [t.get_text() for t in ax.get_yticklabels()] == ["SVXY (-1x)", "UVXY (2x)"]
 
 
-def test_flow_figure_draws_a_band_not_a_line():
+def test_flow_figure_shows_both_bounds_and_no_point_estimate():
+    """Both asset bounds are drawn, each on its own axis, and nothing between them.
+
+    The figure used to draw a band with a midpoint. The midpoint went when the upper
+    bound turned out to exceed the whole front-month contract on some sessions: the
+    midpoint of a bound known to be implausible at one end is not an estimate. What
+    this test protects is the principle underneath - never a single number where the
+    inputs support only a range.
+    """
     n = 300
-    lo = pd.Series(np.random.default_rng(0).normal(0.02, 0.01, n), index=_idx(n))
+    lo = pd.Series(np.random.default_rng(0).normal(0.02, 0.01, n), index=_idx(n)).abs()
     hi = lo + 0.03
-    fig = F.plot_flow_vs_open_interest(lo, hi, windows={"volmageddon_2018": ("2010-06-01", "2010-07-01")})
-    ax = fig.axes[0]
-    assert len(ax.collections) >= 1, "asset-bound band must be drawn"
-    assert _has_legend(ax)
+    fig = F.plot_flow_vs_open_interest(lo, hi, annotate=lo.index[100])
+    assert len(fig.axes) == 2, "one axis per bound, never a dual axis"
+    top, bottom = fig.axes
+    assert len(top.get_lines()) >= 1 and len(bottom.get_lines()) >= 2
+    assert "lower" in top.get_title(loc="left").lower()
+    assert "upper" in bottom.get_title(loc="left").lower()
+    labels = " ".join(ln.get_label().lower() for ax in fig.axes for ln in ax.get_lines())
+    assert "midpoint" not in labels and "central" not in labels
+    ref = [ln for ln in bottom.get_lines() if np.allclose(ln.get_ydata(), 100.0)]
+    assert ref, "the upper panel must show the 100%-of-open-interest reference"
 
 
 def test_mean_excess_and_qq():
