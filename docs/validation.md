@@ -1193,6 +1193,61 @@ total return (the windows are losses: -8.9%, -4.8%, -3.2% against a total of +68
 
 ---
 
+## V36. Clean-clone reproduction (Phase 15)
+
+The repository was cloned to a fresh directory and exercised as a reader would. What
+happened, in full, including the two defects it found.
+
+**What reproduces from the clone alone.**
+
+| Step | Result |
+|---|---|
+| `python scripts/run_tests.py` | **245 passed, 2 skipped** — identical to the source tree |
+| `python scripts/check_results_numbers.py` | **passes** — every number in the four write-ups matches its committed table |
+| `python scripts/make_figures.py` | **20 of 24 figures rebuild**; 4 fail with a clear message |
+| `python scripts/run_pipeline.py --only clean` | stops with exit code **2** and names the command to run |
+
+**What does not, and why that is correct.** `data/raw/` is gitignored, so a clone holds
+the manifest but not the 338 raw files. The pipeline does not download implicitly: the
+clean stage stops with
+
+> Missing raw VIX futures files: data/raw/cboe/vx → run: `python scripts/fetch_data.py --only futures`
+
+and explains that every input must come through `fetch_data.py` so that its URL,
+retrieval time and SHA-256 are recorded. Four figures (`index_vs_products`,
+`decay_regression`, `decay_blocks`, `feb2018_detail`) read cached product price files
+rather than a processed CSV, so they fail the same way and `make_figures.py` exits 1.
+That is the intended behaviour, not a reproduction failure: the alternative is a figure
+built from data whose provenance was never recorded.
+
+**Defect 1: three committed figures were stale.** Rebuilding all 24 figures produced
+byte-identical output for 21 and *different* output for `feb2018_detail`,
+`rolling_sharpe` and `weight_and_binding_constraint`. The cause is a Phase 14 gap, not
+non-determinism: those three were last written in Phase 11 (commit 9ed5840), while
+`viz/figures.py` changed in Phase 14 (7ca64e4), so the figures in the repository were
+not the output of the code that builds them. Rebuilt and committed in Phase 15. Three
+consecutive rebuilds now give byte-identical output, and the rebuilt versions were each
+read and checked against the claims they support.
+
+**Defect 2: `shade_windows` measured the axis before there was one.** The stress-window
+labels all sit on one row, so `volmageddon 2018` and `covid 2020` — about two years
+apart on an eighteen-year axis — printed on top of each other. A first fix compared the
+gap between windows against `ax.get_xlim()`, which looked right and did nothing, because
+`shade_windows` is called *before* the data is plotted: the limits are still matplotlib's
+default `(0, 1)`, so every gap measured as enormous. (The same latent assumption sits in
+the open-window branch, which resolves `hi=None` to `get_xlim()[1]`; it is not exercised
+by any current figure and is left as a known limitation rather than changed untested.)
+The working fix defers the decision to draw time and compares the labels' *rendered*
+extents, which is the only point at which both the limits and the text width exist. A
+test asserts the labels do not overlap and fails on the pre-fix behaviour.
+
+**What this test does not establish.** That the tables themselves reproduce from raw
+data — that needs the 338 raw files, which this environment cannot fetch (see the note
+in `README.md`). The clone test establishes that the code, the tests, the number checks
+and 20 of the 24 figures reproduce from what the repository actually contains.
+
+---
+
 ## Open items
 
 1. The 2016 and 2019 steps in V6 are not explained.
@@ -1210,3 +1265,7 @@ total return (the windows are losses: -8.9%, -4.8%, -3.2% against a total of +68
 7. Why a 21-day rebalance does better than a daily one (0.42 against 0.27) is not
    established: lower costs and a lucky alignment around February 2018 both
    contribute, and this sample cannot separate them.
+8. `shade_windows` resolves an open window's right edge with `ax.get_xlim()[1]`, which
+   is matplotlib's default `(0, 1)` when the function is called before the data is
+   plotted (V36, defect 2). No current figure passes an open window, so the path is
+   unexercised; it is recorded rather than changed without a case to test it against.

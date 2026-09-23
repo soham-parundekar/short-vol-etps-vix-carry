@@ -981,3 +981,74 @@ leaves 18 rows both times.
 ### Next
 
 Phase 15 — documentation and the report.
+
+---
+
+## Session 12 — 24 September 2026
+
+**Phase 15 — documentation and report.** The phase prompt's instruction was to write the
+key findings first: "If that section cannot be written clearly, the project is not
+finished." It could, in three sentences, and they are now the opening of the report, the
+README and the one-page summary, saying the same thing in the same numbers.
+
+### Written
+
+* `reports/report.md` — the full write-up. Introduction, institutional background built
+  from the 28 verified filing terms, data with its three hazards, methodology, results in
+  seven findings, robustness and red-team, discussion, limitations, conclusion,
+  references.
+* `reports/summary_one_page.md` — question, method, three findings, one caveat.
+* `README.md` — key findings with numbers matching `docs/results.md`; a main-outputs
+  section; limitations rewritten to name the weaknesses actually found (grid median 0.06,
+  the constant short's 0.40, the 0.72% margin, the 2.05-tick breakeven, H3's unmet
+  magnitude) rather than the generic ones written before any results existed.
+
+### The number check now covers everything
+
+`scripts/check_results_numbers.py` was written in Phase 13 for `docs/results.md`. It now
+asserts the report, the summary and the README as well — 28 further assertions covering
+filing-term coverage, the sample span, the roll-convention evidence, the ex-ante GARCH
+and EVT parameters, the warning path date by date, the probability ratio across the whole
+threshold grid, and the red-team answers the report quotes.
+
+It caught one error immediately: the report said 24 verified filing terms and the table
+holds 28. The table was right.
+
+### The clean-clone reproduction found two defects
+
+Recorded in full as V36. In summary:
+
+* **Three committed figures were not the output of the code that builds them.**
+  `feb2018_detail`, `rolling_sharpe` and `weight_and_binding_constraint` were last
+  written in Phase 11; `viz/figures.py` changed in Phase 14. Rebuilding produced
+  byte-identical output for the other 21 and different output for these three. Rebuilt,
+  inspected against the claims they support, and committed. This is the second time a
+  "the script ran, therefore the artefact is current" assumption has been wrong in this
+  project, after the stale bundle in Phase 09.
+* **A fix that looked right and did nothing.** The stress-window labels collided
+  (`volmageddon 2018` over `covid 2020`). The first fix compared the gap between windows
+  against `ax.get_xlim()` — but `shade_windows` runs *before* the data is plotted, so the
+  limits were still `(0, 1)` and every gap measured as enormous. The figure came back
+  unchanged, which is the only reason it was caught. The working version defers to draw
+  time and compares rendered text extents. Mutation-checked: the test fails on the
+  pre-fix behaviour.
+
+What a clone reproduces: 245 tests, the number check, and 20 of 24 figures. What it does
+not: anything needing the 338 raw files, which are gitignored by design — the pipeline
+stops with exit code 2 and names the command to run rather than downloading implicitly.
+
+### Divergences from the prompt pack, this phase
+
+* The prompt asks for an 8–10 page report; `reports/report.md` is about that length in
+  print but is written as a repository document with tables and links rather than as a
+  paginated PDF. No PDF is produced, because every number in it is asserted against a
+  live table by a script and a PDF would freeze that link.
+* The prompt asks to "update the prompt pack where execution diverged". The divergences
+  from earlier phases were already recorded where they happened — the running-max stress
+  floor replacing the event floor (M8), SPY rather than SPX for the variance proxy (M7),
+  the log-HAR target correction (V20a). This session added no new methodological
+  divergence, so the pack is unchanged beyond this note.
+
+### Next
+
+Phase 16 — final audit.

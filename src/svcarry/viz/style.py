@@ -214,16 +214,47 @@ def shade_windows(ax, windows: "dict[str, tuple]", label: bool = True, alpha: fl
     ``windows`` maps a label to ``(start, end)``; ``end`` may be ``None`` for an
     open window. Shading sits behind the grid so it never competes with the series.
     """
-    for i, (name, (lo, hi)) in enumerate(windows.items()):
+    texts = []
+    for name, (lo, hi) in windows.items():
         x0 = pd.Timestamp(lo)
         x1 = pd.Timestamp(hi) if hi else ax.get_xlim()[1]
         ax.axvspan(x0, x1, color=INK["stress"], zorder=0, alpha=alpha, lw=0)
         if label:
-            ax.annotate(
+            texts.append(ax.annotate(
                 name.replace("_", " "), xy=(x0, 1.0), xycoords=("data", "axes fraction"),
                 xytext=(2, -10), textcoords="offset points", fontsize=8,
                 color=INK["muted"], rotation=0, ha="left", va="top",
-            )
+            ))
+
+    if texts:
+        _stagger_on_draw(ax, texts)
+
+
+def _stagger_on_draw(ax, texts, row_height: float = 11.0) -> None:
+    """Drop a label onto a lower row when it would overlap the one before it.
+
+    The decision needs the rendered width of each label and the final axis limits,
+    and neither exists when ``shade_windows`` is called - it runs before the data is
+    plotted, so ``ax.get_xlim()`` is still matplotlib's default ``(0, 1)``. So the
+    check is deferred to draw time, where both are known, and measured in display
+    coordinates against the actual text extents rather than guessed from a gap
+    threshold in data units.
+    """
+    def place(_event=None):
+        renderer = ax.figure.canvas.get_renderer()
+        for t in texts:                       # measure every label on the top row
+            t.set_position((t.get_position()[0], -10.0))
+        prev_right, prev_row = None, 0
+        for t in texts:
+            box = t.get_window_extent(renderer=renderer)
+            row = 0
+            if prev_right is not None and box.x0 < prev_right:
+                row = 1 - prev_row            # collides: use the other row
+            t.set_position((t.get_position()[0], -10.0 - row_height * row))
+            prev_right, prev_row = box.x1, row
+
+    ax.figure.canvas.mpl_connect("draw_event", place)
+    ax._svcarry_stagger = place               # keep a handle for tests and re-draws
 
 
 def format_date_axis(ax, fmt: str | None = None) -> None:

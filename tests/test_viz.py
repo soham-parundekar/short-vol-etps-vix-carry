@@ -23,6 +23,7 @@ from svcarry.viz.style import (
     apply_style,
     greyscale_check,
     series_style,
+    shade_windows,
 )
 
 
@@ -349,3 +350,37 @@ def test_index_vs_products_clips_the_residual_axis_and_says_so():
     assert rax.get_ylim()[0] > -0.6 * 1e4, "the outlier must not set the axis"
     note = " ".join(t.get_text() for t in fig.texts)
     assert "clipped" in note and "6,200" in note.replace("-6,200", "6,200")
+
+
+def test_stress_labels_stagger_when_windows_are_close_together():
+    """volmageddon 2018 and covid 2020 sit close enough on a 2008-2026 axis that one
+    label lands on top of the other. The check runs at draw time, because
+    shade_windows is called before the data is plotted and so cannot know either the
+    axis limits or the rendered width of a label.
+    """
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(9.5, 4.6))
+    shade_windows(ax, {
+        "gfc_2008": ("2008-09-01", "2008-12-31"),
+        "euro_2011": ("2011-08-01", "2011-10-31"),
+        "volmageddon_2018": ("2018-01-26", "2018-02-28"),
+        "covid_2020": ("2020-02-19", "2020-04-30"),
+    })
+    idx = pd.bdate_range("2008-01-02", "2026-09-18")
+    ax.plot(idx, np.arange(len(idx)))
+    fig.canvas.draw()
+
+    rows = {t.get_text(): round(t.get_position()[1], 3) for t in ax.texts}
+    assert rows["gfc 2008"] == rows["euro 2011"], \
+        "windows far apart share the top row"
+    assert rows["covid 2020"] != rows["volmageddon 2018"], \
+        "windows close together must not collide"
+
+    # and the labels really do not overlap once placed
+    r = fig.canvas.get_renderer()
+    boxes = {t.get_text(): t.get_window_extent(renderer=r) for t in ax.texts}
+    v, c = boxes["volmageddon 2018"], boxes["covid 2020"]
+    assert c.x0 < v.x1, "this test is only meaningful while the two would collide"
+    assert (c.y0 >= v.y1) or (v.y0 >= c.y1), "the two labels still overlap"
+    plt.close(fig)
