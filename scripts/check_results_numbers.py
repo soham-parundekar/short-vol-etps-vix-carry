@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
-"""Check every headline number in docs/results.md against the committed tables.
+"""Check every headline number in the write-ups against the committed tables.
 
 Phase 13's rule is that a number in the prose must be pointable to a table. This
-script is that rule, executable: it reads the tables and asserts the figures the
-results document quotes. It is deliberately dumb - the expected values are written
-out here, so a pipeline change that moves a number fails this check instead of
+script is that rule, executable: it reads the tables and asserts the figures
+quoted in `docs/results.md`, `reports/report.md`, `reports/summary_one_page.md`
+and `README.md`. It is deliberately dumb - the expected values are written out
+here, so a pipeline change that moves a number fails this check instead of
 silently disagreeing with the write-up.
 
     python scripts/check_results_numbers.py        # exits 1 on any mismatch
+
+Numbers quoted in the prose but not held in a table (derivations, filing
+quotations, commit hashes and timestamps) are traced in `docs/validation.md` at
+the section named beside them, and are out of this script's scope by design: it
+checks the table-to-prose link, not the data-to-table one, which is what the
+pipeline's own validation stages do.
 """
 
 from __future__ import annotations
@@ -128,12 +135,101 @@ def main() -> int:
     lo = rc.index[rc.index.get_loc(hi) - 1]
     chk("cost breakeven (ticks)", lo + (hi - lo) * rc[lo] / (rc[lo] - rc[hi]), 2.05, 0.02)
 
+    # ---- numbers first quoted in reports/report.md and reports/summary_one_page.md ----
+
+    # Section 2: the filings. Every product term the report tabulates was matched.
+    ft = pd.read_csv(T / "filing_terms.csv")
+    if not bool(ft["found"].all()):
+        missing = ft.loc[~ft["found"].astype(bool), "claim"].tolist()
+        fails.append(f"report section 2: filing terms not found in the documents: {missing}")
+    if not (ft["agrees"] != "no").all():
+        fails.append("report section 2: a filing term disagrees with config")
+    chk("report: number of verified filing terms", len(ft), 28, 0.0)
+
+    # Section 3: sample span, from the index itself rather than a table.
+    idx = pd.read_csv(ROOT / "data" / "processed" / "index_daily.csv", parse_dates=["date"])
+    chk("report: index sessions", len(idx), 4711, 0.0)
+    for label, got, want in [("first", str(idx["date"].min().date()), "2008-01-02"),
+                             ("last", str(idx["date"].max().date()), "2026-09-18")]:
+        if got != want:
+            fails.append(f"report: sample {label} session is {got}, the write-ups say {want}")
+
+    # Section 4.1: the roll convention was chosen on evidence, not asserted.
+    rv = pd.read_csv(T / "roll_convention.csv")
+    rv = rv[(rv["convention"] == "sp_dji") & (rv["symbol"] == "VIXY")].iloc[0]
+    chk("report: roll-weight loading t-stat (VIXY)", rv["t_stat"], -0.61, 0.03)
+    chk("report: roll-weight loading p-value (VIXY)", rv["p_value"], 0.54, 0.03)
+
+    # Section 4.3 / 5.4: the ex-ante model, as the report states its parameters.
+    gf = pd.read_csv(T / "garch_fit.csv").set_index("sample").loc["pre2018"]
+    chk("report: GARCH persistence", gf["persistence"], 0.938)
+    chk("report: GARCH nu", gf["nu"], 5.75)
+    chk("report: GARCH lambda", gf["lambda"], 0.201)
+    chk("report: GARCH alpha", gf["alpha"], 0.279)
+    chk("report: GARCH gamma", gf["gamma"], -0.245)
+    chk("report: GARCH beta", gf["beta"], 0.781)
+    if not gf["max_param_diff_between_seeds"] < 1e-5:
+        fails.append("report: the two GARCH seeds do not agree to 1e-5")
+
+    ev = pd.read_csv(T / "evt_thresholds.csv")
+    ev = ev[(ev["sample"] == "pre2018") & (ev["chosen"])].iloc[0]
+    chk("report: EVT threshold quantile", ev["q"], 0.925, 1e-9)
+    chk("report: EVT exceedances", ev["n_exceed"], 189, 0.0)
+    chk("report: EVT shape xi", ev["xi"], 0.181)
+
+    # Section 5.4: the warning path the report walks date by date.
+    wp = pd.read_csv(T / "exante_warning_path.csv", parse_dates=["date"]).set_index("date")
+    for d, want in [("2018-01-12", 3877.0), ("2018-01-29", 1941.0),
+                    ("2018-02-02", 294.0), ("2018-02-05", 12.8)]:
+        chk(f"report: ex-ante return period {d}", wp.loc[d, "return_period_years_-1x"], want)
+    chk("report: 5 Feb morning, one in N trading days",
+        1.0 / wp.loc["2018-02-05", "p_daily_-1x"], 3200, 0.02)
+    chk("report: settlement-based index return 5 Feb 2018",
+        wp.loc["2018-02-05", "index_return"], 0.961)
+
+    # Section 5.4 / 8: the design gap across the whole threshold grid.
+    sbt = pd.read_csv(T / "survival_by_threshold.csv")
+    ratio = (pd.read_csv(T / "termination_probabilities.csv")
+             .query("fit == 'pre2018' and state == 'unconditional'")
+             .pivot(index="q", columns="design", values="p_daily"))
+    ratio = ratio["-1x"] / ratio["-0.5x"]
+    chk("report: probability ratio, grid minimum", ratio.min(), 5.3, 0.02)
+    chk("report: probability ratio, grid maximum", ratio.max(), 9.4, 0.02)
+    chk("report: survival gap, capped, grid maximum",
+        sbt[sbt["dynamics"] == "capped"]["gap_pp"].max(), 9.43, 0.01)
+
+    # Section 5.6: the HAR's out-of-sample correlation claim ("0.54 against 0.53").
+    hf = pd.read_csv(T / "har_oos_diagnostics.csv")
+    hf = hf[hf["period"] == "full"].set_index("model")
+    chk("report: HAR level-spec R2", hf.loc["HAR level", "oos_r2_vs_eval_mean"], 0.053, 0.05)
+
+    # Section 5.7 and the summary: the benchmark table the comparison rests on.
+    chk("report: strategy annualised volatility", po.loc["strategy", "ann_vol"], 0.126)
+    chk("report: strategy time invested", po.loc["strategy", "time_invested"], 0.726)
+    chk("report: out-of-sample sessions", po.loc["strategy", "n"], 2695, 0.0)
+    chk("report: buy-and-hold -1x drawdown",
+        po.loc["buy-and-hold -1x (XIV fee)", "max_drawdown"], -0.992, 0.01)
+
+    # Section 6: the red-team answers the report quotes.
+    rt = pd.read_csv(T / "redteam_answers.csv").set_index("question")
+    leak = [q for q in rt.index if q.startswith("2.")][0]
+    if "1.12" not in str(rt.loc[leak, "number"]):
+        fails.append("report section 6: the leak-calibration Sharpe is no longer 1.12")
+    conc = [q for q in rt.index if q.startswith("6.")][0]
+    for token in ("11.7%", "17.0%"):
+        if token not in str(rt.loc[conc, "number"]):
+            fails.append(f"report section 6: concentration answer no longer quotes {token}")
+    per = [q for q in rt.index if q.startswith("5.")][0]
+    for token in ("68.7%", "-8.9%", "-4.8%", "-3.2%", "25.5%"):
+        if token not in str(rt.loc[per, "number"]):
+            fails.append(f"report section 6: period answer no longer quotes {token}")
+
     if fails:
-        print(f"{len(fails)} number(s) in docs/results.md do not match the tables:")
+        print(f"{len(fails)} number(s) in the write-ups do not match the tables:")
         for line in fails:
             print("  " + line)
         return 1
-    print("docs/results.md: every checked number matches its committed table")
+    print("results.md, report.md, summary_one_page.md, README.md: every checked number matches its committed table")
     return 0
 
 

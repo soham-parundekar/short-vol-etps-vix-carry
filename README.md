@@ -14,23 +14,47 @@ what a crash would cost.
 
 ---
 
+## Key findings
+
+**The reconstructed index and the products that tracked it were measured fifteen minutes
+apart until October 2020, and that timing — not fee drag or tracking difficulty —
+accounts for most of their apparent disagreement:** tracking error against VIXY falls from
+**133.2 bp a day** in 2011–2015 to **31.7 bp a day** after the settlement time changed, and
+on 5 February 2018 **57.5%** of the index's **+96.1%** move, in log terms, occurred after
+the products' 4:00 p.m. close. On that day the mechanical rebalancing demand of SVXY and
+UVXY alone was an estimated **55,690 front-month contracts, 25.0% of that contract's open
+interest** at the lower asset bound, which the 2018 de-levering would have cut to **20,884
+contracts and 9.4%** — arithmetic from disclosed assets, not an estimate. **Bounding
+position size by an explicitly estimated crash loss does change the loss distribution** —
+an out-of-sample Sharpe of **0.27** and a **−26.3%** drawdown against **0.06** and
+**−43.2%** for volatility targeting alone — **but it does not create return:** a constant
+0.173 short earns **0.40**, the alpha over PUT/SPX/VXX is **−1.4% a year (t = −0.52)**, and
+the median of the 144-specification grid the pre-registered configuration was drawn from is
+**0.06**.
+
+Full write-up: [`reports/report.md`](reports/report.md) ·
+one page: [`reports/summary_one_page.md`](reports/summary_one_page.md) ·
+verdicts and their qualifications: [`docs/results.md`](docs/results.md).
+
+---
+
 ## Status
 
 | | |
 |---|---|
 | **Research design** | Fixed and committed before any data was retrieved. Five hypotheses, each with a stated rejection criterion |
 | **Analysis library** | Complete and tested — **244 tests passing**, 2 skipped (cross-checks against packages not installed) |
-| **Data** | Retrieved by `scripts/fetch_data.py`; 338 files, each with URL, retrieval time and SHA-256 in `data/raw/_manifest.json` |
-| **Phases complete** | 07 index validation · 08 mechanics and flows · 09 tail risk and survival · 10 forecasting and signals · 11 backtest and H5 · 12 robustness and red-team · 13 results · 14 figures |
-| **Hypotheses** | H1 **rejected** · H2 **not rejected** (25% of front-month open interest at the lower asset bound) · H3 **not rejected, magnitude unmet** (8.7x, not 10x) · H4 **rejected** · H5 **not rejected** (out-of-sample Sharpe 0.27 ± 0.31; alpha −1.4% a year, t = −0.52) |
-| **What the backtest does not show** | The dynamic rule does not beat a constant 0.173 short (Sharpe 0.40); what it buys is the tail. Its escape from 5 February 2018 rests on one filter clearing its threshold by 0.72% the day before |
+| **Data** | Retrieved by `scripts/fetch_data.py`; 338 files, each with URL, retrieval time and SHA-256 in `data/raw/_manifest.json`. 4,711 index sessions, 2008-01-02 to 2026-09-18 |
+| **Phases complete** | 07 index validation · 08 mechanics and flows · 09 tail risk and survival · 10 forecasting and signals · 11 backtest and H5 · 12 robustness and red-team · 13 results · 14 figures · 15 documentation and report |
+| **Hypotheses** | H1 **rejected** · H2 **not rejected** (25.0% of front-month open interest at the lower asset bound) · H3 **not rejected, magnitude unmet** (8.7×, not 10×) · H4 **rejected** · H5 **not rejected** (out-of-sample Sharpe 0.27 ± 0.31; alpha −1.4% a year, t = −0.52) |
+| **What the backtest does not show** | The dynamic rule does not beat a constant 0.173 short (Sharpe 0.40); what it buys is the tail (worst day −11.7% against −16.6%). Its escape from 5 February 2018 rests on one filter clearing its threshold by 0.72% the day before |
 | **How robust** | Across 144 specifications the out-of-sample Sharpe runs −0.35 to 0.53, **median 0.06**; the pre-registered cell (0.27) is the 78th percentile. Breakeven cost 2.05 ticks per side. Rebalancing weekly instead of daily loses 31.7% in February 2018 |
 
-The verdicts and their interpretation are in [`docs/results.md`](docs/results.md);
-`python scripts/check_results_numbers.py` re-reads the tables and asserts every
-number that document quotes. Every number above is traced in `docs/validation.md`, with what remains imperfect in
-`docs/limitations.md` and the sequence of work - including errors caught and what they
-were worth - in `docs/project_log.md`.
+`python scripts/check_results_numbers.py` re-reads the committed tables and asserts every
+number quoted in this README, the report, the one-page summary and `docs/results.md`; it
+exits non-zero on any disagreement. Each number is traced in `docs/validation.md`, with
+what remains imperfect in `docs/limitations.md` and the sequence of work — including errors
+caught and what they were worth — in `docs/project_log.md`.
 
 The environment used to build this repository could not reach the data hosts or PyPI
 through its egress proxy. The data was therefore fetched on the author's own machine by
@@ -155,12 +179,13 @@ with `VIX/VIX3M` as a robustness variant. Details in
 ```
 config/          config.yaml (every tunable parameter) and filings.yaml (primary sources)
 data/            raw / interim / processed, with a provenance manifest
-docs/            research question, design, literature, data sources, validation,
-                 limitations, project log, final audit
+docs/            research question, design, literature, data sources, methodology,
+                 results, validation, limitations, project log, figure index
 prompts/         the phase, task and operational prompts used to build the project
 references/      bibliography and archived SEC filings
-reports/         figures, tables and the report
-scripts/         fetch_data.py, run_pipeline.py, run_tests.py
+reports/         report.md, summary_one_page.md, 24 figures and 42 tables
+scripts/         fetch_data.py, run_pipeline.py, make_figures.py, run_tests.py,
+                 check_results_numbers.py
 src/svcarry/
   config.py      YAML-backed configuration
   data/          cached, throttled, hashed downloaders (Cboe, prices, FRED, EDGAR)
@@ -171,7 +196,7 @@ src/svcarry/
   strategy/      signals, crash-budgeted sizing, backtest engine
   evaluation/    performance metrics, drawdowns, attribution regressions
   viz/           shared style and one function per figure
-tests/           164 tests
+tests/           246 tests (244 pass, 2 skipped when optional packages are absent)
 ```
 
 ## Running it
@@ -182,7 +207,7 @@ cd short-vol-etps-vix-carry
 pip install -e .            # numpy, pandas, scipy, matplotlib, requests, PyYAML
 
 make data                   # download everything (idempotent; cached and hashed)
-make test                   # 164 tests; uses pytest if installed, else the bundled runner
+make test                   # 246 tests; uses pytest if installed, else the bundled runner
 make pipeline               # clean -> index -> mechanics -> tail -> signals -> backtest
 make figures
 make verify                 # re-hash every file against the manifest
@@ -195,6 +220,25 @@ pytest.
 The pipeline never reaches the network. If raw data is absent it stops and tells you to
 run `make data`, so a figure can never be produced from data whose provenance was not
 recorded.
+
+---
+
+## Main outputs
+
+| Output | What it is |
+|---|---|
+| [`reports/report.md`](reports/report.md) | The full write-up: background and filings, data, methodology, results, robustness, discussion, limitations |
+| [`reports/summary_one_page.md`](reports/summary_one_page.md) | Question, method, three findings, one caveat |
+| [`docs/results.md`](docs/results.md) | The five verdicts against their pre-registered criteria, with each conclusion's qualification attached |
+| `reports/tables/` | 42 CSVs. Every number in the prose is one of these |
+| `reports/figures/` | 24 figures, each built by `scripts/make_figures.py` with the question it answers recorded in [`docs/figure_index.md`](docs/figure_index.md) |
+| `data/processed/` | The reconstructed index, curve, signals, weights and backtest, daily |
+
+```bash
+python scripts/make_figures.py --list        # every figure and the question it answers
+python scripts/make_figures.py --only equity_curve
+python scripts/check_results_numbers.py      # assert the prose against the tables
+```
 
 ---
 
@@ -228,16 +272,37 @@ Full record: [`docs/validation.md`](docs/validation.md) (populated as each phase
 Stated here rather than only in the report, because they bound what the project can
 claim:
 
+- **The strategy result is specification-dependent.** The pre-registered cell earns 0.27
+  against a grid median of 0.06, at the 78th percentile of 144 cells. Pre-registration
+  protects against searching the grid; it does not protect against having drawn a good
+  cell. Both numbers belong in any honest summary of this project.
+- **The strategy does not beat the naive alternative.** A constant 0.173 short earns a
+  Sharpe of 0.40 against the dynamic rule's 0.27. What the rule buys is the tail — a
+  worst day of −11.7% against −16.6% — not return. The alpha over PUT/SPX/VXX is −1.4% a
+  year (t = −0.52).
+- **The escape from February 2018 rests on a 0.72% margin.** The contango filter cleared
+  its threshold by that much at the close of 2 February. At a threshold of 1.025 the
+  February return is −24.3%; rebalancing weekly instead of daily gives −31.7% with a worst
+  day of −38.0%. And the VRP filter — the other half of the entry rule — was *on* that
+  day, so only one of the two filters did any work.
+- **Breakeven cost is 2.05 ticks per side.** One tick is the quoted spread in calm
+  markets; two is not unusual in a crisis, which is when this strategy trades most.
 - **Daily data only.** The intraday sequence on 5 February 2018 — including the
   after-hours move that triggered XIV's acceleration — cannot be resolved. The flow
-  analysis therefore shows that mechanical demand was *large relative to* open
-  interest; it does not establish that it caused the size of the move.
-- **Assets outstanding are inferred**, not observed, for most of the sample. Because the
-  flow estimate is linear in assets, results are reported as a range between bounds
-  anchored on disclosed figures, and the conclusion is required to hold at both.
-- **One day dominates the tail.** February 2018 is the largest observation in the
-  sample, so every headline is reported across the EVT threshold grid and with that day
-  jackknifed out.
+  analysis shows mechanical demand was *large relative to* open interest; it does not
+  establish that it caused the size of the move.
+- **Assets outstanding are inferred**, not observed, for most of the sample. Results are
+  reported as a range between bounds anchored on disclosed figures, and the H2 claim is
+  stated at the lower bound. Scope is SVXY and UVXY only, so it understates the complex.
+- **One day dominates the tail.** February 2018 is the largest observation in the sample,
+  so every tail headline is reported across the EVT threshold grid and with that day
+  jackknifed out. Five-year survival is reported as a pair (81.1% unbounded, 89.9% capped)
+  because the model's own volatility dynamics cannot be extrapolated safely.
+- **The stated H3 magnitude was not met.** The −0.5× design is 8.7 times safer on the
+  headline threshold, between 5.3 and 9.4 across the grid — not the 10× the hypothesis
+  claimed.
+- **1–3% of the post-2020 tracking slope is unexplained** and daily data cannot allocate
+  it between residual fee drag and index noise.
 - **Futures only.** No free historical option data, so option-based implementations of
   the same premium are out of scope.
 - **A backtest is not an expected return.** The strategy trades an index with stylised
