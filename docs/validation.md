@@ -206,21 +206,35 @@ hypothesis that was **rejected**.
 **H1 (pre-registered in `docs/research_design.md`):** the reconstructed index tracks
 the traded products to within roughly 20 bp a day throughout.
 
-**H1 is rejected.** Daily tracking error against VIXY, de-levered:
+**H1 is rejected.** Daily tracking error against VIXY, split on the settlement-time
+change (`index_tracking_eras.csv`, added in Phase 13 so these numbers live in a
+committed table rather than in this paragraph):
 
-| Era | Tracking error (bp/day) | Slope on the index |
-|---|---|---|
-| 2011-01 to 2015-12 | 120.6 | 0.873 |
-| 2016-01 to 2017-12 | 108.4 | 0.886 |
-| 2019-01 to 2020-10-23 | 137.3 | 0.958 |
-| 2020-10-26 onward | 31.0 | 0.985 |
+| Era | Settlement | TE, raw difference (bp/day) | TE, regression residual | Leverage-adjusted slope |
+|---|---|---|---|---|
+| 2011-01 to 2015-12 | 15:15 CT | 133.2 | 120.7 | 0.873 |
+| 2016-01 to 2017-12 | 15:15 CT | 117.0 | 108.5 | 0.886 |
+| 2018 (leverage change year) | 15:15 CT | 447.1 | 290.3 | 0.543 |
+| 2019-01 to 2020-10-23 | 15:15 CT | 139.1 | 137.4 | 0.958 |
+| 2020-10-26 onward | **15:00 CT** | **31.7** | 31.0 | 0.985 |
+
+H1's criterion is written on the raw difference, which is the first of the two columns;
+the second lets a fitted slope and intercept absorb the attenuation and is the smaller
+number. Either way the criterion (25 bp/day) is exceeded everywhere except after
+October 2020, where it is exceeded by less. *Correction, Phase 13: this table
+previously showed only the regression-residual column, labelled simply "tracking
+error", and the two definitions were not distinguished.*
 
 The slopes are the signature that matters. A slope below one, common across products
 of *different leverage and different issuer*, is not product-specific tracking
 difficulty — it is attenuation from noise in the regressor, i.e. in the
-reconstructed index. Over 2011-2017, slope ÷ leverage came to 0.887 for VIXY (+1x),
-0.889 for SVXY (−1x) and 0.877 for UVXY (+2x): one common factor across three
-issuers and three leverages.
+reconstructed index. Over 2011-2017 the leverage-adjusted slope is 0.877 for VIXY
+(+1x), 0.872 for SVXY (−1x) and 0.867 for UVXY (+2x) (`index_tracking.csv`): one
+common factor across three issuers and three leverages. *Correction, Phase 13: these
+were quoted as 0.887 / 0.889 / 0.877 from an exploratory run, and the committed
+table's `slope_over_lev` column divided an already-leverage-adjusted slope by the
+leverage again — flipping its sign for inverse products. The column is gone and the
+`slope` column is the leverage-adjusted one.*
 
 ### Hypotheses tested and rejected
 

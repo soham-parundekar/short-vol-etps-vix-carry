@@ -175,14 +175,56 @@ def stage_index(cfg) -> dict:
                     "start": str(df.index.min().date()), "end": str(df.index.max().date()),
                     "n": len(df),
                     "corr": float(df["idx"].corr(df["prod"])),
+                    # The regressor is ALREADY the leveraged index (L x idx), so
+                    # this coefficient is the leverage-adjusted slope: 1.0 means the
+                    # product moved exactly as its stated multiple of the index.
+                    # (It was additionally divided by L until Phase 13, which flipped
+                    # its sign for inverse products and halved it for 2x ones.)
                     "slope": float(fit.params[1]),
                     "slope_se": float(fit.bse[1]),
-                    "slope_over_lev": float(fit.params[1] / L.mean()),
                     "te_bp_daily": float(resid.std() * 1e4),
                     "mean_resid_bp": float(resid.mean() * 1e4),
                 })
     track = pd.DataFrame(rows)
     track.to_csv(tables / "index_tracking.csv", index=False)
+
+    # ---- the same comparison, split on the settlement-time change ----------
+    # Cboe moved the VX daily settlement from 3:15 to 3:00 p.m. CT effective
+    # 2020-10-26, which is when the index and the products' 4:00 p.m. closes start
+    # being measured at the same instant. The eras below straddle that date (and
+    # separate the 2018 leverage change) so the regime shift is a committed number
+    # rather than one that lives only in prose.
+    settle_eras = [("2011-01-01", "2015-12-31"), ("2016-01-01", "2017-12-31"),
+                   ("2018-01-01", "2018-12-31"), ("2019-01-01", "2020-10-23"),
+                   ("2020-10-26", None)]
+    era_rows = []
+    idx_df = built[chosen]
+    for sym, r_p in prods.items():
+        for lo, hi in settle_eras:
+            a, b = idx_df["ret"].copy(), r_p.copy()
+            if lo: a, b = a[a.index >= lo], b[b.index >= lo]
+            if hi: a, b = a[a.index <= hi], b[b.index <= hi]
+            df = pd.concat({"idx": a, "prod": b}, axis=1).dropna()
+            if len(df) < 60:
+                continue
+            L = leverage_series(sym, df.index)
+            fitted = L * df["idx"]
+            fit = ols(df["prod"].to_numpy(), fitted.to_numpy(), names=["lev_idx"],
+                      cov_type="HAC")
+            # Two tracking errors, because they answer different questions. The
+            # hypothesis is written on the raw difference (H1: "the difference
+            # between the rebuilt excess return and the product's return"); the
+            # regression residual, which lets the slope and an intercept absorb the
+            # attenuation, is the smaller number and is what V6's table reported
+            # before this column existed.
+            era_rows.append({
+                "symbol": sym, "era": f"{lo or 'start'} to {hi or 'end'}",
+                "settlement": "15:15 CT" if (hi or "2099") <= "2020-10-23" else "15:00 CT",
+                "n": len(df), "slope": float(fit.params[1]),
+                "te_bp_daily_raw": float((df["prod"] - fitted).std() * 1e4),
+                "te_bp_daily_regression_resid": float(np.std(fit.resid, ddof=2) * 1e4),
+            })
+    pd.DataFrame(era_rows).to_csv(tables / "index_tracking_eras.csv", index=False)
 
     # ---- the decisive test: does the residual load on the roll weight? -----
     # A mis-timed roll shows up as tracking residual that moves with w1. Under the

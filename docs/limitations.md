@@ -326,6 +326,21 @@ are still holding (Sharpe 0.27 against 0.06 for volatility targeting alone, draw
 
 ---
 
+## L24. Two tracking errors, and which one the hypothesis used
+
+H1 is written on the raw difference between the product's return and the leveraged
+index return. A regression residual - letting a fitted slope and intercept absorb the
+attenuation - is the smaller number (133.2 against 120.7 bp a day in 2011-2015; 31.7
+against 31.0 after October 2020) and was what `docs/validation.md` V6 reported until
+Phase 13. Both are now in `index_tracking_eras.csv`, labelled. The verdict is the same
+under either.
+
+**What it bears on.** The size of the tracking-error numbers quoted for H1, by about
+10%, and nothing else. The regime shift - a factor of four across the settlement-time
+change - is the finding, and it is the same in both columns.
+
+---
+
 ## L8. Open questions carried forward
 
 1. The 2016 and 2019 steps in the tracking-error series are unexplained (L1).

@@ -31,8 +31,8 @@
    "reports/tables/index_tracking.csv",
    "reports/tables/roll_convention.csv"
   ],
-  "seconds": 6.6,
-  "finished_utc": "2026-09-20T18:15:53Z"
+  "seconds": 6.9,
+  "finished_utc": "2026-09-23T13:22:28Z"
  },
  "mechanics": {
   "decay_rows": 36,

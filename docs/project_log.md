@@ -864,3 +864,61 @@ V31-V35, limitations L22-L23.
 ### Next
 
 Phase 13 — results: every conclusion stated at the confidence Phase 12 supports.
+
+---
+
+## Session 10 — 23 September 2026
+
+**Phase 13 — results and interpretation.** Complete. `docs/results.md` states each
+hypothesis against its pre-registered criterion, then interprets the findings at the
+confidence Phase 12 leaves them.
+
+### The verdicts, in one line each
+
+H1 **rejected** (133.2 bp/day tracking error in 2011-2015 against a 25 bp criterion).
+H2 **not rejected** (25.0% of front-month open interest at the lower bound).
+H3 **not rejected, stated magnitude unmet** (8.7x, not the 10x claimed).
+H4 **rejected** (Kelly interval contains 1.0; pre-2018 it was centred at 1.11).
+H5 **not rejected** (Sharpe 0.27 with a standard error of 0.31; alpha -1.4% a year,
+t = -0.52) - and weaker than that sentence sounds, which the document says in the same
+paragraph rather than a later one.
+
+### Traceability turned up two errors in my own numbers
+
+The phase's rule is that a number in the prose must be pointable to a committed table.
+Checking that, rather than asserting it:
+
+* **V6's tracking errors were not in any table.** They came from an exploratory run
+  and used the *regression residual* (120.6 bp), while H1's criterion is written on
+  the raw difference (133.2 bp). Both are now computed by the pipeline into
+  `index_tracking_eras.csv`, labelled, with the settlement-time split that makes the
+  regime shift visible. The verdict is unchanged under either definition.
+* **`index_tracking.csv` had a mislabelled column.** `slope_over_lev` divided a slope
+  that was already leverage-adjusted (the regressor is `L x index`) by the leverage
+  again - flipping its sign for SVXY and halving it for UVXY. The column is gone; the
+  `slope` column is the leverage-adjusted one, and V6's "0.887 / 0.889 / 0.877" is
+  corrected to the table's 0.877 / 0.872 / 0.867. The substance - one common factor
+  near 0.87 across three issuers and three leverages - is unchanged.
+
+Both corrections are recorded in V6 itself, and a third number (the -1x variance drag,
+which I first wrote as 18% a year) was recomputed to 30% at 60% volatility before it
+reached the document.
+
+### `scripts/check_results_numbers.py`
+
+Forty-odd figures from `results.md`, each re-read from its table and asserted, exiting
+non-zero on any disagreement. It is the phase's traceability criterion made
+executable: a future pipeline change that moves a number now fails a check instead of
+leaving the write-up quietly wrong.
+
+### What the document says that the project's own framing did not
+
+The three findings it nominates as genuinely informative are the settlement-time
+artefact, the de-levering counterfactual (25.0% to 9.4% of open interest), and the gap
+between the chosen configuration's 0.27 Sharpe and the specification grid's median of
+0.06. The strategy's positive Sharpe - the headline the project was built around - is
+explicitly *not* on that list.
+
+### Next
+
+Phase 14 — visualisation: the figures that carry those three findings.
