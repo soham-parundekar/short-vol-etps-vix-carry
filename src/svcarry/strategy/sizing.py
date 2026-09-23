@@ -38,6 +38,9 @@ __all__ = [
     "stress_move",
     "stress_loss",
     "target_weight",
+    "running_max_floor",
+    "roll_fraction",
+    "strategy_weights",
 ]
 
 
@@ -127,13 +130,15 @@ def target_weight(
         with np.errstate(divide="ignore", invalid="ignore"):
             w_stress = max_stress_loss / stress_s
 
-    w = pd.concat([w_vol, w_stress], axis=1).min(axis=1)
+    # skipna=False: a missing crash budget is a missing weight, never a silent
+    # fall-back to volatility targeting alone.
+    w = pd.concat([w_vol, w_stress], axis=1).min(axis=1, skipna=False)
     w = w.clip(lower=min_weight, upper=max_weight)
 
     binding = pd.Series("vol_target", index=idx, dtype=object)
     binding[w_stress < w_vol] = "stress_budget"
     binding[(w >= max_weight - 1e-12)] = "max_weight"
-    binding[w_vol.isna()] = "no_estimate"
+    binding[w_vol.isna() | w_stress.isna()] = "no_estimate"
 
     if signal is not None:
         s = pd.Series(signal).reindex(idx).astype(float)
@@ -147,3 +152,56 @@ def target_weight(
     out.attrs["vol_target"] = vol_target
     out.attrs["max_stress_loss"] = max_stress_loss
     return out
+
+
+def running_max_floor(index_returns: pd.Series) -> pd.Series:
+    """The largest one-day index rise observed through each close.
+
+    The real-time form of "a move that has actually happened". A floor fixed at the
+    5 February 2018 move, applied before that date, sizes 2008-2017 positions with
+    knowledge of a day that had not yet occurred; this one only ever knows the past.
+    """
+    return pd.Series(index_returns).astype(float).cummax().rename("floor_running_max")
+
+
+def roll_fraction(w2: pd.Series, exp2: pd.Series) -> pd.Series:
+    """Share of the index basket moved into the second contract on each date.
+
+    Within a roll period it is the day's increase in ``w2``. When the second contract
+    changes, the old second contract has become the front and everything now in the
+    new second contract was moved there that day, so it is ``w2`` itself.
+    """
+    w2 = pd.Series(w2).astype(float)
+    same = pd.Series(exp2).eq(pd.Series(exp2).shift(1))
+    out = (w2 - w2.shift(1)).where(same, w2)
+    return out.clip(lower=0.0).fillna(0.0).rename("roll_fraction")
+
+
+def strategy_weights(
+    index_returns: pd.Series, signal: pd.Series, move_quantile: pd.Series,
+    floor: "pd.Series | float", vol_target: float = 0.15, vol_lookback: int = 21,
+    max_stress_loss: float = 0.20, max_weight: float = 1.0,
+) -> pd.DataFrame:
+    """Every sizing input and the resulting weight, indexed by the close at which
+    each is known. Nothing is lagged here; the backtest engine applies the lag.
+
+    ``move_quantile`` is the model's conditional one-day move for the next session;
+    ``floor`` is either a series known at each close (the real-time running maximum)
+    or a constant (the configured historical event).
+    """
+    r = pd.Series(index_returns).astype(float)
+    idx = r.index
+    vol = realised_vol(r, window=vol_lookback)
+    fl = (pd.Series(float(floor), index=idx) if np.isscalar(floor)
+          else pd.Series(floor).reindex(idx).astype(float))
+    q = pd.Series(move_quantile).reindex(idx).astype(float)
+    stress = pd.concat([q, fl], axis=1).max(axis=1, skipna=False)
+    tw = target_weight(vol, vol_target=vol_target, stress=stress,
+                       max_stress_loss=max_stress_loss, max_weight=max_weight,
+                       signal=pd.Series(signal).reindex(idx))
+    tw.insert(0, "realised_vol", vol)
+    tw.insert(1, "move_quantile", q)
+    tw.insert(2, "floor", fl)
+    tw["stress_source"] = np.where(q >= fl, "model", "floor")
+    tw.loc[stress.isna(), "stress_source"] = "undefined"
+    return tw

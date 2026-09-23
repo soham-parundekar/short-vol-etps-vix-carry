@@ -25,12 +25,25 @@ re-implemented (and mis-implemented) at each call site.
 
 Costs
 -----
-Charged on turnover: ``c_t = |w_t - w_{t-1}| * k_t`` where ``k_t = ticks * tick_size
-/ P_t`` converts a bid-offer in VIX points into a fraction of the notional, using the
-weighted futures price ``P_t`` actually held. Expressing costs relative to the price
-level matters because VIX futures traded near 12 in 2017 and near 40 in March 2020;
-a fixed basis-point cost would understate the friction in calm markets and overstate
-it in crises, which is precisely backwards.
+Charged on the trading the rule actually requires, at ``k_t = ticks * tick_size / P_t``
+per unit of notional, where ``P_t`` is the weighted futures price held: a bid-offer
+in VIX points is a larger fraction of a 12-point future (2017) than of a 40-point one
+(March 2020), and a fixed basis-point cost would get that backwards. Two sources:
+
+*Rebalancing.* A position at weight ``w`` does not stay at ``w``: after a day's move
+it is ``w (1 + r) / (1 + R)`` of the new equity - a short grows as the index rises and
+equity falls. Returning it to the next target is the trade,
+
+    turnover_t = | w_t - w_{t-1} (1 + r_{t-1}) / (1 + R_{t-1}) |,
+
+and a missing weight is a flat position, so leaving the market and coming back through
+a data gap is charged. (Until Phase 11 turnover was ``|w_t - w_{t-1}|`` on the target
+alone, which misses the drift and charged nothing for entries after a gap.)
+
+*Rolling.* Holding the index means holding its basket, which moves a fraction
+``w1_{t-1} - w1_t`` of the notional from the front to the second contract every day:
+two legs, about 24 times the position a year. Charged as ``2 |w_t| roll_t k_t``
+when ``roll_fraction`` is supplied.
 
 Nothing here is netted, smoothed or annualised inside the engine. It returns the
 daily series and :mod:`svcarry.evaluation.metrics` does the summarising, so that the
@@ -59,6 +72,7 @@ class BacktestResult:
     equity: pd.Series
     turnover: pd.Series
     settings: dict = field(default_factory=dict)
+    components: "pd.DataFrame | None" = None   # turnover and cost by source
 
     def frame(self) -> pd.DataFrame:
         return pd.DataFrame(
@@ -93,6 +107,8 @@ def run_backtest(
     cost_bps: float | None = None,
     direction: int = -1,
     initial_equity: float = 1.0,
+    roll_fraction: pd.Series | None = None,
+    drift_turnover: bool = True,
 ) -> BacktestResult:
     """Run the strategy.
 
@@ -116,6 +132,16 @@ def run_backtest(
         Flat proportional cost in basis points per unit turnover, as an alternative
         to the tick model. Used in the robustness section to show the conclusion does
         not hinge on the cost specification.
+    roll_fraction
+        Share of the index basket rolled from the front to the second contract on each
+        date (``max(w1_{t-1} - w1_t, 0)``). If given, the roll is charged on both legs.
+    drift_turnover
+        Charge the trade back to target after each day's drift (default). ``False``
+        charges only changes in the target, which understates trading; kept for the
+        cost-attribution table and for tests.
+
+    Raises if a position is held on a date whose index return is missing: the day
+    cannot be valued, and skipping it would drop a real profit or loss.
     """
     r = pd.Series(index_returns).astype(float)
     idx = r.index
@@ -124,6 +150,11 @@ def run_backtest(
     if signal_lag < 0:
         raise ValueError("signal_lag must be >= 0; a negative lag is look-ahead")
     w = w_raw.shift(signal_lag)
+    w_pos = w.fillna(0.0)                      # a missing weight is a flat position
+    held_undefined = (w_pos != 0) & r.isna()
+    if held_undefined.any():
+        raise ValueError(f"position held on {int(held_undefined.sum())} date(s) with no "
+                         f"index return, first {r.index[held_undefined][0].date()}")
 
     a = (pd.Series(accrual).reindex(idx).astype(float) if accrual is not None
          else pd.Series(0.0, index=idx))
@@ -140,30 +171,38 @@ def run_backtest(
             k = (cost_ticks * tick_size) / p
         k = k.replace([np.inf, -np.inf], np.nan).ffill()
 
-    turnover = w.diff().abs()
-    turnover.iloc[: signal_lag + 1] = w.iloc[: signal_lag + 1].abs()
-    turnover = turnover.fillna(0.0)
-    costs = (turnover * k).fillna(0.0)
-
-    gross = a + direction * w * r
-    net = gross - costs
-
-    # A day with no weight (before the first signal, or a data gap) contributes the
-    # collateral accrual only; it is not dropped, because dropping it would quietly
+    # A day with no weight (before the first signal, or a data gap) is flat: it earns
+    # the collateral accrual only. It is not dropped, because dropping it would quietly
     # shorten the sample and flatter the annualised statistics.
-    net = net.where(w.notna(), a)
-    gross = gross.where(w.notna(), a)
+    gross = a + direction * w_pos * r.fillna(0.0)
+
+    turnover_target = (w_pos - w_pos.shift(1).fillna(0.0)).abs()
+    if drift_turnover:
+        drifted = (w_pos.shift(1).fillna(0.0) * (1.0 + r.shift(1).fillna(0.0))
+                   / (1.0 + gross.shift(1).fillna(0.0)))
+        turnover = (w_pos - drifted).abs()
+    else:
+        turnover = turnover_target.copy()
+    rebal_costs = (turnover * k).fillna(0.0)
+    if roll_fraction is not None:
+        rf_ = pd.Series(roll_fraction).reindex(idx).astype(float).fillna(0.0)
+        roll_turnover = 2.0 * w_pos.abs() * rf_
+    else:
+        roll_turnover = pd.Series(0.0, index=idx)
+    roll_costs = (roll_turnover * k).fillna(0.0)
+    costs = rebal_costs + roll_costs
+    net = gross - costs
 
     equity = (1.0 + net.fillna(0.0)).cumprod() * initial_equity
 
-    return BacktestResult(
+    res = BacktestResult(
         returns=net.rename("ret"),
         gross=gross.rename("gross"),
-        weight=w.rename("weight"),
+        weight=w_pos.rename("weight"),
         costs=costs.rename("costs"),
         accrual=a.rename("accrual"),
         equity=equity.rename("equity"),
-        turnover=turnover.rename("turnover"),
+        turnover=(turnover + roll_turnover).rename("turnover"),
         settings={
             "signal_lag": signal_lag,
             "cost_ticks": cost_ticks,
@@ -174,8 +213,18 @@ def run_backtest(
             "n_days_invested": int((w.fillna(0) != 0).sum()),
             "n_accrual_missing": n_acc_missing,
             "mean_cost_per_unit_turnover_bps": float(np.nanmean(k) * 10_000),
+            "drift_turnover": drift_turnover,
+            "roll_costed": roll_fraction is not None,
         },
     )
+    res.components = pd.DataFrame({
+        "turnover_target": turnover_target, "turnover_rebalance": turnover,
+        "turnover_roll": roll_turnover, "cost_rebalance": rebal_costs,
+        "cost_roll": roll_costs, "cost_per_unit": k})
+    first = w.first_valid_index()
+    res.settings["n_days_weight_missing_after_start"] = (
+        int(w.loc[first:].isna().sum()) if first is not None else 0)
+    return res
 
 
 def buy_and_hold_etp(

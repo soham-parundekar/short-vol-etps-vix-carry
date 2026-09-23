@@ -227,3 +227,61 @@ requiring both. Thresholds from `config/config.yaml`, fixed in commit 2bdeb31
 (08:30:04 UTC). A missing input gives a missing signal - no position - never a default.
 Every signal is indexed by the date it is observable and is lagged by the backtest
 (`signal_lag = 1`), never pre-lagged here.
+
+## M8. The strategy, and one amendment made before it was run
+
+**Position.** A collateralised short in the reconstructed index, entered only when both
+Phase 10 signals are on, sized by
+
+    w_t = min( sigma* / sigma_hat_t ,  l_max / StressLoss_t ,  w_max ),
+
+with `sigma* = 0.15`, `sigma_hat` the trailing 21-day realised volatility of the index,
+`l_max = 0.20`, `w_max = 1.0` and `StressLoss_t = w * move_t` for a one-day index rise
+`move_t`. Every input is formed at the close of `t`; the engine applies the one-day lag
+(`svcarry.strategy.backtest.run_backtest`), so the weight earning the return of `t+1`
+was computed from data through `t`.
+
+**The crash scenario.** `move_t = max(q_t, floor_t)`:
+
+- `q_t` is the fitted **conditional 99.9% one-day move** for the next session, from a
+  skewed-*t* GJR-GARCH(1,1) with a spliced GPD upper tail estimated on index log returns
+  **to 31 December 2015 only** - the design window - with the EVT threshold chosen by
+  the Phase 09 rule on those residuals. Parameters are then frozen and only the
+  volatility state is filtered forward (`one_step_ahead_sigma`), so no post-2015
+  observation enters the model that sizes a post-2015 position. Inside the design
+  window the model is in sample, and the design-window performance is reported as such.
+- `floor_t` is the **largest one-day index rise observed through `t`**
+  (`running_max_floor`).
+
+*The amendment.* The configuration and the phase prompt set the floor to the
+5 February 2018 move (96.1%). Applied from 2008, that sizes every pre-2018 position
+with a day that had not happened yet: by this project's own look-ahead rule
+(`prompts/tasks/lookahead_audit.md`, "any row where use precedes availability is a
+leak"), it is a leak, and the research design asks for an *ex-ante* stress loss
+(§4.5). The running maximum is the real-time form of the same idea - the largest move
+that has actually happened - and is exact from 5 February 2018 onwards, where it equals
+the configured value. The amendment was written into `config/config.yaml` and committed
+**before any backtest was run**; the event floor is still run, and reported beside the
+honest version, as a calibration of what knowing the answer in advance is worth. It
+sizes larger before 2018 (floor 0.14-0.33 rather than 0.96), so the honest version is
+the one that takes the bigger loss on 5 February 2018.
+
+**Costs.** Both sources of trading, at 1 tick (0.05 VIX points) per side on the weighted
+futures price held: the rebalance back to target after the position drifts, and the
+index's own daily roll on two legs (about twelve round trips a year). The engine
+charged neither before Phase 11 - the drift and the re-entry after a gap were free, and
+the roll was not charged at all - which understated the friction of a strategy that
+holds a rolling futures basket. Fixed with the amendment, before the run.
+
+**Collateral.** The T-bill accrual (S&P DJI convention, previous business day's
+discount rate) is credited on the full capital, once: the index returns used are
+excess returns, so nothing is double-counted. The same accrual is credited to every
+benchmark that holds collateral, so the comparison isolates sizing rather than the
+cash leg.
+
+**Benchmarks.** Buy-and-hold -1x and -0.5x daily-rebalanced products on the same index
+(XIV's and SVXY's fees), the Cboe PutWrite index, a constant-weight short sized to the
+strategy's average exposure in the same window, and the S&P 500 (SPY, total return).
+
+**Windows.** Design window to 31 December 2015, evaluation window from 1 January 2016,
+reported separately and never pooled into a headline.

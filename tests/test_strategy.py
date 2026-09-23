@@ -119,18 +119,60 @@ def test_backtest_accounting_identity():
     w = pd.Series(0.5, index=r.index)
     a = pd.Series(0.00002, index=r.index)
     p = pd.Series(15.0, index=r.index)
-    bt = run_backtest(r, w, price_level=p, accrual=a, signal_lag=1, cost_ticks=1.0)
+    bt = run_backtest(r, w, price_level=p, accrual=a, signal_lag=1, cost_ticks=1.0,
+                      drift_turnover=False)
     t = r.index[50]
-    expected = 0.00002 - 0.5 * r.loc[t]        # no turnover after the first day
+    expected = 0.00002 - 0.5 * r.loc[t]        # no target change after the first day
     assert bt.returns.loc[t] == pytest.approx(expected, rel=1e-12)
     assert bt.costs.loc[t] == pytest.approx(0.0, abs=1e-15)
+
+
+def test_constant_weight_still_trades_the_drift_back_to_target():
+    """A short at 0.5 that loses 10% on the index is 0.5*1.1/0.95 = 0.579 of equity
+    the next morning; holding 0.5 means buying back 0.079."""
+    idx = _idx(4)
+    r = pd.Series([0.0, 0.10, 0.0, 0.0], index=idx)
+    w = pd.Series(0.5, index=idx)
+    bt = run_backtest(r, w, cost_bps=0.0, signal_lag=1)
+    drifted = 0.5 * 1.10 / (1.0 - 0.5 * 0.10)
+    assert bt.turnover.iloc[2] == pytest.approx(drifted - 0.5, rel=1e-12)
+    assert bt.components["turnover_target"].iloc[2] == 0.0
+
+
+def test_leaving_and_re_entering_through_a_gap_is_charged():
+    idx = _idx(8)
+    r = pd.Series(0.0, index=idx)
+    w = pd.Series([0.4, 0.4, np.nan, np.nan, 0.4, 0.4, 0.4, 0.4], index=idx)
+    bt = run_backtest(r, w, cost_bps=100.0, signal_lag=1)
+    assert bt.costs.iloc[3] == pytest.approx(0.4 * 0.01)      # exit into the gap
+    assert bt.costs.iloc[5] == pytest.approx(0.4 * 0.01)      # re-entry after it
+    assert bt.settings["n_days_weight_missing_after_start"] == 2
+
+
+def test_roll_is_charged_on_both_legs():
+    idx = _idx(5)
+    r = pd.Series(0.0, index=idx)
+    w = pd.Series(0.5, index=idx)
+    roll = pd.Series([0.0, 0.05, 0.05, 0.05, 0.05], index=idx)
+    bt = run_backtest(r, w, cost_bps=100.0, signal_lag=1, roll_fraction=roll)
+    assert bt.components["cost_roll"].iloc[3] == pytest.approx(2 * 0.5 * 0.05 * 0.01)
+
+
+def test_a_position_on_a_day_with_no_index_return_raises():
+    idx = _idx(6)
+    r = pd.Series([0.01, 0.01, np.nan, 0.01, 0.01, 0.01], index=idx)
+    with pytest.raises(ValueError, match="no index return"):
+        run_backtest(r, pd.Series(0.3, index=idx), cost_bps=0.0, signal_lag=1)
+    flat = pd.Series([0.3, np.nan, 0.3, 0.3, 0.3, 0.3], index=idx)
+    run_backtest(r, flat, cost_bps=0.0, signal_lag=1)          # flat that day: fine
 
 
 def test_backtest_charges_costs_on_turnover_only():
     r = _index_returns(10, seed=3)
     w = pd.Series([0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0], index=r.index)
     p = pd.Series(20.0, index=r.index)
-    bt = run_backtest(r, w, price_level=p, signal_lag=1, cost_ticks=2.0, tick_size=0.05)
+    bt = run_backtest(r, w, price_level=p, signal_lag=1, cost_ticks=2.0, tick_size=0.05,
+                      drift_turnover=False)
     k = 2.0 * 0.05 / 20.0                        # 50 bp per unit turnover
     charged = bt.costs[bt.costs > 0]
     assert len(charged) == 2                     # one entry, one exit

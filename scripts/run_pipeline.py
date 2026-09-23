@@ -633,47 +633,7 @@ def stage_tail(cfg) -> dict:
         q = n * (n + 2) * np.sum(ac ** 2 / (n - np.arange(1, lags + 1)))
         return float(q), float(stats.chi2.sf(q, lags))
 
-    def gpd_ks(z, g):
-        y = z[z > g.threshold] - g.threshold
-        c = (1 - (1 + g.xi * y / g.beta) ** (-1 / g.xi)) if abs(g.xi) > 1e-8 \
-            else 1 - np.exp(-y / g.beta)
-        return float(stats.kstest(c, "uniform").pvalue)
-
-    def me_xi(z, lo_q, hi_q):
-        th, me, _ = mean_excess(z, tail="upper", n_points=60, q_lo=0.80, q_hi=0.99)
-        qs = np.array([(z <= t).mean() for t in th])
-        m = (qs >= lo_q) & (qs <= hi_q)
-        if m.sum() < 3:
-            return np.nan
-        s = np.polyfit(th[m], me[m], 1)[0]
-        return s / (1 + s)
-
-    def choose_threshold(z, grid):
-        """The recorded rule (prompts/tasks/choose_evt_threshold.md): the lowest
-        threshold with >= 50 exceedances, xi within one se of the next two, KS on the
-        excesses p > 0.10, and inside the linear region of the mean excess - taken as
-        the lower and upper halves of [q, 0.99] implying xi within one se of each
-        other."""
-        rows = []
-        fits = {q: fit_gpd(z, q=q, tail="upper") for q in grid}
-        for i, q in enumerate(grid):
-            g = fits[q]
-            nxt = [fits[grid[j]].xi for j in (i + 1, i + 2) if j < len(grid)]
-            stable = len(nxt) == 2 and all(abs(g.xi - x) <= g.se_xi for x in nxt)
-            mid = q + (0.99 - q) / 2.0
-            a, b = me_xi(z, q, mid), me_xi(z, mid, 0.99)
-            linear = bool(np.isfinite(a) and np.isfinite(b) and abs(a - b) <= g.se_xi)
-            ks = gpd_ks(z, g)
-            rows.append({"q": q, "threshold": g.threshold, "n_exceed": g.n_exceed,
-                         "xi": g.xi, "se_xi": g.se_xi, "beta": g.beta, "ks_p": ks,
-                         "me_xi_lower_half": a, "me_xi_upper_half": b,
-                         "ok_n": g.n_exceed >= 50, "ok_stable": stable,
-                         "ok_ks": ks > 0.10, "ok_linear": linear})
-        t = pd.DataFrame(rows)
-        t["passes"] = t[["ok_n", "ok_stable", "ok_ks", "ok_linear"]].all(axis=1)
-        chosen = float(t.loc[t["passes"], "q"].min()) if t["passes"].any() else np.nan
-        t["chosen"] = t["q"] == chosen
-        return t, fits, chosen
+    from svcarry.econometrics.evt import choose_threshold, gpd_ks  # noqa: F401
 
     # ---- 1. GARCH fits --------------------------------------------------------
     samples = {"pre2018": lr[lr.index <= CUT], "full": lr}

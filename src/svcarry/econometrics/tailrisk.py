@@ -35,6 +35,8 @@ __all__ = [
     "SplicedInnovations",
     "conditional_exceedance",
     "filter_sigma",
+    "one_step_ahead_sigma",
+    "conditional_move_quantile",
     "termination_table",
     "simulate_first_passage",
     "simulate_returns",
@@ -121,6 +123,38 @@ def filter_sigma(params: dict, returns: pd.Series, s2_init: float | None = None)
         e = r[t] - mu
         s2[t + 1] = om + (al + (ga if e < 0 else 0.0)) * e * e + be * s2[t]
     return pd.Series(np.sqrt(s2[:-1]), index=getattr(returns, "index", None))
+
+
+def one_step_ahead_sigma(params: dict, returns: pd.Series,
+                         s2_init: float | None = None) -> pd.Series:
+    """Conditional sd of the NEXT session's return, indexed by the date it is formed.
+
+    The value at ``t`` uses returns through ``t`` - it is ``filter_sigma``'s value for
+    ``t + 1`` - so a weight computed at the close of ``t`` from it, and applied to the
+    return of ``t + 1``, uses nothing it could not have known. Written out as its own
+    recursion rather than as a shifted ``filter_sigma`` so that no negative shift
+    appears anywhere in the sizing chain.
+    """
+    r = np.asarray(returns, dtype=float)
+    om, al, ga, be, mu = (params["omega"], params["alpha"], params["gamma"],
+                          params["beta"], params["mu"])
+    s2 = s2_init if s2_init is not None else om / (1.0 - (al + be + 0.5 * ga))
+    out = np.empty(len(r))
+    for t in range(len(r)):
+        e = r[t] - mu
+        s2 = om + (al + (ga if e < 0 else 0.0)) * e * e + be * s2
+        out[t] = s2
+    return pd.Series(np.sqrt(out), index=getattr(returns, "index", None),
+                     name="sigma_next")
+
+
+def conditional_move_quantile(params: dict, innov: SplicedInnovations,
+                              log_returns: pd.Series, p: float = 0.999) -> pd.Series:
+    """The one-day SIMPLE index return exceeded with probability ``1 - p`` on the next
+    session, formed at each close: ``expm1(mu + sigma_next * z_p)``."""
+    sig = one_step_ahead_sigma(params, log_returns)
+    z = float(innov.ppf(np.array([p]))[0])
+    return np.expm1(params["mu"] + sig * z).rename(f"q{p:g}_next")
 
 
 def termination_table(

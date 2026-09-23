@@ -127,7 +127,15 @@ strategy:
   vol_lookback: 21
   max_stress_loss: 0.20         # cap on the loss under the stress scenario
   stress_quantile: 0.999
-  stress_floor_event: "2018-02-05"   # stress move is at least this day's move
+  # How the floor under the crash scenario is set. PHASE 11 AMENDMENT, made before
+  # any backtest was run (see docs/project_log.md Session 8 and docs/methodology.md
+  # M8): "running_max" is the largest one-day index rise observed up to the decision
+  # date. The original setting, the 5 February 2018 move, is not observable before
+  # 5 February 2018, so using it to size 2008-2017 positions is look-ahead - and the
+  # research design itself asks for an "ex-ante stress loss". The event floor is kept
+  # and reported as a labelled hindsight calibration, never as the headline.
+  stress_floor: running_max          # running_max | event
+  stress_floor_event: "2018-02-05"   # used by the hindsight calibration variant only
   max_weight: 1.0
   cost_ticks: 1.0               # per side, in 0.05 VIX points
   tick_value: 0.05
