@@ -312,3 +312,40 @@ def test_heatmap_outlines_the_cell_named_by_its_labels():
     # labels 1.0 and 0.2 are at positions 2 and 1; int(1.0) = 1 and int(0.2) = 0 are
     # the wrong cell, which is what this test exists to catch
     assert rects[0].get_xy() == (0.5, 1.5)
+
+
+def test_shape_across_thresholds_draws_the_band_and_marks_the_choice():
+    g = pd.DataFrame({"q": [0.90, 0.925, 0.95, 0.975], "xi": [0.18, 0.17, 0.20, 0.15],
+                      "se_xi": [0.07, 0.08, 0.10, 0.15], "n_exceed": [200, 150, 100, 50]})
+    fig = F.plot_shape_across_thresholds(g, chosen=0.925)
+    ax = fig.axes[0]
+    assert len(ax.collections) >= 1                       # the one-standard-error band
+    assert any(np.allclose(ln.get_xdata(), 0.925) for ln in ax.get_lines())
+    assert "xi" in ax.get_ylabel()
+
+
+def test_specification_distribution_marks_median_and_chosen():
+    rng = np.random.default_rng(0)
+    sh = rng.normal(0.05, 0.2, 144)
+    fig = F.plot_specification_distribution(sh, chosen=0.27)
+    ax = fig.axes[0]
+    xs = [float(ln.get_xdata()[0]) for ln in ax.get_lines() if len(set(ln.get_xdata())) == 1]
+    assert any(abs(x - float(np.median(sh))) < 1e-9 for x in xs), "median line missing"
+    assert any(abs(x - 0.27) < 1e-9 for x in xs), "chosen line missing"
+    labels = [t.get_text() for t in ax.texts]
+    assert any("percentile" in s for s in labels)
+
+
+def test_index_vs_products_clips_the_residual_axis_and_says_so():
+    """A -6,000 bp day would flatten the residual panel; it is clipped, marked and
+    counted in the source note rather than silently rescaling everything else."""
+    idx = _idx(400)
+    lvl = pd.Series(np.linspace(100, 20, 400), index=idx)
+    prod = {"VIXY": lvl * 1.01}
+    resid = pd.Series(np.random.default_rng(1).normal(0, 0.002, 400), index=idx)
+    resid.iloc[200] = -0.62
+    fig = F.plot_index_vs_products(lvl, prod, residual=resid)
+    rax = fig.axes[1]
+    assert rax.get_ylim()[0] > -0.6 * 1e4, "the outlier must not set the axis"
+    note = " ".join(t.get_text() for t in fig.texts)
+    assert "clipped" in note and "6,200" in note.replace("-6,200", "6,200")

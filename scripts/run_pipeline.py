@@ -1425,6 +1425,11 @@ def stage_backtest(cfg) -> dict:
     daily = daily.join(bt.components[["turnover_rebalance", "turnover_roll",
                                       "cost_rebalance", "cost_roll"]])
     daily.to_csv(processed / "backtest_daily.csv", index_label="date")
+    # The benchmark return series, so every figure in Phase 14 regenerates from
+    # committed data rather than from a re-run of this stage.
+    bench_daily = pd.DataFrame({**series, f"constant weight {cw_full:.3f} short":
+                                cw_full_bt.returns, "accrual": acc})
+    bench_daily.to_csv(processed / "benchmarks_daily.csv", index_label="date")
 
     from svcarry.viz.figures import (
         plot_drawdowns, plot_equity_curves, plot_event_detail, plot_weight_and_constraint,
@@ -1486,6 +1491,10 @@ def stage_backtest(cfg) -> dict:
     ]
     add = pd.DataFrame(rows, columns=["input", "indexed_by", "available", "first_used"])
     add["use_precedes_availability"] = False
+    # Replace this stage's own rows rather than appending them: re-running the stage
+    # used to duplicate every line, which would make the audit table grow silently.
+    if len(tt):
+        tt = tt[~tt["input"].isin(add["input"])]
     pd.concat([tt, add], ignore_index=True).to_csv(tpath, index=False)
 
     # ---- 10. audit and H5 ---------------------------------------------------------
@@ -1986,8 +1995,44 @@ RUNNERS = {
     "signals": stage_signals,
     "backtest": stage_backtest,
     "robust": stage_robust,
-    "figures": _not_yet("figures"),
+    "figures": None,          # filled in below: scripts/make_figures.py owns them
 }
+
+
+def stage_figures(cfg) -> dict:
+    """Regenerate every figure through ``scripts/make_figures.py``.
+
+    The figures live in one script rather than being scattered through the analysis
+    stages, so that each regenerates from committed data on its own and the registry
+    there - figure, question answered, inputs - is the single list. This stage is a
+    thin wrapper so ``make figures`` and ``run_pipeline --only figures`` agree.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "make_figures", ROOT / "scripts" / "make_figures.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    failures = []
+    for name, (builder, _, _) in mod.FIGURES.items():
+        try:
+            fig = builder()
+        except Exception as exc:                        # noqa: BLE001
+            failures.append(f"{name}: {type(exc).__name__}: {exc}")
+            continue
+        mod.save_figure(fig, mod.FIG / f"{name}.png")
+        import matplotlib.pyplot as plt
+        plt.close(fig)
+    index = mod.write_index()
+    qc = {"figures": len(mod.FIGURES), "failures": failures,
+          "index": str(index.relative_to(ROOT))}
+    print(json.dumps(qc, indent=1))
+    if failures:
+        raise SystemExit(f"{len(failures)} figure(s) failed to build")
+    return qc
+
+
+RUNNERS["figures"] = stage_figures
 
 
 def main() -> int:

@@ -17,27 +17,3 @@ crash floor (running maximum),t,close of t,close of t+1,False
 weight w,t,close of t,return of t+1,False
 T-bill accrual,t,previous business day's discount rate,return of t,False
 futures price for costs,t,settlement on t,costs charged on t,False
-index return r_t,t,futures settlement on t,close of t (sizing inputs),False
-trailing 21-day realised volatility,t,close of t,close of t+1,False
-GJR-GARCH parameters + EVT tail,fitted once on data to 2015-12-31,2015-12-31,first used 2016-01-01 out of sample; in sample before,False
-conditional 99.9% move for t+1,t,close of t (state filtered to t),close of t+1,False
-crash floor (running maximum),t,close of t,close of t+1,False
-weight w,t,close of t,return of t+1,False
-T-bill accrual,t,previous business day's discount rate,return of t,False
-futures price for costs,t,settlement on t,costs charged on t,False
-index return r_t,t,futures settlement on t,close of t (sizing inputs),False
-trailing 21-day realised volatility,t,close of t,close of t+1,False
-GJR-GARCH parameters + EVT tail,fitted once on data to 2015-12-31,2015-12-31,first used 2016-01-01 out of sample; in sample before,False
-conditional 99.9% move for t+1,t,close of t (state filtered to t),close of t+1,False
-crash floor (running maximum),t,close of t,close of t+1,False
-weight w,t,close of t,return of t+1,False
-T-bill accrual,t,previous business day's discount rate,return of t,False
-futures price for costs,t,settlement on t,costs charged on t,False
-index return r_t,t,futures settlement on t,close of t (sizing inputs),False
-trailing 21-day realised volatility,t,close of t,close of t+1,False
-GJR-GARCH parameters + EVT tail,fitted once on data to 2015-12-31,2015-12-31,first used 2016-01-01 out of sample; in sample before,False
-conditional 99.9% move for t+1,t,close of t (state filtered to t),close of t+1,False
-crash floor (running maximum),t,close of t,close of t+1,False
-weight w,t,close of t,return of t+1,False
-T-bill accrual,t,previous business day's discount rate,return of t,False
-futures price for costs,t,settlement on t,costs charged on t,False

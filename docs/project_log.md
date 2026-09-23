@@ -922,3 +922,62 @@ explicitly *not* on that list.
 ### Next
 
 Phase 14 — visualisation: the figures that carry those three findings.
+
+---
+
+## Session 11 — 23 September 2026
+
+**Phase 14 — visualisation.** Complete. Twenty-four figures, each with a question it
+answers, all regenerating from one script.
+
+### What changed
+
+`scripts/make_figures.py` is now the single owner of the figure set: one builder per
+figure, a registry that pairs each with **the question it answers** and the committed
+files it reads, and `--list`, `--only` and `--index` for working on one at a time.
+`docs/figure_index.md` is generated from that registry rather than maintained by hand,
+so a figure without a question cannot quietly survive. `run_pipeline --only figures`
+and `make figures` both go through it.
+
+Five figures existed only as functions and had never been rendered (the index against
+the products, the term structure, and three others); three are new:
+`shape_across_thresholds` (does the tail estimate depend on where the tail starts?),
+`specification_distribution` (the 144 cells as a histogram, with the median at 0.06 and
+the chosen cell at 0.27 marked), and `decay_blocks` was brought into the registry
+rather than being left as a stage side-effect. `stage_backtest` now writes
+`benchmarks_daily.csv` so the strategy figures rebuild without re-running the backtest.
+
+### Three honesty fixes in the figures themselves
+
+* **The tracking-residual panel was a flat line with one spike.** 5 February 2018 is
+  −6,187 bp against a typical day of ±100, so drawn to scale the panel showed nothing.
+  The axis is now clipped at the 0.5th and 99.5th percentiles, the 14 days outside it
+  are marked with triangles, and the source note says so and names the largest. The
+  regime shift the panel exists to show — noisy before October 2020, quiet after — is
+  now visible.
+* **Two figures encoded meaning in colour alone.** `style.greyscale_check` flags seven
+  hue pairs in the palette within 0.07 of each other in luminance, so the binding
+  constraint now varies marker as well as colour, and the signal-state strip puts each
+  state in its own horizontal band.
+* **Six series with six direct labels collided** at the right edge of the February 2018
+  figure. Direct labels now appear only while there are four or fewer series, which is
+  the project's own stated rule.
+
+### Also
+
+The asset-bounds figure would not rebuild from the committed CSV, because the stage
+drops the extrapolated rows before writing while the in-memory frame still carries the
+flag; the figure now accepts either and still refuses to plot an extrapolated point as
+bounded. Three new viz tests, including one that fails if the residual panel lets a
+single outlier set its scale.
+
+### One bug found by re-running
+
+`timing_audit.csv` grew every time the backtest stage ran: the stage appended its rows
+to whatever was there instead of replacing them, so the committed copy had 50 rows of
+which 32 were duplicates. The stage now replaces its own rows, and running it twice
+leaves 18 rows both times.
+
+### Next
+
+Phase 15 — documentation and the report.

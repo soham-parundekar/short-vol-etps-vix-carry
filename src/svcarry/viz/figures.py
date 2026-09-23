@@ -51,6 +51,8 @@ __all__ = [
     "plot_cost_sensitivity",
     "plot_subsample_stability",
     "plot_parameter_heatmap",
+    "plot_shape_across_thresholds",
+    "plot_specification_distribution",
     "plot_event_detail",
 ]
 
@@ -71,8 +73,8 @@ def plot_index_vs_products(
     nrows = 2 if residual is not None else 1
     fig, axes = new_figure(
         "Reconstructed short-term VIX futures index and the products that track it",
-        "Index level (rebased to 100 at the start of the sample, log scale)",
-        figsize=(9.5, 6.0 if nrows == 2 else 4.6),
+        "Index level, rebased to 100\n(log scale)",
+        figsize=(9.5, 6.4 if nrows == 2 else 4.6),
         nrows=nrows, height_ratios=[3, 1] if nrows == 2 else None,
     )
     ax = axes[0] if nrows == 2 else axes
@@ -97,13 +99,34 @@ def plot_index_vs_products(
     ax.legend(loc="upper right", ncol=2)
     format_date_axis(ax)
 
+    n_clipped = 0
     if residual is not None:
         rax = axes[1]
+        r_bp = residual * 1e4
+        # 5 February 2018 is a -6,000 bp difference - fifty times anything else - and
+        # drawn to scale it flattens the whole panel into a line. The axis is clipped
+        # at the 0.5th and 99.5th percentiles, the clipped days are counted in the
+        # label, and the spikes are drawn so a clipped point is visibly off-scale
+        # rather than silently absent.
+        lo, hi = np.nanpercentile(r_bp.to_numpy(), [0.5, 99.5])
+        pad = 0.35 * (hi - lo)
+        lo, hi = lo - pad, hi + pad
+        n_clipped = int(((r_bp < lo) | (r_bp > hi)).sum())
         rax.axhline(0.0, color=INK["muted"], lw=0.8)
-        rax.plot(residual.index, residual.values * 1e4, color=INK["secondary"], lw=0.9)
+        rax.plot(r_bp.index, r_bp.clip(lo, hi).values, color=INK["secondary"], lw=0.9)
+        out = r_bp[(r_bp < lo) | (r_bp > hi)]
+        rax.scatter(out.index, out.clip(lo, hi).values, s=18, marker="v",
+                    color=PALETTE[7], zorder=4, clip_on=False)
+        rax.set_ylim(lo, hi)
         rax.set_ylabel("Tracking\ndifference (bp/day)")
         format_date_axis(rax)
-    add_source(fig, source)
+    note = source
+    if n_clipped:
+        note += (f" The lower panel's axis is clipped at the 0.5th and 99.5th "
+                 f"percentiles; {n_clipped} day(s) fall outside it and are marked with "
+                 f"a triangle, the largest being 5 February 2018 at "
+                 f"{residual.min() * 1e4:,.0f} bp.")
+    add_source(fig, note)
     return fig
 
 
@@ -427,9 +450,15 @@ def plot_signal_state(panel: pd.DataFrame, threshold: float = 1.0, source: str =
             "both": INK["secondary"]}
     lab = {"none": "invested", "contango": "out: curve inverted",
            "vrp": "out: premium negative", "both": "out: both"}
+    # Each state occupies its own horizontal band as well as its own colour, so the
+    # strip is readable in greyscale: invested fills the row, and each reason for
+    # standing aside sits at its own height.
+    spans = {"none": (0.0, 1.0), "contango": (0.66, 1.0), "vrp": (0.33, 0.66),
+             "both": (0.0, 0.33)}
     for k, c in cmap.items():
         d = p.index[p["binding"] == k]
-        a2.vlines(d, 0, 1, color=c, lw=0.6)
+        lo_, hi_ = spans[k]
+        a2.vlines(d, lo_, hi_, color=c, lw=0.6)
     a2.set_yticks([])
     a2.set_ylim(0, 1)
     a2.legend(handles=[Patch(color=cmap[k], label=f"{lab[k]} ({(p['binding'] == k).mean():.0%})")
@@ -513,7 +542,11 @@ def plot_asset_bounds(bounds: "dict[str, pd.DataFrame]",
     axes = np.atleast_1d(axes)
     for ax, s in zip(axes, syms):
         b = bounds[s]
-        b = b[~b["extrapolated"]]
+        # The committed CSV has the extrapolated rows removed already; the in-memory
+        # frame still carries the flag. Accept either, and never plot an
+        # extrapolated point as though it were bounded.
+        if "extrapolated" in b.columns:
+            b = b[~b["extrapolated"].astype(bool)]
         ax.fill_between(b.index, b["assets_lower"] / 1e9, b["assets_upper"] / 1e9,
                         color=SEQUENTIAL[2], lw=0, label="bounded range", zorder=1)
         ax.plot(b.index, b["assets_lower"] / 1e9, color=PALETTE[0], lw=1.4,
@@ -742,12 +775,20 @@ def plot_weight_and_constraint(weight: pd.Series, binding: pd.Series,
         shade_windows(ax, windows)
     ax.plot(weight.index, weight.values, color=INK["secondary"], lw=0.8, zorder=2)
     order = ["stress_budget", "vol_target", "max_weight", "signal_off", "no_estimate"]
+    # A marker per constraint as well as a colour: the palette's hues are close in
+    # luminance (style.greyscale_check flags seven pairs), so colour alone would not
+    # survive a greyscale print.
+    markers = {"stress_budget": "o", "vol_target": "^", "max_weight": "s",
+               "signal_off": "x", "no_estimate": "d"}
     present = [c for c in order if (binding == c).any()]
     for i, cat in enumerate(present):
         m = binding.reindex(weight.index) == cat
-        ax.scatter(weight.index[m], weight[m], s=5, color=PALETTE[i],
-                   label=cat.replace("_", " "), zorder=3, linewidths=0)
-    ax.legend(loc="upper right", ncol=2, markerscale=2.6)
+        ax.scatter(weight.index[m], weight[m], s=6, color=PALETTE[i],
+                   marker=markers[cat], label=cat.replace("_", " "), zorder=3,
+                   linewidths=0.6 if cat == "signal_off" else 0)
+    # Below the shaded windows' labels, which sit along the top of the axes.
+    ax.legend(loc="upper right", bbox_to_anchor=(1.0, 0.90), ncol=2, markerscale=2.6,
+              framealpha=0.92)
     format_date_axis(ax)
     add_source(fig, source)
     return fig
@@ -860,6 +901,79 @@ def plot_parameter_heatmap(grid: pd.DataFrame, chosen: "tuple | None" = None,
     return fig
 
 
+def plot_shape_across_thresholds(grid: pd.DataFrame, chosen: float | None = None,
+                                 source: str = _SOURCE):
+    """The GPD shape parameter across the threshold grid, with one standard error.
+
+    The question: does the tail estimate depend on where the tail is declared to
+    start? A shape that wanders outside its own error band as the threshold rises is
+    an estimate that should not be quoted as a number.
+
+    ``grid`` needs ``q``, ``xi``, ``se_xi`` and ``n_exceed`` (the EVT threshold table).
+    """
+    fig, ax = new_figure(
+        "GPD shape parameter across the threshold grid",
+        "Shape parameter xi (1 s.e. band)", xlabel="Threshold quantile of the residuals",
+        figsize=(8.2, 4.6),
+    )
+    q = grid["q"].to_numpy(dtype=float)
+    xi = grid["xi"].to_numpy(dtype=float)
+    se = grid["se_xi"].to_numpy(dtype=float)
+    st = series_style(0)
+    ax.fill_between(q, xi - se, xi + se, color=st["color"], alpha=0.18, lw=0)
+    ax.plot(q, xi, marker="o", ms=4, **st)
+    ax.axhline(0.0, color=INK["muted"], lw=0.8)
+    if chosen is not None:
+        ax.axvline(chosen, color=INK["secondary"], lw=1.0, ls=(0, (4, 3)))
+        i = int(np.argmin(np.abs(q - chosen)))
+        direct_label(ax, q[i], xi[i], f"chosen: xi = {xi[i]:.3f}", INK["secondary"])
+    if "n_exceed" in grid:
+        for qi, xii, ni in zip(q, xi, grid["n_exceed"]):
+            ax.annotate(f"n={int(ni)}", xy=(qi, xii), xytext=(0, -14),
+                        textcoords="offset points", ha="center", fontsize=7.5,
+                        color=INK["muted"])
+    add_source(fig, source + " Positive xi means a heavy (power-law) tail; the band is "
+               "one standard error of the maximum-likelihood estimate.")
+    return fig
+
+
+def plot_specification_distribution(sharpes, chosen: float | None = None,
+                                    label: str = "Out-of-sample Sharpe ratio",
+                                    source: str = _SOURCE):
+    """Every specification that was run, as a distribution rather than a best cell.
+
+    The question: how much of a backtest's headline is the choice of specification?
+    The chosen configuration and the median are both marked, because the distance
+    between them is the answer.
+    """
+    fig, ax = new_figure(
+        "Out-of-sample Sharpe across every specification run",
+        "Number of specifications", xlabel=label, figsize=(8.2, 4.6),
+    )
+    x = np.asarray(sharpes, dtype=float)
+    lo, hi = np.floor(x.min() * 20) / 20, np.ceil(x.max() * 20) / 20
+    bins = np.arange(lo, hi + 0.05, 0.05)
+    ax.hist(x[x > 0], bins=bins, color=PALETTE[0], alpha=0.85, label="Sharpe above zero")
+    ax.hist(x[x <= 0], bins=bins, color=PALETTE[7], alpha=0.85, label="Sharpe at or below zero")
+    med = float(np.median(x))
+    ax.axvline(med, color=INK["primary"], lw=1.2, ls=(0, (1, 1.4)))
+    ax.annotate(f"median {med:.2f}", xy=(med, 1.0), xycoords=("data", "axes fraction"),
+                xytext=(4, -12), textcoords="offset points", fontsize=9,
+                color=INK["primary"], va="top")
+    if chosen is not None:
+        ax.axvline(chosen, color=INK["secondary"], lw=1.4)
+        pct = float((x < chosen).mean())
+        ax.annotate(f"chosen {chosen:.2f}\n({pct:.0%} percentile)",
+                    xy=(chosen, 1.0), xycoords=("data", "axes fraction"),
+                    xytext=(4, -34), textcoords="offset points", fontsize=9,
+                    color=INK["secondary"], va="top")
+    ax.legend(loc="upper left", fontsize=9)
+    add_source(fig, source + f" n = {len(x)} specifications, every one run end to end; "
+               "the parameters of the chosen cell were fixed before any data was "
+               "retrieved.")
+    return fig
+
+
 def plot_event_detail(index_level: pd.Series, products: "dict[str, pd.Series]",
                       weight: pd.Series | None = None,
                       lo="2018-01-22", hi="2018-02-16", source: str = _SOURCE):
@@ -878,16 +992,21 @@ def plot_event_detail(index_level: pd.Series, products: "dict[str, pd.Series]",
         s = s[(s.index >= lo) & (s.index <= hi)].dropna()
         return s / s.iloc[0] * 100.0 if len(s) else s
 
+    # Direct labels only while there are four or fewer series; beyond that they
+    # collide at the right edge and the legend carries the identity instead.
+    label_ends = len(products) < 4
     st = series_style(0)
     s = _seg(index_level)
     ax.plot(s.index, s.values, label="index", **st)
-    direct_label(ax, s.index[-1], s.iloc[-1], "index", st["color"])
+    if label_ends:
+        direct_label(ax, s.index[-1], s.iloc[-1], "index", st["color"])
     for i, (name, p) in enumerate(products.items(), start=1):
         st = series_style(i)
         sp = _seg(p)
         if len(sp):
             ax.plot(sp.index, sp.values, label=name, **st)
-            direct_label(ax, sp.index[-1], sp.iloc[-1], name, st["color"])
+            if label_ends:
+                direct_label(ax, sp.index[-1], sp.iloc[-1], name, st["color"])
     ax.legend(loc="upper left")
     format_date_axis(ax, "%d %b")
 
