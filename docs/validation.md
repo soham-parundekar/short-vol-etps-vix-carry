@@ -1067,6 +1067,118 @@ than for skill.
 
 ---
 
+## V31. The specification grid
+
+144 cells: contango threshold (0.95, 0.975, 1.0, 1.025) x volatility target (0.10,
+0.15, 0.20) x crash budget (0.10, 0.20, 0.30, 1.00) x rebalance interval (1, 5, 21),
+each run end to end and each written to `specification_distribution.csv`.
+
+| | Out-of-sample Sharpe |
+|---|---|
+| Minimum | -0.35 |
+| First quartile | -0.05 |
+| **Median** | **0.06** |
+| Third quartile | 0.24 |
+| Maximum | 0.53 |
+| **Chosen configuration** | **0.27 - the 78th percentile** |
+| Share of cells above zero | 64.6% |
+
+**Warning, by the phase's own criterion.** The chosen configuration is not the maximum,
+but it sits in the upper quartile rather than near the median. The parameters were
+fixed in `config/config.yaml` before any data was retrieved (V24), so this is not
+selection after the fact - but it does mean the pre-registered cell was a lucky one,
+and the median specification's Sharpe of **0.06** is the number a reader should carry
+as "what this strategy earns if you did not happen to pick well".
+
+Specifications run in this phase: 204 (144 grid + 50 one-at-a-time + 10 cost cells).
+Phase 11 ran 13 backtest variants and Phase 10 five forecast specifications, so the
+project has run about 220 in total, all reported.
+
+## V32. One-at-a-time sweeps
+
+`robustness_parameters.csv`, out-of-sample Sharpe, baseline 0.27:
+
+| Parameter | Cells | Range | Where the baseline sits |
+|---|---|---|---|
+| Contango threshold | 0.95 / 0.975 / **1.0** / 1.025 | -0.17 to 0.27 | **the best of the four** |
+| Crash budget `l_max` | 0.10 / **0.20** / 0.30 / 1.00 | 0.06 to 0.43 | second of four; tighter is better |
+| Rebalance interval | **1** / 5 / 21 days | 0.01 to 0.42 | middle; 5 days is the worst |
+| Volatility target | 0.10 / **0.15** / 0.20 | 0.18 to 0.37 | middle |
+| Volatility lookback | 10 / **21** / 63 | 0.27 to 0.38 | lowest of three |
+| Slope measure | **cm30/cm90** / VIX/VIX3M | 0.27 / 0.33 | the robustness variant does better |
+| Variance proxy | **rs** / parkinson / gk / close-to-close | 0.08 to 0.28 | close-to-close is much worse |
+| HAR horizon | 10 / **21** / 42 | 0.09 to 0.28 | middle |
+| HAR lags | **(1,5,22)** / (1,5,10) / (1,10,44) | 0.16 to 0.27 | the best of three |
+| Retransformation | **normal** / smearing | 0.27 / 0.20 | as designed |
+| Crash floor | **running max** / event (hindsight) | 0.27 / 0.33 | the honest one is lower |
+| EVT threshold | eight quantiles | 0.27 flat | the floor binds, so the tail model barely matters |
+| Index construction | **rolled** / shifted / constant-maturity / calendar spread | 0.07 to 0.27 | see V33 |
+| Signal lag | 0 / **1** / 2 | -0.13 to 1.12 | the leak calibration |
+
+Two cells change the interpretation rather than the number:
+
+* **Rebalancing weekly turns the February 2018 result inside out.** At a 5-day
+  interval the exit signalled on Friday 2 February is not executed until the next
+  rebalance, so the position is held through the event: worst day **-38.0%**, February
+  return **-31.7%**, Sharpe 0.01. At 21 days the grid happens to rebalance clear of it
+  and the Sharpe is 0.42. The protection is therefore not a property of the sizing
+  rule; it is a property of acting on the signal the same day.
+* **A threshold of 1.025 holds the position into the event**: February return
+  **-24.3%**, worst day -24.2%, Sharpe 0.07.
+
+## V33. Alternative constructions
+
+| Construction | Out-of-sample Sharpe |
+|---|---|
+| Rolled index (the reconstruction used throughout) | 0.27 |
+| One-day-shifted roll convention | 0.27 |
+| Constant-maturity 30-day basket | 0.27 |
+| Calendar spread, front against fourth month | 0.07 |
+
+The reconstruction choice does not carry the result: the two alternative ways of
+holding the curve give the same answer to two decimal places. The calendar-spread
+version - which isolates the slope from the level - earns much less, so what the
+strategy is paid for is being short the level, not the shape.
+
+## V34. Subsamples
+
+`robustness_subsamples.csv`. Configured periods: 2008-2012 **0.92**, 2013-2017 0.28,
+2018-2021 **-0.34**, 2022-onwards 0.38. Single years inside the evaluation window run
+from **-1.24** (2020) and -1.04 (2018) to **+1.45** (2023) and +1.20 (2017).
+
+Leave-one-year-out on the evaluation window: 0.11 (excluding 2017) to 0.40 (excluding
+2020). So no single year manufactures the result, but 2017 carries a large share of
+it: drop that one year and the Sharpe falls from 0.27 to 0.11. Leave-one-stress-window-
+out moves it to at most 0.34, and no stress window accounts for more than half the
+total return (the windows are losses: -8.9%, -4.8%, -3.2% against a total of +68.7%).
+
+## V35. The red team, answered with numbers
+
+`redteam_answers.csv`, in the prompt's order:
+
+1. **Weakest assumption**: the contango threshold. February 2018 by threshold: -0.1%
+   at 0.95, 0.975 and 1.0; **-24.3% at 1.025**.
+2. **Could look-ahead explain it?** No. A one-day leak gives a Sharpe of 1.12 against
+   0.27; the whole-chain perturbation test passes and is mutation-checked.
+3. **Survivorship**: XIV is in the product sample for its whole life, including its
+   acceleration on 2018-02-21, and no product was dropped.
+4. **Cost breakeven**: **2.05 ticks per side** (0.102 VIX points) takes the
+   out-of-sample Sharpe to zero.
+5. **Period dominance**: 2017 contributes +25.5% of a +68.7% total; excluding it the
+   Sharpe is 0.11. No stress window exceeds half the total.
+6. **Single-day dominance**: the largest day is -11.7% (10 August 2017), 17% of the
+   total return in absolute terms; the tail jackknife is V19.
+7. **Parameter selection**: grid median 0.06, chosen 0.27 at the 78th percentile.
+8. **Asset bounds**: H2 is already stated at the lower bound (Phase 08); the upper
+   bound only strengthens it.
+9. **Is the story fitted?** The alpha is -1.4% a year (t = -0.52) and the equity beta
+   is asymmetric (0.19 up, 0.42 down) - which is what the design predicted before the
+   data was seen. But a constant-weight short earns more per unit of risk than the
+   dynamic rule, so the part of the story that says the *rule* adds value is not
+   supported.
+
+---
+
 ## Open items
 
 1. The 2016 and 2019 steps in V6 are not explained.
@@ -1081,3 +1193,6 @@ than for skill.
 6. Why the strategy's partial PUT beta is negative while its univariate beta is
    positive is collinearity, not a finding; the separate loadings are not identified
    (V30).
+7. Why a 21-day rebalance does better than a daily one (0.42 against 0.27) is not
+   established: lower costs and a lucky alignment around February 2018 both
+   contribute, and this sample cannot separate them.

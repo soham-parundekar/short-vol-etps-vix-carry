@@ -298,3 +298,17 @@ def test_signal_state_shows_threshold_and_every_state_share():
     assert any(np.allclose(ln.get_ydata(), 1.0) for ln in top.get_lines())
     labels = [t.get_text() for t in strip.get_legend().get_texts()]
     assert len(labels) == 4 and all("%" in s for s in labels)
+
+
+def test_heatmap_outlines_the_cell_named_by_its_labels():
+    """(row, column) are labels: outlining position (1, 0) when asked for the cell
+    at labels (1.0, 0.2) is a mislabelled figure, so it is tested."""
+    g = pd.DataFrame(np.arange(9.0).reshape(3, 3), index=[0.95, 0.975, 1.0],
+                     columns=[0.1, 0.2, 0.3])
+    g.index.name, g.columns.name = "threshold", "budget"
+    fig = F.plot_parameter_heatmap(g, chosen=(1.0, 0.2))
+    rects = [p for p in fig.axes[0].patches if p.get_width() == 1]
+    assert len(rects) == 1
+    # labels 1.0 and 0.2 are at positions 2 and 1; int(1.0) = 1 and int(0.2) = 0 are
+    # the wrong cell, which is what this test exists to catch
+    assert rects[0].get_xy() == (0.5, 1.5)

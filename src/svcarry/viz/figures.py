@@ -49,6 +49,7 @@ __all__ = [
     "plot_rolling_sharpe",
     "plot_weight_and_constraint",
     "plot_cost_sensitivity",
+    "plot_subsample_stability",
     "plot_parameter_heatmap",
     "plot_event_detail",
 ]
@@ -775,6 +776,47 @@ def plot_cost_sensitivity(costs: "Sequence[float]", sharpe: "Sequence[float]",
     return fig
 
 
+def plot_subsample_stability(estimates: "dict[str, tuple]", label: str = "Sharpe ratio",
+                             reference: float | None = None, source: str = _SOURCE):
+    """One estimate per subsample with its standard error, drawn as a forest plot.
+
+    ``estimates`` maps a label to ``(point, se)`` or ``(point, None)``. The reference
+    line is the full-window estimate, so the question the figure answers is whether
+    the headline is a property of the strategy or of one stretch of the sample.
+    """
+    import matplotlib.pyplot as plt
+
+    from .style import apply_style
+
+    apply_style()
+    names = list(estimates)
+    fig, ax = plt.subplots(figsize=(8.2, 0.42 * len(names) + 1.8))
+    y = np.arange(len(names))[::-1]
+    for i, nm in enumerate(names):
+        pt, se = estimates[nm]
+        c = PALETTE[0] if pt >= 0 else PALETTE[7]
+        if se is not None and np.isfinite(se):
+            ax.plot([pt - se, pt + se], [y[i], y[i]], color=c, lw=2.0, alpha=0.45,
+                    solid_capstyle="round")
+        ax.plot([pt], [y[i]], marker="o", ms=6, color=c, lw=0)
+    ax.axvline(0.0, color=INK["primary"], lw=0.9)
+    if reference is not None:
+        ax.axvline(reference, color=INK["secondary"], lw=1.0, ls=(0, (4, 3)))
+        ax.annotate("chosen configuration, full evaluation window",
+                    xy=(reference, 1.0), xycoords=("data", "axes fraction"),
+                    xytext=(4, -10), textcoords="offset points", fontsize=8.5,
+                    color=INK["secondary"], va="top")
+    ax.set_yticks(y)
+    ax.set_yticklabels(names, fontsize=9)
+    ax.set_xlabel(label)
+    ax.set_title("Stability across subsamples, with one standard error",
+                 loc="left", color=INK["primary"])
+    ax.grid(axis="y", visible=False)
+    fig.tight_layout()
+    add_source(fig, source)
+    return fig
+
+
 def plot_parameter_heatmap(grid: pd.DataFrame, chosen: "tuple | None" = None,
                            title: str = "Out-of-sample Sharpe across the parameter grid",
                            cbar_label: str = "Sharpe ratio, out of sample",
@@ -803,7 +845,13 @@ def plot_parameter_heatmap(grid: pd.DataFrame, chosen: "tuple | None" = None,
                 ax.text(j, i, f"{vals[i, j]:.2f}", ha="center", va="center",
                         fontsize=8.5, color=INK["primary"])
     if chosen is not None:
-        ax.add_patch(plt.Rectangle((chosen[1] - 0.5, chosen[0] - 0.5), 1, 1,
+        # (row, column) given as LABELS where they exist - passing (1.0, 0.2) and
+        # having it outline the cell at positions (1, 0) is exactly the kind of
+        # quiet mislabelling a figure should not be able to make.
+        r_, c_ = chosen
+        i_ = grid.index.get_loc(r_) if r_ in grid.index else int(r_)
+        j_ = grid.columns.get_loc(c_) if c_ in grid.columns else int(c_)
+        ax.add_patch(plt.Rectangle((j_ - 0.5, i_ - 0.5), 1, 1,
                                    fill=False, edgecolor=INK["primary"], lw=2.0))
     cb = fig.colorbar(im, ax=ax, fraction=0.04, pad=0.02)
     cb.set_label(cbar_label, color=INK["secondary"])

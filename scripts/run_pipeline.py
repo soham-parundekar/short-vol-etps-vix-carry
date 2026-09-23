@@ -1511,6 +1511,431 @@ def stage_backtest(cfg) -> dict:
     return qc
 
 
+def stage_robust(cfg) -> dict:
+    """Try to break every conclusion, and report the whole grid - not the cells that
+    worked.
+
+    The organising question is the phase prompt's: not "does the result survive small
+    perturbations" but "what is the smallest reasonable change that reverses it".
+    Every cell of every sweep is written out, the chosen configuration's rank inside
+    the full grid is reported, and the nine red-team questions are answered with
+    numbers rather than reassurance.
+    """
+    import numpy as np
+    import pandas as pd
+
+    from svcarry.data.cboe import load_cboe_index, load_vx_panel
+    from svcarry.data.fred import load_fred, tbill_accrual
+    from svcarry.data.prices import load_prices, split_adjusted_returns
+    from svcarry.econometrics.evt import choose_threshold
+    from svcarry.econometrics.garch import GJRGarch
+    from svcarry.econometrics.realized import daily_variance_proxy
+    from svcarry.econometrics.tailrisk import SplicedInnovations, conditional_move_quantile
+    from svcarry.evaluation.metrics import performance_stats, sharpe_standard_error
+    from svcarry.evaluation.regressions import alpha_regression
+    from svcarry.index.reconstruct import reconstruct_index
+    from svcarry.strategy.backtest import run_backtest
+    from svcarry.strategy.signals import build_signal_panel, combine_signals
+    from svcarry.strategy.sizing import roll_fraction, running_max_floor, strategy_weights
+
+    processed = ROOT / cfg.dotted("paths.processed")
+    interim = ROOT / cfg.dotted("paths.interim")
+    tables = ROOT / cfg.dotted("paths.tables")
+    figdir = ROOT / cfg.dotted("paths.figures")
+    idx = pd.read_csv(_require(processed / "index_daily.csv", "the reconstructed index",
+                               "run: python scripts/run_pipeline.py --only index"),
+                      parse_dates=["date"]).set_index("date")
+    DESIGN_END = pd.Timestamp(cfg.dotted("sample.design_end"))
+    OOS_START = pd.Timestamp(cfg.dotted("sample.oos_start"))
+    BASE = dict(
+        vol_target=float(cfg.dotted("strategy.vol_target")),
+        vol_lookback=int(cfg.dotted("strategy.vol_lookback")),
+        max_stress_loss=float(cfg.dotted("strategy.max_stress_loss")),
+        max_weight=float(cfg.dotted("strategy.max_weight")),
+        contango_threshold=float(cfg.dotted("strategy.contango_threshold")),
+        vrp_min=float(cfg.dotted("strategy.vrp_min")),
+        cost_ticks=float(cfg.dotted("strategy.cost_ticks")),
+        signal_lag=int(cfg.dotted("strategy.signal_lag")),
+        rebalance=1, evt_q=None, floor="running_max", slope="cm",
+        horizon=int(cfg.dotted("forecast.har_horizon")),
+        lags=tuple(int(x) for x in cfg.dotted("forecast.har_lags")),
+        har_log=bool(cfg.dotted("forecast.har_log")),
+        retransform="normal", rv_method=str(cfg.dotted("forecast.rv_method")),
+        index="rolled",
+    )
+    TICK = float(cfg.dotted("strategy.tick_value"))
+    TMIN = int(cfg.dotted("forecast.har_train_min"))
+    REFIT = int(cfg.dotted("forecast.har_refit_every"))
+    QP = float(cfg.dotted("strategy.stress_quantile"))
+    GRID = [float(q) for q in cfg.dotted("tail.threshold_grid")]
+    acc = tbill_accrual(load_fred("DTB3"), idx.index)
+    spy_ohlc = load_prices("SPY")
+    floor_event = float(idx["ret"].loc[pd.Timestamp(cfg.dotted("strategy.stress_floor_event"))])
+
+    # ---- alternative index constructions ---------------------------------------
+    panel = pd.read_csv(_require(interim / "vx_panel.csv", "the futures panel",
+                                 "run: python scripts/run_pipeline.py --only clean"),
+                        parse_dates=["date", "expiry"])
+
+    def constant_maturity_index(p: pd.DataFrame, maturity: int = 30) -> pd.DataFrame:
+        """Hold the two contracts bracketing ``maturity`` days, at the interpolation
+        weights, and reprice them the next day. A tradable alternative to the calendar
+        roll: the weights come from where 30 days falls on the curve, not from the
+        roll schedule."""
+        g = p.dropna(subset=["settle"]).sort_values(["date", "days_to_expiry"])
+        rows = {}
+        for d, grp in g.groupby("date"):
+            q = grp[grp["days_to_expiry"] > 0]
+            lo = q[q["days_to_expiry"] <= maturity].tail(1)
+            hi = q[q["days_to_expiry"] > maturity].head(1)
+            if len(hi) == 0:
+                continue
+            if len(lo) == 0:                       # nothing shorter: hold the front
+                rows[d] = {"e1": hi["expiry"].iloc[0], "e2": hi["expiry"].iloc[0],
+                           "p1": hi["settle"].iloc[0], "p2": hi["settle"].iloc[0], "w1": 1.0}
+                continue
+            t1, t2 = float(lo["days_to_expiry"].iloc[0]), float(hi["days_to_expiry"].iloc[0])
+            w1 = (t2 - maturity) / (t2 - t1)
+            rows[d] = {"e1": lo["expiry"].iloc[0], "e2": hi["expiry"].iloc[0],
+                       "p1": lo["settle"].iloc[0], "p2": hi["settle"].iloc[0], "w1": w1}
+        cm = pd.DataFrame.from_dict(rows, orient="index").sort_index()
+        px = p.dropna(subset=["settle"]).set_index(["date", "expiry"])["settle"]
+        ret = {}
+        dates = cm.index
+        for i in range(1, len(dates)):
+            t, s = dates[i], dates[i - 1]
+            r = cm.loc[s]
+            try:
+                p1n, p2n = px.loc[(t, r["e1"])], px.loc[(t, r["e2"])]
+            except KeyError:
+                continue
+            ret[t] = r["w1"] * (p1n / r["p1"] - 1.0) + (1 - r["w1"]) * (p2n / r["p2"] - 1.0)
+        out = cm.copy()
+        out["ret"] = pd.Series(ret)
+        out["w2"] = 1.0 - out["w1"]
+        out["price_held"] = out["w1"] * out["p1"] + out["w2"] * out["p2"]
+        return out
+
+    def calendar_spread_index(p: pd.DataFrame, near: int = 1, far: int = 4) -> pd.DataFrame:
+        """Long the front month, short the ``far``-th, both rolled on the monthly
+        cycle, normalised to one unit of front-month notional. Shorting this series is
+        the calendar-spread version of the strategy: it isolates the slope from the
+        level."""
+        g = p.dropna(subset=["settle"]).sort_values(["date", "days_to_expiry"])
+        g = g[g["days_to_expiry"] > 0]
+        held, rows = {}, {}
+        for d, grp in g.groupby("date"):
+            if len(grp) < far:
+                continue
+            held[d] = (grp["expiry"].iloc[near - 1], grp["expiry"].iloc[far - 1],
+                       grp["settle"].iloc[near - 1], grp["settle"].iloc[far - 1])
+        px = g.set_index(["date", "expiry"])["settle"]
+        dates = sorted(held)
+        for i in range(1, len(dates)):
+            t, s = dates[i], dates[i - 1]
+            e1, e2, p1, p2 = held[s]
+            try:
+                n1, n2 = px.loc[(t, e1)], px.loc[(t, e2)]
+            except KeyError:
+                continue
+            rows[t] = {"ret": (n1 / p1 - 1.0) - (n2 / p2 - 1.0) * (p2 / p1),
+                       "price_held": p1}
+        return pd.DataFrame.from_dict(rows, orient="index").sort_index()
+
+    alt_index = {}
+    alt_index["rolled"] = idx
+    shifted = reconstruct_index(panel, convention="shifted")
+    alt_index["shifted roll convention"] = shifted
+    cm_idx = constant_maturity_index(panel)
+    cm_idx["f1"], cm_idx["f2"] = cm_idx["p1"], cm_idx["p2"]
+    cm_idx["exp2"] = cm_idx["e2"]
+    alt_index["constant-maturity 30 day"] = cm_idx
+    sp_idx = calendar_spread_index(panel)
+    alt_index["calendar spread, front vs 4th"] = sp_idx
+
+    # ---- cached builders ---------------------------------------------------------
+    _sig_cache, _q_cache = {}, {}
+
+    def signal_panel(horizon, lags, har_log, retransform, rv_method, threshold, vrp_min, slope):
+        key = (horizon, lags, har_log, retransform, rv_method)
+        if key not in _sig_cache:
+            rv = daily_variance_proxy(spy_ohlc, rv_method).dropna()
+            curve = idx[["vix", "vix3m", "cm30", "cm90", "f1", "days_to_exp1"]]
+            _sig_cache[key] = build_signal_panel(
+                rv, curve, horizon=horizon, lags=lags, log=har_log, train_min=TMIN,
+                refit_every=REFIT, contango_threshold=1.0, vrp_min=0.0,
+                retransform=retransform)[0]
+        p_ = _sig_cache[key]
+        slope_col = "slope_cm" if slope == "cm" else "slope_vix3m"
+        c = (p_[slope_col] < threshold).astype(float)
+        c[p_[slope_col].isna()] = np.nan
+        v = (p_["vrp"] > vrp_min).astype(float)
+        v[p_["vrp"].isna()] = np.nan
+        return combine_signals({"c": c, "v": v}, rule="all")
+
+    def move_quantile(returns, evt_q):
+        key = (id(returns), evt_q)
+        if key not in _q_cache:
+            lr = np.log1p(returns.dropna())
+            train = lr[lr.index <= DESIGN_END]
+            fkey = ("fit", id(returns))
+            if fkey not in _q_cache:
+                f = GJRGarch(dist=cfg.dotted("tail.garch_dist")).fit(train, n_starts=4, seed=0)
+                t_, g_, q_ = choose_threshold(f.std_resid, GRID)
+                _q_cache[fkey] = (f, g_, q_)
+            f, g_, q_ = _q_cache[fkey]
+            q = evt_q if evt_q is not None else q_
+            innov = SplicedInnovations(f.dist, f.dist_params, g_[q])
+            _q_cache[key] = conditional_move_quantile(f.params, innov, lr, p=QP)
+        return _q_cache[key]
+
+    def run(**over):
+        o = {**BASE, **over}
+        src = alt_index[o["index"]]
+        R = src["ret"]
+        price = (src["w1"] * src["f1"] + src["w2"] * src["f2"]) if "w1" in src else src["price_held"]
+        roll = roll_fraction(src["w2"], src["exp2"]) if "w2" in src and "exp2" in src \
+            else pd.Series(1.0 / 21.0, index=src.index)
+        sig = signal_panel(o["horizon"], o["lags"], o["har_log"], o["retransform"],
+                           o["rv_method"], o["contango_threshold"], o["vrp_min"],
+                           o["slope"]).reindex(R.index)
+        fl = running_max_floor(R) if o["floor"] == "running_max" else floor_event
+        w = strategy_weights(R, sig, move_quantile(R, o["evt_q"]).reindex(R.index), fl,
+                             o["vol_target"], o["vol_lookback"], o["max_stress_loss"],
+                             o["max_weight"])["weight"]
+        if o["rebalance"] > 1:                      # hold the weight between rebalances
+            keep = pd.Series(False, index=w.index)
+            keep.iloc[::o["rebalance"]] = True
+            w = w.where(keep).ffill()
+        a = acc.reindex(R.index)
+        return run_backtest(R, w, price_level=price, accrual=a, signal_lag=o["signal_lag"],
+                            cost_ticks=o["cost_ticks"], tick_size=TICK, roll_fraction=roll)
+
+    def stats(bt, lo=OOS_START, hi=None, name="cell"):
+        r = bt.returns.loc[lo:hi]
+        st = performance_stats(r, rf=acc.reindex(r.index), name=name,
+                               turnover=bt.turnover.loc[lo:hi], weight=bt.weight.loc[lo:hi])
+        st["feb_2018"] = float((1.0 + bt.returns.loc["2018-02-05":"2018-02-06"]).prod() - 1.0)
+        return st
+
+    base_bt = run()
+    base_oos = stats(base_bt, name="chosen configuration")
+    base_sharpe = base_oos["sharpe"]
+
+    # ---- 1. cost sweep and breakeven ---------------------------------------------
+    cost_grid = [0.0, 0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0, 4.0]
+    cost_rows = [stats(run(cost_ticks=c), name=f"{c:g} ticks") | {"cost_ticks": c}
+                 for c in cost_grid]
+    costs = pd.DataFrame(cost_rows)
+    costs.to_csv(tables / "robustness_costs.csv", index=False)
+    sh = costs.set_index("cost_ticks")["sharpe"]
+    below = sh[sh <= 0]
+    if len(below):
+        c_hi = below.index[0]
+        c_lo = sh.index[sh.index.get_loc(c_hi) - 1]
+        breakeven = c_lo + (c_hi - c_lo) * sh[c_lo] / (sh[c_lo] - sh[c_hi])
+    else:
+        breakeven = np.nan
+
+    # ---- 2. one-at-a-time sweeps --------------------------------------------------
+    sweeps = {
+        "contango_threshold": [float(x) for x in cfg.dotted("robustness.contango_grid")],
+        "vol_target": [float(x) for x in cfg.dotted("robustness.vol_target_grid")],
+        "max_stress_loss": [float(x) for x in cfg.dotted("robustness.stress_loss_grid")],
+        "rebalance": [int(x) for x in cfg.dotted("robustness.rebalance_grid")],
+        "evt_q": GRID,
+        "horizon": [10, 21, 42],
+        "lags": [(1, 5, 22), (1, 5, 10), (1, 10, 44)],
+        "har_log": [True, False],
+        "retransform": ["normal", "smearing"],
+        "rv_method": ["rs_overnight", "parkinson_overnight", "gk_overnight", "close_to_close"],
+        "floor": ["running_max", "event"],
+        "slope": ["cm", "vix3m"],
+        "vol_lookback": [10, 21, 63],
+        "signal_lag": [0, 1, 2],
+        "index": list(alt_index),
+    }
+    par_rows = []
+    for name, values in sweeps.items():
+        for v in values:
+            st = stats(run(**{name: v}), name=f"{name} = {v}")
+            st.update({"parameter": name, "value": str(v),
+                       "is_baseline": v == BASE[name]})
+            par_rows.append(st)
+    params = pd.DataFrame(par_rows)
+    params.to_csv(tables / "robustness_parameters.csv", index=False)
+
+    # ---- 3. the full grid, for the specification distribution ---------------------
+    grid_rows = []
+    for th in sweeps["contango_threshold"]:
+        for vt in sweeps["vol_target"]:
+            for ml in sweeps["max_stress_loss"]:
+                for rb in sweeps["rebalance"]:
+                    st = stats(run(contango_threshold=th, vol_target=vt,
+                                   max_stress_loss=ml, rebalance=rb))
+                    st.update({"contango_threshold": th, "vol_target": vt,
+                               "max_stress_loss": ml, "rebalance": rb,
+                               "is_chosen": (th == BASE["contango_threshold"]
+                                             and vt == BASE["vol_target"]
+                                             and ml == BASE["max_stress_loss"]
+                                             and rb == BASE["rebalance"])})
+                    grid_rows.append(st)
+    grid = pd.DataFrame(grid_rows)
+    grid.to_csv(tables / "specification_distribution.csv", index=False)
+    n_specs = len(grid) + len(params) + len(costs)
+    pct = float((grid["sharpe"] < base_sharpe).mean())
+
+    # ---- 4. subsamples -------------------------------------------------------------
+    sub_rows = []
+    for lo, hi in cfg.dotted("robustness.subsamples"):
+        st = stats(base_bt, lo=pd.Timestamp(lo), hi=pd.Timestamp(hi) if hi else None,
+                   name=f"{lo} to {hi or 'end'}")
+        st["kind"] = "configured subsample"
+        sub_rows.append(st)
+    oos_years = sorted({d.year for d in base_bt.returns.loc[OOS_START:].index})
+    for y in oos_years:
+        r = base_bt.returns.loc[OOS_START:]
+        keep = r[r.index.year != y]
+        st = performance_stats(keep, rf=acc.reindex(keep.index), name=f"OOS excluding {y}")
+        st["kind"] = "leave one year out"
+        sub_rows.append(st)
+    for wname, (lo, hi) in cfg.dotted("robustness.stress_windows").items():
+        r = base_bt.returns.loc[OOS_START:]
+        keep = r[(r.index < pd.Timestamp(lo)) | (r.index > pd.Timestamp(hi))]
+        if len(keep) < 250:
+            continue
+        st = performance_stats(keep, rf=acc.reindex(keep.index), name=f"OOS excluding {wname}")
+        st["kind"] = "leave one stress window out"
+        sub_rows.append(st)
+    for y in oos_years:                      # each year on its own
+        r = base_bt.returns.loc[OOS_START:]
+        seg = r[r.index.year == y]
+        st = performance_stats(seg, rf=acc.reindex(seg.index), name=f"{y} alone")
+        st["kind"] = "single year"
+        sub_rows.append(st)
+    subs = pd.DataFrame(sub_rows)
+    subs.to_csv(tables / "robustness_subsamples.csv", index=False)
+
+    # ---- 5. red-team answers, each a number ---------------------------------------
+    oos_r = base_bt.returns.loc[OOS_START:]
+    tot = float((1.0 + oos_r).prod() - 1.0)
+    contrib = {}
+    for wname, (lo, hi) in cfg.dotted("robustness.stress_windows").items():
+        seg = oos_r[(oos_r.index >= pd.Timestamp(lo)) & (oos_r.index <= pd.Timestamp(hi))]
+        if len(seg):
+            contrib[wname] = float((1.0 + seg).prod() - 1.0)
+    yearly = {int(y): float((1.0 + oos_r[oos_r.index.year == y]).prod() - 1.0)
+              for y in oos_years}
+    top_day = oos_r.abs().nlargest(1)
+    lag0 = stats(run(signal_lag=0))["sharpe"]
+    feb_by_threshold = {str(th): float(params[(params["parameter"] == "contango_threshold")
+                                              & (params["value"] == str(th))]["feb_2018"].iloc[0])
+                        for th in sweeps["contango_threshold"]}
+    products = cfg.dotted("products")
+    prod_cover = {k: {"inception": v.get("inception"), "terminated": v.get("terminated", "-")}
+                  for k, v in products.items()}
+    a_oos = alpha_regression(
+        oos_r,
+        {"PUT": load_cboe_index("PUT")["close"].reindex(idx.index).pct_change().loc[OOS_START:] - acc.loc[OOS_START:],
+         "SPX": split_adjusted_returns(load_prices("SPY")).reindex(idx.index).loc[OOS_START:] - acc.loc[OOS_START:],
+         "VXX_like": idx["ret"].loc[OOS_START:]},
+        rf=acc.loc[OOS_START:])
+    redteam = [
+        ("1. Weakest assumption",
+         "The contango filter's threshold. It cleared 1.0 by 0.72% at the close of "
+         "2 Feb 2018; at 1.025 the position is held into the event.",
+         f"Feb 2018 return by threshold: " + ", ".join(f"{k}: {v:.1%}" for k, v in feb_by_threshold.items())),
+        ("2. Could look-ahead explain the result?",
+         "No: a one-day leak multiplies the Sharpe, it does not create the honest one.",
+         f"lag 0 Sharpe {lag0:.2f} vs chosen {base_sharpe:.2f}; whole-chain perturbation "
+         f"test passes and is mutation-checked"),
+        ("3. Survivorship",
+         "XIV is in the product sample for its whole life including its termination; "
+         "no product was dropped.",
+         json.dumps(prod_cover)),
+        ("4. Cost at which the OOS Sharpe reaches zero",
+         "Interpolated on the cost grid.",
+         f"{breakeven:.2f} ticks per side ({breakeven * TICK:.3f} VIX points)"),
+        ("5. Does one period dominate?",
+         "Total out-of-sample return decomposed by stress window and by year.",
+         f"total {tot:.1%}; " + ", ".join(f"{k}: {v:+.1%}" for k, v in contrib.items())
+         + "; best year " + max(yearly, key=yearly.get).__str__() + f" {max(yearly.values()):+.1%}"),
+        ("6. Does one day dominate?",
+         "Largest single day as a share of the total out-of-sample return.",
+         f"{top_day.index[0].date()} {float(top_day.iloc[0]):+.1%}, "
+         f"{abs(float(top_day.iloc[0]) / tot):.1%} of the total"),
+        ("7. Parameter selection",
+         "Distribution of out-of-sample Sharpe over the full grid.",
+         f"n = {len(grid)} cells: min {grid['sharpe'].min():.2f}, median "
+         f"{grid['sharpe'].median():.2f}, max {grid['sharpe'].max():.2f}; chosen "
+         f"{base_sharpe:.2f} at the {pct:.0%} percentile"),
+        ("8. Asset-outstanding bounds",
+         "H2 is stated at the lower bound already (Phase 08); the upper bound only "
+         "strengthens it, and the flow claim is excluded outside the anchors.",
+         "lower bound 25.0% of front-month open interest; upper bound exceeds 100%"),
+        ("9. Is the economic story fitted?",
+         "The alpha is indistinguishable from zero and the equity beta is asymmetric, "
+         "which is the story the design predicted before the data was seen.",
+         f"alpha {a_oos['alpha_annual']:.2%} a year (t = {a_oos['alpha_t']:.2f}); "
+         f"a constant-weight short earns more per unit of risk than the dynamic rule"),
+    ]
+    pd.DataFrame(redteam, columns=["question", "answer", "number"]).to_csv(
+        tables / "redteam_answers.csv", index=False)
+
+    # ---- 6. figures ----------------------------------------------------------------
+    from svcarry.viz.figures import (
+        _SOURCE as _SOURCE_NOTE, plot_cost_sensitivity, plot_parameter_heatmap,
+        plot_subsample_stability,
+    )
+    from svcarry.viz.style import save_figure
+    save_figure(plot_cost_sensitivity(costs["cost_ticks"], costs["sharpe"],
+                                      breakeven=breakeven), figdir / "cost_sensitivity.png")
+    hm = grid[(grid["rebalance"] == 1)].pivot_table(index="contango_threshold",
+                                                    columns="max_stress_loss",
+                                                    values="sharpe", aggfunc="mean")
+    save_figure(plot_parameter_heatmap(
+        hm, chosen=(BASE["contango_threshold"], BASE["max_stress_loss"]),
+        source=_SOURCE_NOTE + " Daily rebalancing, averaged over the three volatility "
+        "targets (0.10, 0.15, 0.20); the full 144-cell grid is in "
+        "specification_distribution.csv."), figdir / "parameter_heatmap.png")
+    est = {}
+    for _, r_ in subs[subs["kind"].isin(["configured subsample", "single year"])].iterrows():
+        est[r_["name"]] = (r_["sharpe"], r_.get("sharpe_se_lo", np.nan))
+    save_figure(plot_subsample_stability(est, reference=base_sharpe),
+                figdir / "subsample_stability.png")
+
+    qc = {
+        "chosen_oos_sharpe": base_sharpe,
+        "specifications_run_here": int(n_specs),
+        "grid": {"n": int(len(grid)), "min": float(grid["sharpe"].min()),
+                 "median": float(grid["sharpe"].median()),
+                 "max": float(grid["sharpe"].max()),
+                 "chosen_percentile": pct,
+                 "share_positive": float((grid["sharpe"] > 0).mean())},
+        "cost_breakeven_ticks": float(breakeven),
+        "sweep_extremes": {
+            p_: {"min": float(g["sharpe"].min()), "max": float(g["sharpe"].max()),
+                 "argmin": g.loc[g["sharpe"].idxmin(), "value"],
+                 "argmax": g.loc[g["sharpe"].idxmax(), "value"]}
+            for p_, g in params.groupby("parameter")},
+        "feb_2018_by_threshold": feb_by_threshold,
+        "subsample_sharpe": {r_["name"]: float(r_["sharpe"]) for _, r_ in subs.iterrows()},
+        "yearly_return_oos": yearly,
+        "stress_window_contribution_oos": contrib,
+        "alternative_constructions": {
+            nm: float(params[(params["parameter"] == "index")
+                             & (params["value"] == nm)]["sharpe"].iloc[0])
+            for nm in alt_index},
+        "outputs": ["reports/tables/robustness_costs.csv",
+                    "reports/tables/robustness_parameters.csv",
+                    "reports/tables/robustness_subsamples.csv",
+                    "reports/tables/specification_distribution.csv",
+                    "reports/tables/redteam_answers.csv"],
+    }
+    print(json.dumps(qc, indent=1, default=str))
+    return qc
+
+
 RUNNERS = {
     "clean": stage_clean,
     "index": stage_index,
@@ -1518,7 +1943,7 @@ RUNNERS = {
     "tail": stage_tail,
     "signals": stage_signals,
     "backtest": stage_backtest,
-    "robust": _not_yet("robust"),
+    "robust": stage_robust,
     "figures": _not_yet("figures"),
 }
 

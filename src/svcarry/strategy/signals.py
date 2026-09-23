@@ -150,7 +150,7 @@ def build_signal_panel(
     rv: pd.Series, curve: pd.DataFrame, *, horizon: int = 21,
     lags: tuple = (1, 5, 22), log: bool = True, train_min: int = 1000,
     refit_every: int = 21, contango_threshold: float = 1.0, vrp_min: float = 0.0,
-    periods_per_year: int = 252,
+    periods_per_year: int = 252, retransform: str = "normal",
 ):
     """Every series that feeds the entry decision, on the index's trading calendar.
 
@@ -167,7 +167,8 @@ def build_signal_panel(
     from svcarry.econometrics.har import har_oos_forecast
 
     har = har_oos_forecast(rv, horizon=horizon, lags=tuple(lags), log=log,
-                           train_min=train_min, refit_every=refit_every)
+                           train_min=train_min, refit_every=refit_every,
+                           retransform=retransform)
     idx = curve.index
     p = pd.DataFrame(index=idx)
     p["rv_proxy"] = rv.reindex(idx)

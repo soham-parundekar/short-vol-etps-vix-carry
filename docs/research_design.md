@@ -286,3 +286,42 @@ Detail in `docs/validation.md`. Summary of what is checked and against what:
   additionally cross-check against them.
 - Raw data is not redistributed (see `docs/data_sources.md` for the licensing
   reasoning); the acquisition script reproduces it from the original sources.
+
+---
+
+## 9. What the evidence supports, after Phase 12
+
+Added 23 September 2026. **Nothing above this line has been edited**: the hypotheses
+and their rejection criteria are left exactly as they were written before any data was
+retrieved, so that this section can be read against them. What follows is the claim
+each one supports *now*, at the confidence the robustness work leaves it.
+
+| | As stated | As the evidence leaves it |
+|---|---|---|
+| **H1** | The index tracks VIXY and VXX within 10 bp/day | **Rejected.** Tracking error is dominated by a dated settlement-time change, not by reconstruction error (V6, V9) |
+| **H2** | Rebalancing demand exceeded 10% of front-month open interest | **Not rejected**, at the lower asset bound (25.0%), for SVXY and UVXY only, on 4 of 10 candidate days with 6 indeterminate (V13, L10) |
+| **H3** | P(+80%) at least 10x P(+160%), stable across thresholds | **Not rejected, magnitude unmet**: 8.7x, not 10x. The ordering and the survival gap are stable (V16, V17) |
+| **H4** | Kelly-optimal short strictly below 1.0 | **Rejected**: the interval contains 1.0, and pre-2018 it was centred above it (V18) |
+| **H5** | Positive out-of-sample Sharpe, alpha indistinguishable from zero | **Not rejected**, and weaker than that sentence sounds: Sharpe 0.27 with a standard error of 0.31 at the chosen configuration, **0.06 at the median of the 144-cell grid**; alpha -1.4% a year (t = -0.52) (V28, V30, V31) |
+
+Three claims that the design implied and the evidence does **not** support, stated
+here so they are not carried into the report:
+
+1. **That the entry rules add return.** A constant-weight short at the same average
+   exposure earns a higher Sharpe out of sample (0.40 against 0.27) and a higher CAGR.
+   What the rules buy is the tail: worst day -11.7% against -16.6% (L19).
+2. **That crash budgeting alone makes the trade survivable.** The February 2018 escape
+   came from the entry filter, one day ahead and by a margin of 0.72%, and it
+   disappears if the same rule is rebalanced weekly (-31.7%) or the threshold is 2.5%
+   higher (-24.3%) (L18, L23). The budget's demonstrated contribution is narrower and
+   real: Sharpe 0.27 against 0.06 for volatility targeting alone, drawdown -26%
+   against -43%.
+3. **That the strategy is an attractive standalone investment.** Out of sample it is
+   beaten on Sharpe by the PutWrite index (0.53) and by the S&P 500 (0.75), it earns
+   nothing at two ticks of cost, and its result is not robust to plausible changes in
+   the rebalance interval or the threshold.
+
+The project's research question asked whether crash budgeting "turns it into something
+an investor could hold". The answer this evidence supports is: it turns a position that
+would have been destroyed into one that survives - which is not the same as one worth
+holding.

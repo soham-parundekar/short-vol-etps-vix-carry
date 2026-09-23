@@ -296,6 +296,36 @@ direction, and no result from this strategy should be quoted without it.
 
 ---
 
+## L22. The result is specification-dependent, and the chosen cell is a good one
+
+Across the 144-cell grid the out-of-sample Sharpe runs from -0.35 to 0.53 with a
+**median of 0.06**. The pre-registered configuration earns 0.27, the 78th percentile.
+The parameters were fixed before any data was retrieved and the provenance is in the
+commit history, so this is not selection after the fact - but a reader should treat
+0.27 as one draw from that distribution rather than as the property of the strategy,
+and the median cell as the honest central estimate.
+
+**What it bears on.** Every strategy claim. Phase 13 states them at this confidence,
+not at the baseline's.
+
+---
+
+## L23. The crash protection is a property of trading daily, not of the sizing rule
+
+The strategy avoided 5 February 2018 because it acted on a signal generated the
+previous close. Rebalancing weekly - the same rule, executed less often - holds the
+position through the event: worst day -38.0%, February -31.7%. A threshold 2.5% higher
+does the same. The sizing rule caps the loss *given* a position; what kept the position
+small enough to matter on that day was the entry filter, and the entry filter needs
+same-day execution.
+
+**What it bears on.** Any claim that crash budgeting alone makes the trade survivable.
+The evidence supports a narrower claim: budgeting bounds the loss from a position you
+are still holding (Sharpe 0.27 against 0.06 for volatility targeting alone, drawdown
+-26% against -43%), and the filters decide whether you are holding one.
+
+---
+
 ## L8. Open questions carried forward
 
 1. The 2016 and 2019 steps in the tracking-error series are unexplained (L1).
@@ -308,5 +338,7 @@ direction, and no result from this strategy should be quoted without it.
 5. Why the intraday range exceeds the squared open-to-close return by 14% on SPY
    (L16): intraday mean reversion and microstructure in highs and lows are both
    consistent with it.
-6. Whether the strategy's edge over a constant-weight short survives in the tail once
-   Phase 12 sweeps the thresholds around the February 2018 margin (L18, L19).
+6. Resolved in Phase 12: it does not survive a 2.5% change in the threshold or a
+   weekly rebalance (L22, L23).
+7. Why a 21-day rebalance beats a daily one is not separated into cost saving and
+   luck around February 2018.

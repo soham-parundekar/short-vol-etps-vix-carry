@@ -788,3 +788,79 @@ them, the betas are not. Validation V25-V30, limitations L18-L21, methodology M8
 
 Phase 12 — robustness and red-teaming. The first thing it should price is the
 0.72% margin of 2 February 2018 (the contango grid runs to 1.025).
+
+---
+
+## Session 9 — 23 September 2026
+
+**Phase 12 — robustness and red-team.** Complete. The strategy claim comes out of this
+phase materially weaker than it went in, and the write-up now says so.
+
+### The number that matters most
+
+Across the 144-cell grid (threshold x volatility target x crash budget x rebalance
+interval) the out-of-sample Sharpe runs from **-0.35 to 0.53, median 0.06**. The
+pre-registered configuration earns 0.27 - the **78th percentile**. The parameters were
+fixed before any data was retrieved and the commit history proves it, so this is not
+selection after the fact; but it does mean the chosen cell was a fortunate one, and
+0.06 is the honest central estimate for "this strategy, specified some other
+reasonable way".
+
+### Two cells that change the interpretation, not just the number
+
+* **Rebalancing weekly holds the position through 5 February 2018** - the exit
+  signalled on Friday is not executed until the next rebalance date: worst day -38.0%,
+  February -31.7%, Sharpe 0.01. At 21 days the grid happens to rebalance clear of it
+  (0.42).
+* **A threshold of 1.025 does the same**: February -24.3%.
+
+So the crash protection is a property of *acting on the signal the same day*, not of
+the sizing rule. The rule's own contribution is real but narrower: Sharpe 0.27 against
+0.06 for volatility targeting alone, drawdown -26% against -43%.
+
+### What survived
+
+The reconstruction: the shifted roll convention (0.27) and a constant-maturity basket
+(0.27) give the same answer as the rolled index (0.27). The tail model barely matters
+once the running-maximum floor binds - the EVT threshold sweep is flat. The alpha is
+insignificant in every specification tried. Survivorship is clean: XIV is in the sample
+for its whole life.
+
+### What did not
+
+The calendar-spread version - short front, long fourth, which isolates the slope -
+earns 0.07, so what the strategy is paid for is being short the *level*. The
+close-to-close variance proxy takes the Sharpe to 0.08. And the cost breakeven is
+**2.05 ticks per side**: at anything above that the strategy earns nothing.
+
+### Claims revised, not dropped
+
+`docs/research_design.md` gains a section 9 written **below** the untouched
+pre-registration, stating each hypothesis at the confidence the robustness leaves it,
+plus three claims the design implied that the evidence does not support: that the entry
+rules add return, that crash budgeting alone makes the trade survivable, and that the
+strategy is an attractive standalone investment.
+
+### Errors caught
+
+* The parameter heatmap outlined the cell at *positions* (1, 0) when asked for the cell
+  at *labels* (1.0, 0.2) - a figure that quietly mislabels the chosen configuration.
+  Fixed, with a test that fails on the old behaviour (the first version of that test
+  passed on it, because `int(1.0)` happened to equal the right position; the test was
+  rewritten with a 3x3 grid where the two differ).
+* The robustness sweeps cached the fitted tail model on `id(returns)`. A temporary
+  Series can reuse an address once collected, so that cache could have handed one index
+  construction's tail model to another. Re-keyed on the construction's name before any
+  robustness number was produced.
+
+### Also
+
+`stage_robust` builds two index constructions the project had not used before (a
+constant-maturity 30-day basket and a front-versus-fourth calendar spread) so the
+"alternative constructions" row is a real re-run rather than an assertion. 204
+specifications in this phase; about 220 across the project, all reported. Validation
+V31-V35, limitations L22-L23.
+
+### Next
+
+Phase 13 — results: every conclusion stated at the confidence Phase 12 supports.
