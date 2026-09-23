@@ -19,10 +19,11 @@ what a crash would cost.
 | | |
 |---|---|
 | **Research design** | Fixed and committed before any data was retrieved. Five hypotheses, each with a stated rejection criterion |
-| **Analysis library** | Complete and tested — **228 tests passing**, 2 skipped (cross-checks against packages not installed) |
+| **Analysis library** | Complete and tested — **240 tests passing**, 2 skipped (cross-checks against packages not installed) |
 | **Data** | Retrieved by `scripts/fetch_data.py`; 338 files, each with URL, retrieval time and SHA-256 in `data/raw/_manifest.json` |
-| **Phases complete** | 07 index validation · 08 mechanics and flows · 09 tail risk and survival · 10 forecasting and signals |
-| **Hypotheses so far** | H1 **rejected** · H2 **not rejected** (25% of front-month open interest at the lower asset bound) · H3 **not rejected, magnitude unmet** (8.7x, not 10x) · H4 **rejected** · H5 pending (Phase 11) |
+| **Phases complete** | 07 index validation · 08 mechanics and flows · 09 tail risk and survival · 10 forecasting and signals · 11 backtest and H5 |
+| **Hypotheses** | H1 **rejected** · H2 **not rejected** (25% of front-month open interest at the lower asset bound) · H3 **not rejected, magnitude unmet** (8.7x, not 10x) · H4 **rejected** · H5 **not rejected** (out-of-sample Sharpe 0.27 ± 0.31; alpha −1.4% a year, t = −0.52) |
+| **What the backtest does not show** | The dynamic rule does not beat a constant 0.173 short (Sharpe 0.40); what it buys is the tail. Its escape from 5 February 2018 rests on one filter clearing its threshold by 0.72% the day before |
 
 Every number above is traced in `docs/validation.md`, with what remains imperfect in
 `docs/limitations.md` and the sequence of work - including errors caught and what they

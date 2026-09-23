@@ -184,5 +184,169 @@
   ],
   "seconds": 3.7,
   "finished_utc": "2026-09-21T06:15:37Z"
+ },
+ "backtest": {
+  "design_window_model": {
+   "n": 2015,
+   "end": "2015-12-31",
+   "persistence": 0.9339888319121585,
+   "threshold_q": 0.9,
+   "xi": 0.05363194013053264,
+   "max_param_diff_between_seeds": 1.1775683100567758e-06,
+   "q999_median": 0.17777334153363344,
+   "q999_max": 3.960676177680935
+  },
+  "floor": {
+   "running_max_at_2018-02-02": 0.3270861496866166,
+   "event_floor": 0.9610261470152934,
+   "share_days_floor_binds_over_model": 0.7588622373169178
+  },
+  "weights": {
+   "mean": 0.19615990431665034,
+   "max": 0.7350640883983592,
+   "mean_when_on": 0.26677520474472854,
+   "binding_shares": {
+    "vol_target": 0.4742,
+    "signal_off": 0.2645,
+    "stress_budget": 0.2613
+   }
+  },
+  "oos": {
+   "sharpe": 0.26799949822667746,
+   "sharpe_se": 0.3138217888817447,
+   "cagr": 0.05013766214714965,
+   "max_drawdown": -0.2626280745035502,
+   "worst_day": -0.11672792274336695,
+   "worst_week": -0.1354849927719397,
+   "ann_turnover": 11.260288892758625,
+   "total_return": 0.687394667743924,
+   "worst_3_days": {
+    "2017-08-10": -0.11672792274336695,
+    "2016-09-09": -0.07875439295966148,
+    "2020-06-11": -0.06590954986794256
+   },
+   "best_3_days": {
+    "2016-11-07": 0.047489562078691934,
+    "2017-04-24": 0.03553867813063943,
+    "2017-02-14": 0.03431384679235003
+   }
+  },
+  "design_sharpe": 0.45084349420740566,
+  "constant_weight": {
+   "full (not a headline)": 0.19615990431665034,
+   "design": 0.22750478826414955,
+   "oos": 0.1727123028182613
+  },
+  "lag_sharpe_oos": {
+   "0": 1.1192608680919616,
+   "1": 0.26799949822667746,
+   "2": -0.12894911725654884
+  },
+  "cost_sharpe_oos": {
+   "0.0": 0.5237307733296445,
+   "1.0": 0.26799949822667746,
+   "2.0": 0.011950864613401184,
+   "4.0": -0.4993077219699433
+  },
+  "feb_2018_5th_6th": {
+   "strategy": -0.0006433234818707945,
+   "buy-and-hold -1x (XIV fee)": -0.9508961364754984,
+   "buy-and-hold -0.5x (SVXY fee)": -0.4130365172636682,
+   "Cboe PutWrite (PUT)": -0.022606685980274155,
+   "S&P 500 (SPY, total return)": -0.022944506643450602,
+   "strategy, hindsight floor": -0.0002500696841308825
+  },
+  "feb_2018_dependence": {
+   "signal_off_from": "2018-02-02",
+   "slope_cm_on_2018-02-02": 1.0071512585274054,
+   "threshold": 1.0,
+   "margin_over_threshold_pct": 0.7151258527405391,
+   "vrp_signal_on_2018-02-02": 1.0,
+   "vrp_on_2018-02-05": 0.1152984841920659,
+   "weight_that_would_have_been_held": 0.39511695992971574,
+   "counterfactual_loss_on_2018-02-05": -0.3797177296216508,
+   "actual_return_on_2018-02-05": -0.0006847629744444332,
+   "worst_day_with_lag_2": -0.3797305873791319
+  },
+  "alpha_specs_oos": {
+   "H5 (PUT+SPX+VXX)": {
+    "alpha_annual": -0.0143,
+    "alpha_t": -0.5156,
+    "r2": 0.4545,
+    "beta_PUT": -0.3812,
+    "beta_VXX_like": -0.1154
+   },
+   "auxiliary: PUT+SPX": {
+    "alpha_annual": -0.013,
+    "alpha_t": -0.3801,
+    "r2": 0.2095,
+    "beta_PUT": -0.2829,
+    "beta_VXX_like": NaN
+   },
+   "auxiliary: VXX only": {
+    "alpha_annual": -0.0092,
+    "alpha_t": -0.2981,
+    "r2": 0.4231,
+    "beta_PUT": NaN,
+    "beta_VXX_like": -0.1057
+   },
+   "auxiliary: PUT only": {
+    "alpha_annual": 0.0121,
+    "alpha_t": 0.3302,
+    "r2": 0.1099,
+    "beta_PUT": 0.3335,
+    "beta_VXX_like": NaN
+   },
+   "auxiliary: SPX only": {
+    "alpha_annual": -0.0073,
+    "alpha_t": -0.2069,
+    "r2": 0.1928,
+    "beta_PUT": NaN,
+    "beta_VXX_like": NaN
+   }
+  },
+  "factor_correlations": {
+   "PUT": {
+    "PUT": 1.0,
+    "SPX": 0.897,
+    "VXX_like": -0.663
+   },
+   "SPX": {
+    "PUT": 0.897,
+    "SPX": 1.0,
+    "VXX_like": -0.716
+   },
+   "VXX_like": {
+    "PUT": -0.663,
+    "SPX": -0.716,
+    "VXX_like": 1.0
+   }
+  },
+  "alpha_oos": {
+   "annual": -0.01434010042444778,
+   "t": -0.5155636338061164,
+   "p": 0.6062016298572183,
+   "betas": {
+    "PUT": -0.381198273961576,
+    "SPX": 0.19168424601769773,
+    "VXX_like": -0.11538049096552237
+   },
+   "n": 2691,
+   "r2": 0.45449890201651333
+  },
+  "H5": {
+   "oos_sharpe_positive": true,
+   "alpha_insignificant_at_5pct": true
+  },
+  "cost_share_roll": 0.3869747884852553,
+  "outputs": [
+   "data/processed/backtest_daily.csv",
+   "reports/tables/performance_{full,design,oos}.csv",
+   "reports/tables/stress_windows.csv",
+   "reports/tables/alpha_regression.csv",
+   "reports/tables/backtest_variants.csv"
+  ],
+  "seconds": 11.0,
+  "finished_utc": "2026-09-23T12:10:38Z"
  }
 }

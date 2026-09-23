@@ -1172,13 +1172,352 @@ def stage_signals(cfg) -> dict:
     return qc
 
 
+def stage_backtest(cfg) -> dict:
+    """The crash-budgeted strategy, its benchmarks, and H5.
+
+    Three things are kept visible throughout because each could otherwise flatter the
+    result: the design window is reported apart from the evaluation window and never
+    pooled into a headline; the crash floor is the largest move observed *to date*,
+    with the configured 5 February 2018 floor run beside it as a hindsight
+    calibration; and the deliberately leaky variant (signal_lag = 0) is run so a
+    reader can see what a one-day leak would have been worth here.
+    """
+    import numpy as np
+    import pandas as pd
+
+    from svcarry.data.cboe import load_cboe_index
+    from svcarry.data.fred import load_fred, tbill_accrual
+    from svcarry.data.prices import load_prices, split_adjusted_returns
+    from svcarry.econometrics.evt import choose_threshold
+    from svcarry.econometrics.garch import GJRGarch
+    from svcarry.econometrics.tailrisk import SplicedInnovations, conditional_move_quantile
+    from svcarry.evaluation.metrics import (
+        drawdown, performance_stats, performance_table, rolling_sharpe, window_returns,
+    )
+    from svcarry.evaluation.regressions import alpha_regression, downside_beta_regression
+    from svcarry.strategy.backtest import buy_and_hold_etp, run_backtest
+    from svcarry.strategy.sizing import roll_fraction, running_max_floor, strategy_weights
+
+    processed = ROOT / cfg.dotted("paths.processed")
+    tables = ROOT / cfg.dotted("paths.tables")
+    figdir = ROOT / cfg.dotted("paths.figures")
+    idx = pd.read_csv(_require(processed / "index_daily.csv", "the reconstructed index",
+                               "run: python scripts/run_pipeline.py --only index"),
+                      parse_dates=["date"]).set_index("date")
+    sig = pd.read_csv(_require(processed / "signals_daily.csv", "the signal panel",
+                               "run: python scripts/run_pipeline.py --only signals"),
+                      parse_dates=["date"]).set_index("date")
+    R = idx["ret"]
+    lr = np.log1p(R.dropna())
+    DESIGN_END = pd.Timestamp(cfg.dotted("sample.design_end"))
+    OOS_START = pd.Timestamp(cfg.dotted("sample.oos_start"))
+    VT = float(cfg.dotted("strategy.vol_target"))
+    VL = int(cfg.dotted("strategy.vol_lookback"))
+    LMAX = float(cfg.dotted("strategy.max_stress_loss"))
+    WMAX = float(cfg.dotted("strategy.max_weight"))
+    QP = float(cfg.dotted("strategy.stress_quantile"))
+    LAG = int(cfg.dotted("strategy.signal_lag"))
+    TICKS = float(cfg.dotted("strategy.cost_ticks"))
+    TICK = float(cfg.dotted("strategy.tick_value"))
+    GRID = [float(q) for q in cfg.dotted("tail.threshold_grid")]
+
+    # ---- 1. the crash scenario, fitted on the design window only ---------------
+    train = lr[lr.index <= DESIGN_END]
+    fit = GJRGarch(dist=cfg.dotted("tail.garch_dist")).fit(train, n_starts=4, seed=0)
+    fit1 = GJRGarch(dist=cfg.dotted("tail.garch_dist")).fit(train, n_starts=4, seed=1)
+    thr, gpds, q_chosen = choose_threshold(fit.std_resid, GRID)
+    thr.insert(0, "sample", f"design window to {DESIGN_END.date()}")
+    thr.to_csv(tables / "evt_threshold_design_window.csv", index=False)
+    if not np.isfinite(q_chosen):
+        raise SystemExit("no design-window EVT threshold satisfies the rule")
+    innov = SplicedInnovations(fit.dist, fit.dist_params, gpds[q_chosen])
+    q999 = conditional_move_quantile(fit.params, innov, lr, p=QP).reindex(idx.index)
+    floor_rt = running_max_floor(R).reindex(idx.index)
+    floor_event = float(R.loc[pd.Timestamp(cfg.dotted("strategy.stress_floor_event"))])
+
+    # ---- 2. weights -------------------------------------------------------------
+    S = sig["signal"].reindex(idx.index)
+    sizing = {
+        "primary": strategy_weights(R, S, q999, floor_rt, VT, VL, LMAX, WMAX),
+        "hindsight floor (calibration)":
+            strategy_weights(R, S, q999, floor_event, VT, VL, LMAX, WMAX),
+        "no crash budget (vol target only)":
+            strategy_weights(R, S, q999 * 0 + 1e-12, 1e-12, VT, VL, LMAX, WMAX),
+        "no signals (always on)":
+            strategy_weights(R, pd.Series(1.0, index=idx.index), q999, floor_rt,
+                             VT, VL, LMAX, WMAX),
+    }
+    W = sizing["primary"]
+    W.to_csv(processed / "strategy_weights.csv", index_label="date")
+
+    # ---- 3. the backtest --------------------------------------------------------
+    acc = tbill_accrual(load_fred("DTB3"), idx.index)
+    price = (idx["w1"] * idx["f1"] + idx["w2"] * idx["f2"]).rename("price_held")
+    roll = roll_fraction(idx["w2"], idx["exp2"])
+    common = dict(price_level=price, accrual=acc, cost_ticks=TICKS, tick_size=TICK,
+                  roll_fraction=roll)
+    bt = run_backtest(R, W["weight"], signal_lag=LAG, **common)
+    runs = {"strategy": bt}
+    for nm, sz in sizing.items():
+        if nm != "primary":
+            runs[nm] = run_backtest(R, sz["weight"], signal_lag=LAG, **common)
+    lag_runs = {l: run_backtest(R, W["weight"], signal_lag=l, **common) for l in (0, 1, 2)}
+    cost_runs = {c: run_backtest(R, W["weight"], signal_lag=LAG,
+                                 **{**common, "cost_ticks": c})
+                 for c in [float(x) for x in cfg.dotted("robustness.cost_ticks_grid")]}
+    no_roll = run_backtest(R, W["weight"], signal_lag=LAG,
+                           **{**common, "roll_fraction": None})
+    no_drift = run_backtest(R, W["weight"], signal_lag=LAG, drift_turnover=False, **common)
+
+    # ---- 4. benchmarks ----------------------------------------------------------
+    fee = lambda sym: float(cfg.dotted(f"products.{sym}.fee"))          # noqa: E731
+    spy = split_adjusted_returns(load_prices("SPY")).reindex(idx.index)
+    put = load_cboe_index("PUT")["close"].reindex(idx.index).pct_change()
+    vxx_like = R - fee("VXX") * pd.Series(idx.index, index=idx.index).diff().dt.days / 365.0
+    bh1 = buy_and_hold_etp(R.fillna(0.0), leverage=-1.0, fee=fee("XIV"), accrual=acc)
+    bh05 = buy_and_hold_etp(R.fillna(0.0), leverage=-0.5, fee=fee("SVXY"), accrual=acc)
+
+    def const_weight(window_start, window_end):
+        w = bt.weight.loc[window_start:window_end].mean()
+        return w, run_backtest(R, pd.Series(w, index=idx.index), signal_lag=LAG, **common)
+
+    series = {
+        "strategy": bt.returns,
+        "buy-and-hold -1x (XIV fee)": bh1.returns,
+        "buy-and-hold -0.5x (SVXY fee)": bh05.returns,
+        "Cboe PutWrite (PUT)": put,
+        "S&P 500 (SPY, total return)": spy,
+    }
+    extras = {"strategy": {"turnover": bt.turnover, "weight": bt.weight}}
+
+    # ---- 5. performance, by window ----------------------------------------------
+    windows = {"full (not a headline)": (idx.index.min(), idx.index.max()),
+               "design": (idx.index.min(), DESIGN_END),
+               "oos": (OOS_START, idx.index.max())}
+    perf = {}
+    const_w = {}
+    for wname, (lo, hi) in windows.items():
+        cw, cw_bt = const_weight(lo, hi)
+        const_w[wname] = cw
+        ser = {**series, f"constant weight {cw:.3f} short": cw_bt.returns}
+        sub = {k: v.loc[lo:hi] for k, v in ser.items()}
+        t = performance_table(sub, rf=acc.loc[lo:hi],
+                              extras={"strategy": {"turnover": bt.turnover.loc[lo:hi],
+                                                   "weight": bt.weight.loc[lo:hi]}})
+        t.insert(0, "window", wname)
+        perf[wname] = t
+        t.to_csv(tables / f"performance_{wname.split()[0]}.csv")
+    oos = perf["oos"]
+
+    # ---- 6. variants, lags, costs -----------------------------------------------
+    var_rows = []
+    for nm, r_ in {**{k: v.returns for k, v in runs.items()},
+                   **{f"signal_lag = {l}": v.returns for l, v in lag_runs.items()},
+                   **{f"cost {c:g} tick(s)": v.returns for c, v in cost_runs.items()},
+                   "no roll cost charged": no_roll.returns,
+                   "no drift turnover charged": no_drift.returns}.items():
+        for wname, (lo, hi) in windows.items():
+            st = performance_stats(r_.loc[lo:hi], rf=acc.loc[lo:hi], name=nm)
+            st["window"] = wname
+            var_rows.append(st)
+    variants = pd.DataFrame(var_rows)
+    variants.to_csv(tables / "backtest_variants.csv", index=False)
+
+    # ---- 7. stress windows -------------------------------------------------------
+    sw = {k: (v[0], v[1]) for k, v in cfg.dotted("robustness.stress_windows").items()}
+    cw_full, cw_full_bt = const_weight(*windows["full (not a headline)"])
+    stress = window_returns({**series,
+                             f"constant weight {cw_full:.3f} short": cw_full_bt.returns,
+                             "strategy, hindsight floor": runs["hindsight floor (calibration)"].returns,
+                             "strategy, no crash budget": runs["no crash budget (vol target only)"].returns},
+                            sw)
+    stress.to_csv(tables / "stress_windows.csv", index_label="window")
+
+    # ---- 8. attribution ----------------------------------------------------------
+    factors = {"PUT": put - acc, "SPX": spy - acc, "VXX_like": vxx_like}
+    # The three-factor regression is what H5 names, but VXX_like is the index the
+    # strategy is short, so it is nearly mechanical and it is strongly correlated with
+    # PUT. Two auxiliary specifications are reported so the partial coefficients are
+    # not read as economic loadings on their own.
+    specs = {"H5 (PUT+SPX+VXX)": factors,
+             "auxiliary: PUT+SPX": {k: factors[k] for k in ("PUT", "SPX")},
+             "auxiliary: VXX only": {"VXX_like": factors["VXX_like"]},
+             "auxiliary: PUT only": {"PUT": factors["PUT"]},
+             "auxiliary: SPX only": {"SPX": factors["SPX"]}}
+    aux_rows = []
+    for wname, (lo, hi) in windows.items():
+        for sname, fs in specs.items():
+            a_ = alpha_regression(bt.returns.loc[lo:hi],
+                                  {k: v.loc[lo:hi] for k, v in fs.items()}, rf=acc.loc[lo:hi])
+            aux_rows.append({"window": wname, "spec": sname, "n": a_["n"],
+                             "alpha_annual": a_["alpha_annual"], "alpha_t": a_["alpha_t"],
+                             "alpha_p": a_["alpha_p"], "r2": a_["rsquared"],
+                             **{f"beta_{k}": v for k, v in a_["betas"].items()},
+                             **{f"t_{k}": v for k, v in a_["beta_t"].items()}})
+    aux = pd.DataFrame(aux_rows)
+    fcorr = pd.DataFrame({k: v for k, v in factors.items()}).corr()
+    fcorr.to_csv(tables / "factor_correlations.csv", index_label="factor")
+    aux.to_csv(tables / "alpha_regression_specs.csv", index=False)
+
+    reg_rows, regs = [], {}
+    for wname, (lo, hi) in windows.items():
+        r_ = bt.returns.loc[lo:hi]
+        a = alpha_regression(r_, {k: v.loc[lo:hi] for k, v in factors.items()}, rf=acc.loc[lo:hi])
+        d = downside_beta_regression(r_, spy.loc[lo:hi], rf=acc.loc[lo:hi])
+        regs[wname] = (a, d)
+        reg_rows.append({"window": wname, "n": a["n"], "alpha_annual": a["alpha_annual"],
+                         "alpha_t": a["alpha_t"], "alpha_p": a["alpha_p"],
+                         **{f"beta_{k}": v for k, v in a["betas"].items()},
+                         **{f"t_{k}": v for k, v in a["beta_t"].items()},
+                         "r2": a["rsquared"], "hac_lags": a["lags"],
+                         "beta_spx_up": d["beta_up"], "beta_spx_down": d["beta_down"],
+                         "asymmetry_p": d["asymmetry_p"]})
+    pd.DataFrame(reg_rows).to_csv(tables / "alpha_regression.csv", index=False)
+
+    # ---- 9. daily panel and figures ----------------------------------------------
+    daily = bt.frame().join(W[["realised_vol", "move_quantile", "floor", "stress_move",
+                               "w_vol_target", "w_stress_budget", "binding",
+                               "stress_source"]], rsuffix="_sizing")
+    daily["index_ret"] = R
+    daily["signal"] = S
+    daily = daily.join(bt.components[["turnover_rebalance", "turnover_roll",
+                                      "cost_rebalance", "cost_roll"]])
+    daily.to_csv(processed / "backtest_daily.csv", index_label="date")
+
+    from svcarry.viz.figures import (
+        plot_drawdowns, plot_equity_curves, plot_event_detail, plot_weight_and_constraint,
+    )
+    from svcarry.viz.style import save_figure
+    eq = {nm: (1.0 + s.fillna(0.0)).cumprod() for nm, s in
+          {**series, f"constant weight {cw_full:.3f} short": cw_full_bt.returns}.items()}
+    save_figure(plot_equity_curves(eq, oos_start=str(OOS_START.date())),
+                figdir / "equity_curve.png")
+    save_figure(plot_drawdowns({nm: drawdown(s.fillna(0.0))["drawdown"]
+                                for nm, s in series.items()}), figdir / "drawdowns.png")
+    from svcarry.viz.figures import plot_rolling_sharpe
+    rs = {nm: rolling_sharpe(s, 252, rf=acc) for nm, s in series.items()
+          if nm != "buy-and-hold -1x (XIV fee)"}
+    save_figure(plot_rolling_sharpe(rs, 252, oos_start=str(OOS_START.date())),
+                figdir / "rolling_sharpe.png")
+    save_figure(plot_weight_and_constraint(bt.weight, W["binding"].shift(LAG)),
+                figdir / "weight_and_binding_constraint.png")
+    ev = idx.loc["2018-01-15":"2018-03-01"]
+    save_figure(plot_event_detail(
+        (1.0 + R.loc[ev.index]).cumprod(),
+        {"strategy": (1.0 + bt.returns.loc[ev.index]).cumprod(),
+         "buy-and-hold -1x": (1.0 + bh1.returns.loc[ev.index]).cumprod(),
+         "strategy, hindsight floor": (1.0 + runs["hindsight floor (calibration)"]
+                                       .returns.loc[ev.index]).cumprod()},
+        weight=bt.weight.loc[ev.index]), figdir / "feb2018_detail.png")
+
+    # ---- 9b. what the escape from 5 February 2018 rests on -----------------------
+    thr_c = float(cfg.dotted("strategy.contango_threshold"))
+    feb_prev, feb_day = pd.Timestamp("2018-02-02"), pd.Timestamp("2018-02-05")
+    w_held = float(W.loc[pd.Timestamp("2018-02-01"), "weight"])
+    feb_dep = {
+        "signal_off_from": str(feb_prev.date()),
+        "slope_cm_on_2018-02-02": float(sig.loc[feb_prev, "slope_cm"]),
+        "threshold": thr_c,
+        "margin_over_threshold_pct": float(sig.loc[feb_prev, "slope_cm"] / thr_c - 1.0) * 100,
+        "vrp_signal_on_2018-02-02": float(sig.loc[feb_prev, "sig_vrp"]),
+        "vrp_on_2018-02-05": float(sig.loc[feb_day, "vrp"]),
+        "weight_that_would_have_been_held": w_held,
+        "counterfactual_loss_on_2018-02-05": -w_held * float(R.loc[feb_day]),
+        "actual_return_on_2018-02-05": float(bt.returns.loc[feb_day]),
+        "worst_day_with_lag_2": float(lag_runs[2].returns.min()),
+    }
+
+    # ---- 9c. timing table, extended over the sizing chain ------------------------
+    tpath = tables / "timing_audit.csv"
+    tt = pd.read_csv(tpath) if tpath.exists() else pd.DataFrame()
+    rows = [
+        ("index return r_t", "t", "futures settlement on t", "close of t (sizing inputs)"),
+        ("trailing 21-day realised volatility", "t", "close of t", f"close of t+{LAG}"),
+        ("GJR-GARCH parameters + EVT tail", f"fitted once on data to {DESIGN_END.date()}",
+         f"{DESIGN_END.date()}", f"first used {OOS_START.date()} out of sample; in sample before"),
+        ("conditional 99.9% move for t+1", "t", "close of t (state filtered to t)",
+         f"close of t+{LAG}"),
+        ("crash floor (running maximum)", "t", "close of t", f"close of t+{LAG}"),
+        ("weight w", "t", "close of t", f"return of t+{LAG}"),
+        ("T-bill accrual", "t", "previous business day's discount rate", "return of t"),
+        ("futures price for costs", "t", "settlement on t", "costs charged on t"),
+    ]
+    add = pd.DataFrame(rows, columns=["input", "indexed_by", "available", "first_used"])
+    add["use_precedes_availability"] = False
+    pd.concat([tt, add], ignore_index=True).to_csv(tpath, index=False)
+
+    # ---- 10. audit and H5 ---------------------------------------------------------
+    sr = lambda s, lo, hi: performance_stats(s.loc[lo:hi], rf=acc.loc[lo:hi])["sharpe"]  # noqa: E731
+    lo_o, hi_o = windows["oos"]
+    lag_sharpe = {l: sr(v.returns, lo_o, hi_o) for l, v in lag_runs.items()}
+    cost_sharpe = {c: sr(v.returns, lo_o, hi_o) for c, v in cost_runs.items()}
+    feb = {nm: float((1.0 + s.loc["2018-02-05":"2018-02-06"]).prod() - 1.0)
+           for nm, s in {**series, "strategy, hindsight floor":
+                         runs["hindsight floor (calibration)"].returns}.items()}
+    a_oos = regs["oos"][0]
+    worst = bt.returns.loc[lo_o:hi_o].nsmallest(3)
+    best = bt.returns.loc[lo_o:hi_o].nlargest(3)
+    tot_oos = float((1.0 + bt.returns.loc[lo_o:hi_o]).prod() - 1.0)
+    qc = {
+        "design_window_model": {
+            "n": int(len(train)), "end": str(DESIGN_END.date()),
+            "persistence": fit.persistence, "threshold_q": q_chosen,
+            "xi": gpds[q_chosen].xi,
+            "max_param_diff_between_seeds": max(abs(fit.params[k] - fit1.params[k])
+                                                for k in fit.params),
+            "q999_median": float(q999.median()), "q999_max": float(q999.max()),
+        },
+        "floor": {"running_max_at_2018-02-02": float(floor_rt.loc["2018-02-02"]),
+                  "event_floor": floor_event,
+                  "share_days_floor_binds_over_model": float((W["stress_source"] == "floor").mean())},
+        "weights": {"mean": float(bt.weight.mean()), "max": float(bt.weight.max()),
+                    "mean_when_on": float(bt.weight[bt.weight > 0].mean()),
+                    "binding_shares": W["binding"].value_counts(normalize=True).round(4).to_dict()},
+        "oos": {
+            "sharpe": float(oos.loc["strategy", "sharpe"]),
+            "sharpe_se": float(oos.loc["strategy", "sharpe_se_lo"]),
+            "cagr": float(oos.loc["strategy", "cagr"]),
+            "max_drawdown": float(oos.loc["strategy", "max_drawdown"]),
+            "worst_day": float(oos.loc["strategy", "worst_day"]),
+            "worst_week": float(oos.loc["strategy", "worst_week"]),
+            "ann_turnover": float(oos.loc["strategy", "ann_turnover"]),
+            "total_return": tot_oos,
+            "worst_3_days": {str(d.date()): float(v) for d, v in worst.items()},
+            "best_3_days": {str(d.date()): float(v) for d, v in best.items()},
+        },
+        "design_sharpe": float(perf["design"].loc["strategy", "sharpe"]),
+        "constant_weight": const_w,
+        "lag_sharpe_oos": lag_sharpe, "cost_sharpe_oos": cost_sharpe,
+        "feb_2018_5th_6th": feb,
+        "feb_2018_dependence": feb_dep,
+        "alpha_specs_oos": aux[aux["window"] == "oos"].set_index("spec")[
+            ["alpha_annual", "alpha_t", "r2", "beta_PUT", "beta_VXX_like"]].round(4).to_dict("index"),
+        "factor_correlations": fcorr.round(3).to_dict(),
+        "alpha_oos": {"annual": a_oos["alpha_annual"], "t": a_oos["alpha_t"],
+                      "p": a_oos["alpha_p"], "betas": a_oos["betas"],
+                      "n": a_oos["n"], "r2": a_oos["rsquared"]},
+        "H5": {
+            "oos_sharpe_positive": bool(oos.loc["strategy", "sharpe"] > 0),
+            "alpha_insignificant_at_5pct": bool(a_oos["alpha_p"] > 0.05),
+        },
+        "cost_share_roll": float(bt.components["cost_roll"].sum() / bt.costs.sum()),
+        "outputs": ["data/processed/backtest_daily.csv",
+                    "reports/tables/performance_{full,design,oos}.csv",
+                    "reports/tables/stress_windows.csv",
+                    "reports/tables/alpha_regression.csv",
+                    "reports/tables/backtest_variants.csv"],
+    }
+    print(json.dumps(qc, indent=1, default=str))
+    return qc
+
+
 RUNNERS = {
     "clean": stage_clean,
     "index": stage_index,
     "mechanics": stage_mechanics,
     "tail": stage_tail,
     "signals": stage_signals,
-    "backtest": _not_yet("backtest"),
+    "backtest": stage_backtest,
     "robust": _not_yet("robust"),
     "figures": _not_yet("figures"),
 }

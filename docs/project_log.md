@@ -718,3 +718,73 @@ position. `signals_daily.csv` holds no realised outcome; the evaluation series i
 ### Next
 
 Phase 11 — the backtest and H5.
+
+---
+
+## Session 8 — 23 September 2026
+
+**Phase 11 — the crash-budgeted backtest and H5.** Complete. **H5 not rejected.**
+
+### Two decisions taken, and committed, before the backtest was run
+
+Commit 69b748d, with no result in view:
+
+* **The crash floor was reading the future.** The configuration set it to the
+  5 February 2018 move and applied it from 2008. The research design asks for an
+  *ex-ante* stress loss and the project's own audit rule calls that a leak, so the
+  floor became the largest one-day rise observed to date (0.14 in 2008, 0.327 from
+  June 2016, 0.961 from February 2018). It sizes **larger** before 2018, so the honest
+  version is the one that would have taken the bigger loss. The event floor is kept as
+  a labelled calibration: it is worth about 0.06 of out-of-sample Sharpe and half the
+  worst day.
+* **The engine was under-charging.** Turnover was the change in the *target* weight, so
+  the drift back to target was free and re-entering after a gap was free, and the
+  index's own roll - two legs, twelve round trips a year - was not charged at all. All
+  three are now charged; the roll alone is 39% of the cost bill.
+
+### The result
+
+Out of sample (2016-2026, 2,695 days): **Sharpe 0.27** with a Lo standard error of
+**0.31**, CAGR 5.0%, maximum drawdown -26.3%, worst day -11.7%, worst week -13.5%,
+turnover 11.3 a year, costs 3.2% against a 2.3% collateral accrual. Design window
+0.45. **Alpha over PUT, SPX and a VXX-like factor: -1.4% a year, t = -0.52** - and
+insignificant in all five specifications. H5 asked for a positive Sharpe and an
+insignificant alpha: both hold, so **H5 is not rejected**, with the Sharpe itself
+indistinguishable from zero.
+
+### The three findings that are not in the headline
+
+1. **A constant 0.173 short does better.** Sharpe 0.40 against 0.27, CAGR 7.0% against
+   5.0%. What the dynamic parts buy is the tail: worst day -11.7% against -16.6%, skew
+   -3.0 against -4.1. The phase prompt said to report this honestly if it happened; it
+   happened.
+2. **February 2018 turns on 0.72%.** The strategy lost 0.07% on 5 February because the
+   contango filter turned off at the previous close - with `cm30/cm90` at 1.0072
+   against a threshold of 1.0. Held, the position loses 38%, which is exactly what the
+   two-day-lag variant records. The VRP filter stayed *on* through the event.
+3. **Buy-and-hold -1x has a higher Sharpe than the strategy and lost 7.8% a year.**
+   The ratio cannot see a -96% day; compounding cannot ignore it. Worst day and worst
+   week now sit in the same table as the Sharpe for every series.
+
+### Checks
+
+Perturbation over the whole chain (mutation-checked against two injected one-day
+peeks); timing table extended to eighteen inputs, none used before it was available;
+shift test strictly decreasing (lag 0: 1.12, lag 1: 0.27, lag 2: -0.13); cost
+sensitivity monotone (0.52 / 0.27 / 0.01 / -0.50 at 0, 1, 2, 4 ticks); the day's
+accounting reproduced by hand on 10 August 2017, including the drift and roll
+turnover; the EVT threshold rule moved into a module and the Phase 09 tail stage
+re-run bit-identical to confirm the refactor changed nothing.
+
+### Also
+
+The crash scenario's model is fitted on the design window alone (to 2015-12-31) and
+filtered forward with frozen parameters, so no post-2015 observation sizes a post-2015
+position. Auxiliary factor specifications were added because PUT and SPX correlate
+0.897 and their separate loadings are not identified - the alpha is stable across
+them, the betas are not. Validation V25-V30, limitations L18-L21, methodology M8.
+
+### Next
+
+Phase 12 — robustness and red-teaming. The first thing it should price is the
+0.72% margin of 2 February 2018 (the contango grid runs to 1.025).

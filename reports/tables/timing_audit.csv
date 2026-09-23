@@ -9,3 +9,35 @@ VIX3M close,t,4:15 pm ET on t,close of t+1 (robustness only),False
 "VX settlements -> cm30, cm90",t,3:15 pm CT to 2020-10-23; 3:00 pm CT after,close of t+1,False
 "VRP, slopes, signals",t,latest of the above: 4:15 pm ET on t,close of t+1,False
 realised_next_h (evaluation only),t,close of t+21,never used in a decision,False
+index return r_t,t,futures settlement on t,close of t (sizing inputs),False
+trailing 21-day realised volatility,t,close of t,close of t+1,False
+GJR-GARCH parameters + EVT tail,fitted once on data to 2015-12-31,2015-12-31,first used 2016-01-01 out of sample; in sample before,False
+conditional 99.9% move for t+1,t,close of t (state filtered to t),close of t+1,False
+crash floor (running maximum),t,close of t,close of t+1,False
+weight w,t,close of t,return of t+1,False
+T-bill accrual,t,previous business day's discount rate,return of t,False
+futures price for costs,t,settlement on t,costs charged on t,False
+index return r_t,t,futures settlement on t,close of t (sizing inputs),False
+trailing 21-day realised volatility,t,close of t,close of t+1,False
+GJR-GARCH parameters + EVT tail,fitted once on data to 2015-12-31,2015-12-31,first used 2016-01-01 out of sample; in sample before,False
+conditional 99.9% move for t+1,t,close of t (state filtered to t),close of t+1,False
+crash floor (running maximum),t,close of t,close of t+1,False
+weight w,t,close of t,return of t+1,False
+T-bill accrual,t,previous business day's discount rate,return of t,False
+futures price for costs,t,settlement on t,costs charged on t,False
+index return r_t,t,futures settlement on t,close of t (sizing inputs),False
+trailing 21-day realised volatility,t,close of t,close of t+1,False
+GJR-GARCH parameters + EVT tail,fitted once on data to 2015-12-31,2015-12-31,first used 2016-01-01 out of sample; in sample before,False
+conditional 99.9% move for t+1,t,close of t (state filtered to t),close of t+1,False
+crash floor (running maximum),t,close of t,close of t+1,False
+weight w,t,close of t,return of t+1,False
+T-bill accrual,t,previous business day's discount rate,return of t,False
+futures price for costs,t,settlement on t,costs charged on t,False
+index return r_t,t,futures settlement on t,close of t (sizing inputs),False
+trailing 21-day realised volatility,t,close of t,close of t+1,False
+GJR-GARCH parameters + EVT tail,fitted once on data to 2015-12-31,2015-12-31,first used 2016-01-01 out of sample; in sample before,False
+conditional 99.9% move for t+1,t,close of t (state filtered to t),close of t+1,False
+crash floor (running maximum),t,close of t,close of t+1,False
+weight w,t,close of t,return of t+1,False
+T-bill accrual,t,previous business day's discount rate,return of t,False
+futures price for costs,t,settlement on t,costs charged on t,False

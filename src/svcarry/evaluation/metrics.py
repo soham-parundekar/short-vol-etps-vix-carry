@@ -128,6 +128,7 @@ def performance_stats(
         "var_99": float(np.quantile(r, 0.01)),
         "cvar_99": float(r[r <= np.quantile(r, 0.01)].mean()),
         "worst_day": float(r.min()),
+        "worst_week": float((1.0 + r).rolling(5).apply(np.prod, raw=True).min() - 1.0),
         "best_day": float(r.max()),
         "hit_rate": float((r > 0).mean()),
         "longest_drawdown_days": int(dd["days_underwater"].max()),

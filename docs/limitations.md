@@ -243,6 +243,59 @@ strategy with those sessions forced flat.
 
 ---
 
+## L18. The February 2018 escape rests on one day and seven parts in a thousand
+
+The strategy was flat on 5 February 2018 because `cm30/cm90` printed 1.0072 against a
+threshold of 1.0 at the close of 2 February. A threshold of 1.01 - inside the grid
+Phase 12 sweeps - leaves the position on, and the weight held that day (0.395) against
+a +96.1% index move is a 38% loss. The variance-risk-premium filter stayed on
+throughout: implied variance rises before realised variance does, so that filter is
+pro-cyclical in exactly the state it would need to protect against.
+
+**What it bears on.** Every February 2018 number for the strategy, and the volmageddon
+row of the stress table. Not the rest of the record: 2008, 2011, 2015, 2020 and 2024
+are losses of 3-8%, none of which turns on a single day's signal.
+
+---
+
+## L19. The dynamic rule does not beat a fixed small short
+
+Out of sample a constant 0.173 short earns a Sharpe of 0.40 against the strategy's
+0.27, and 7.0% a year against 5.0%. The signals and the crash budget buy a better
+tail - worst day -11.7% against -16.6%, skew -3.0 against -4.1 - not a better ratio.
+The strategy's Sharpe is also below the PutWrite index (0.53) and the S&P 500 (0.75).
+
+**What it bears on.** Any claim that the entry rules add return. They do not, on this
+sample. The claim the evidence supports is narrower: that sizing by a stated crash
+loss rather than by recent volatility changes the shape of the loss distribution -
+volatility targeting alone gives a Sharpe of 0.06 and a 43% drawdown.
+
+---
+
+## L20. The benchmarks are simulated, and one of them is sized with hindsight
+
+The buy-and-hold products are daily-rebalanced NAVs on the reconstructed index with
+the published fees, not the traded ETPs: the -1x line keeps compounding after
+February 2018, where XIV was accelerated and paid out about 4% of its prior value, so
+the simulated series is if anything the *kinder* comparison after that date. The
+constant-weight benchmark is sized at the strategy's own realised average exposure in
+each window, which is a number an investor could not have known in advance; it is a
+like-for-like exposure comparison, not an implementable rule. The PutWrite index and
+SPY are total returns, and the T-bill accrual is subtracted before every Sharpe.
+
+---
+
+## L21. Costs decide the result
+
+At the configured tick the strategy earns 5.0% a year against 3.2% of costs, so the
+answer is roughly "half the gross return goes to friction". At two ticks per side the
+out-of-sample Sharpe is 0.01. The tick model charges a full tick on each leg of the
+roll, where a calendar spread would usually trade inside that, so the default is
+conservative - but the conclusion is not robust to the cost assumption in either
+direction, and no result from this strategy should be quoted without it.
+
+---
+
 ## L8. Open questions carried forward
 
 1. The 2016 and 2019 steps in the tracking-error series are unexplained (L1).
@@ -255,3 +308,5 @@ strategy with those sessions forced flat.
 5. Why the intraday range exceeds the squared open-to-close return by 14% on SPY
    (L16): intraday mean reversion and microstructure in highs and lows are both
    consistent with it.
+6. Whether the strategy's edge over a constant-weight short survives in the tail once
+   Phase 12 sweeps the thresholds around the February 2018 margin (L18, L19).

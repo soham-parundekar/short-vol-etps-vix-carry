@@ -46,6 +46,7 @@ __all__ = [
     "plot_kelly_growth_curve",
     "plot_equity_curves",
     "plot_drawdowns",
+    "plot_rolling_sharpe",
     "plot_weight_and_constraint",
     "plot_cost_sensitivity",
     "plot_parameter_heatmap",
@@ -667,11 +668,12 @@ def plot_equity_curves(curves: "dict[str, pd.Series]",
     if oos_start is not None:
         ax.axvline(pd.Timestamp(oos_start), color=INK["secondary"], lw=1.1,
                    ls=(0, (6, 3)))
-        ax.annotate("out of sample", xy=(pd.Timestamp(oos_start), 1.0),
-                    xycoords=("data", "axes fraction"), xytext=(5, -24),
+        ax.annotate("out of sample", xy=(pd.Timestamp(oos_start), 0.0),
+                    xycoords=("data", "axes fraction"), xytext=(5, 8),
                     textcoords="offset points", fontsize=9, color=INK["secondary"])
     ax.set_yscale("log")
-    ax.legend(loc="upper left", ncol=2)
+    ax.legend(loc="lower right" if len(curves) > 4 else "upper left", ncol=2,
+              fontsize=9, framealpha=0.9)
     format_date_axis(ax)
     add_source(fig, source + " Parameters fixed on 2008-2015; everything after the marked date is held out.")
     return fig
@@ -688,6 +690,36 @@ def plot_drawdowns(drawdowns: "dict[str, pd.Series]", source: str = _SOURCE):
         ax.plot(dd.index, dd.values, label=name, **st)
     ax.legend(loc="lower left", ncol=2)
     format_date_axis(ax)
+    add_source(fig, source)
+    return fig
+
+
+def plot_rolling_sharpe(curves: "dict[str, pd.Series]", window: int = 252,
+                        oos_start=None, source: str = _SOURCE):
+    """Rolling Sharpe ratio, with the zero line and the held-out period marked.
+
+    Drawn because a single full-sample Sharpe for a strategy with this shape of
+    distribution says very little: the interesting question is how much of it comes
+    from a few stretches.
+    """
+    fig, ax = new_figure(
+        f"Rolling {window}-day Sharpe ratio, on excess returns",
+        "Sharpe ratio (annualised)", figsize=(9.5, 4.4),
+    )
+    for i, (name, s) in enumerate(curves.items()):
+        st = series_style(i)
+        ax.plot(s.index, s.values, label=name, lw=1.1, **st)
+    ax.axhline(0.0, color=INK["primary"], lw=0.9)
+    if oos_start is not None:
+        x = pd.Timestamp(oos_start)
+        ax.axvline(x, color=INK["secondary"], lw=1.0, ls=(0, (4, 3)))
+        ax.annotate("evaluation window", xy=(x, 1.0), xycoords=("data", "axes fraction"),
+                    xytext=(4, -10), textcoords="offset points", fontsize=8.5,
+                    color=INK["secondary"], va="top")
+    ax.legend(loc="lower center", ncol=min(len(curves), 4), fontsize=9,
+              bbox_to_anchor=(0.5, -0.30), frameon=False)
+    format_date_axis(ax)
+    fig.tight_layout()
     add_source(fig, source)
     return fig
 

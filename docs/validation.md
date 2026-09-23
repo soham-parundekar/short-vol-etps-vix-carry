@@ -942,6 +942,131 @@ The shift test (step 3) needs the backtest and belongs to Phase 11.
 
 ---
 
+## V25. The sizing chain: timing
+
+| Check | Result | Verdict |
+|---|---|---|
+| Perturbation over the whole chain | inputs after a cut-off changed by a record +150% day; every applied weight and every strategy return before it bit-identical | **Pass** |
+| Mutation check on that test | a one-day peek in the floor, and one in the volatility state, both caught | Pass |
+| Timing table | `timing_audit.csv`, eighteen inputs, no row where use precedes availability | **Pass** |
+| Shift test (Sharpe, out of sample) | lag 0: **1.12**, lag 1: **0.27**, lag 2: **-0.13** | **Pass**, strictly decreasing |
+| Parameter provenance | every strategy parameter in `config/config.yaml` at commit 2bdeb31, before the first data retrieval; the two Phase 11 changes committed at 69b748d before any backtest was run | **Pass** |
+
+The leak calibration is the second row of the shift test: a one-day leak would have
+turned a Sharpe of 0.27 into 1.12 and cut the worst day from -11.7% to -4.2%. Whatever
+the honest result is, it is not a contaminated version of a good one.
+
+## V26. The crash floor, and what the amendment cost
+
+The floor is the largest one-day index rise observed to date: 0.14 in 2008, 0.21 from
+2011, 0.25 from 2015, **0.327** from 24 June 2016, 0.961 from 5 February 2018. The
+model's conditional 99.9% move (design-window GJR-GARCH, persistence 0.934, EVT
+threshold at the 0.90 quantile by the Phase 09 rule, xi = 0.054) has a median of 0.178,
+so the floor is the binding half of the scenario on **75.9%** of days.
+
+Run with the configured hindsight floor instead (0.961 throughout), the strategy's
+out-of-sample Sharpe is **0.33** rather than 0.27, its worst day -6.6% rather than
+-11.7% and its maximum drawdown -19.9% rather than -26.3%. Knowing the answer in
+advance is worth about 0.06 of Sharpe and half the worst day - the honest version is
+the weaker one, which is the direction that makes the amendment credible.
+
+## V27. Costs and turnover
+
+Annual turnover of 11.3 (out of sample): 7.1 rebalancing the drift back to target and
+4.2 from the index's own roll, which is 38.7% of the cost bill. Costs are 3.2% of
+capital a year against a collateral accrual of 2.3%.
+
+| Cost (ticks per side) | 0 | **1 (default)** | 2 | 4 |
+|---|---|---|---|---|
+| Out-of-sample Sharpe | 0.52 | **0.27** | 0.01 | -0.50 |
+
+**Pass** (monotone), with the caveat that matters more than the pass: at two ticks the
+strategy earns nothing. An accounting that charged only changes in the target weight -
+as the engine did before this phase - would have reported 0.29, and one that ignored
+the roll as well, 0.37.
+
+## V28. Performance, by window, never pooled
+
+Out of sample (2016-01-04 to 2026-09-18, 2,695 days), on excess returns:
+
+| | Sharpe (Lo se) | CAGR | Vol | Max DD | Worst day | Worst week |
+|---|---|---|---|---|---|---|
+| **Strategy** | **0.27 (0.31)** | 5.0% | 12.6% | -26.3% | -11.7% | -13.5% |
+| Constant weight 0.173 short | 0.40 (0.32) | 7.0% | 13.4% | -29.4% | -16.6% | -18.3% |
+| Buy-and-hold -1x (XIV fee) | 0.50 (0.33) | **-7.8%** | 77.6% | -99.2% | -96.1% | -96.6% |
+| Buy-and-hold -0.5x (SVXY fee) | 0.49 (0.33) | 13.9% | 38.8% | -71.0% | -48.0% | -51.1% |
+| Cboe PutWrite | 0.53 (0.32) | 8.5% | 12.5% | -28.9% | -11.5% | -18.3% |
+| S&P 500 (SPY, total return) | 0.75 (0.31) | 15.0% | 17.7% | -33.7% | -10.9% | -18.0% |
+
+In the design window the strategy's Sharpe is 0.45 against the constant weight's 0.46.
+
+Three things this table says and the headline does not:
+
+1. **The dynamic rule does not beat a fixed small short.** A constant 0.173 short has a
+   higher Sharpe out of sample (0.40 against 0.27) and a higher CAGR. What the signals
+   and the budget buy is the tail: the worst day is -11.7% against -16.6%, the worst
+   week -13.5% against -18.3%, and the skew -3.0 against -4.1. On this evidence the
+   dynamic parts earn their keep as a risk control, not as a source of return.
+2. **A Sharpe ratio is not a verdict here.** Buy-and-hold -1x has the second-highest
+   Sharpe in the table and lost 7.8% a year: the ratio is computed on daily returns
+   whose -96% day it can barely see, while compounding cannot ignore it.
+3. **The strategy's own Sharpe is not distinguishable from zero.** 0.27 with a Lo (2002)
+   standard error of 0.31.
+
+Variants, out-of-sample Sharpe: no crash budget (volatility targeting alone) **0.06**
+with a -43.2% drawdown; no signals (always on) 0.26 with a -24.2% worst day; both parts
+therefore do something, and the crash budget does more for return than the signals do.
+
+## V29. February 2018: what the escape rests on
+
+The strategy lost 0.07% on 5 February 2018, against -95.1% for buy-and-hold -1x, and
+-8.9% over the whole volmageddon window. It was flat that day because the contango
+filter turned off at the close of Friday 2 February - and it turned off by
+**0.72%**: `cm30/cm90` printed **1.0072** against a threshold of 1.0.
+
+The variance-risk-premium filter did *not* turn off. It was on through the event and
+rose with it (VRP 0.115 on 5 February), because implied variance jumps before realised
+variance does: in a spike that filter says "sell volatility" precisely when volatility
+is exploding.
+
+Had the position been held, the weight computed at the close of 1 February (0.395)
+against a +96.1% index day is a **-38.0%** loss - which is exactly what the two-day-lag
+variant records as its worst day. So the single most favourable fact about this
+strategy rests on one filter clearing its threshold by seven parts in a thousand, on
+the last day it could have. Reported as fragility, not as evidence that the rule works.
+L18; Phase 12's threshold grid (0.95 to 1.025) will price it.
+
+## V30. H5
+
+`alpha_regression.csv`, `alpha_regression_specs.csv`. Out of sample, on excess returns,
+Newey-West at 8 lags:
+
+    r_strategy = alpha + b_PUT r_PUT + b_SPX r_SPX + b_VXX r_VXXlike + e
+
+**alpha = -1.4% a year, t = -0.52, p = 0.61**, R^2 = 0.45, n = 2,691. The alpha is
+insignificant in all five specifications run (three-factor, PUT+SPX, VXX only, PUT
+only, SPX only): between -1.4% and +1.2% a year, every |t| below 0.53.
+
+The individual betas should not be read as economic loadings: PUT and SPX correlate
+0.897, so the three-factor PUT coefficient (-0.38) is a partial coefficient in a
+badly conditioned regression. Univariate betas are +0.33 on PUT and +0.31 on SPX.
+The up/down split of the equity beta is the informative one: **0.19 in up markets,
+0.42 in down markets** (difference p = 0.014). The average beta understates what this
+position does when the market falls.
+
+| H5 | Criterion | Result |
+|---|---|---|
+| First half | positive out-of-sample Sharpe net of 1 tick per side | 0.27 - **holds**, but with a standard error of 0.31 |
+| Second half | alpha not distinguishable from zero at 5% | t = -0.52 - **holds** |
+
+**H5 is not rejected.** The uncomfortable reading, which the write-up keeps: the
+premium survives crash budgeting in the sense that what is left is positive and
+indistinguishable from both zero and a fixed small short position, and every one of
+its factor-adjusted returns is consistent with being paid for crash exposure rather
+than for skill.
+
+---
+
 ## Open items
 
 1. The 2016 and 2019 steps in V6 are not explained.
@@ -953,3 +1078,6 @@ The shift test (step 3) needs the backtest and belongs to Phase 11.
    than trailing RV on MSE in 2008-2012 (V21).
 5. The retransformation understates the conditional mean by about 9% (V21, L15);
    smearing is carried to Phase 12.
+6. Why the strategy's partial PUT beta is negative while its univariate beta is
+   positive is collinearity, not a finding; the separate loadings are not identified
+   (V30).
