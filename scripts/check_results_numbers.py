@@ -109,10 +109,10 @@ def main() -> int:
     chk("contango on", si["contango (cm30/cm90) on"], 0.831)
 
     po = pd.read_csv(T / "performance_oos.csv", index_col=0)
-    chk("H5 out-of-sample Sharpe", po.loc["strategy", "sharpe"], 0.27, 0.03)
+    chk("H5 out-of-sample Sharpe", po.loc["strategy", "sharpe"], 0.20, 0.03)
     chk("H5 Sharpe standard error", po.loc["strategy", "sharpe_se_lo"], 0.31, 0.03)
-    chk("strategy CAGR", po.loc["strategy", "cagr"], 0.050)
-    chk("strategy max drawdown", po.loc["strategy", "max_drawdown"], -0.263)
+    chk("strategy CAGR", po.loc["strategy", "cagr"], 0.041)
+    chk("strategy max drawdown", po.loc["strategy", "max_drawdown"], -0.268)
     chk("strategy worst day", po.loc["strategy", "worst_day"], -0.117)
     chk("strategy worst week", po.loc["strategy", "worst_week"], -0.135)
     chk("PutWrite Sharpe", po.loc["Cboe PutWrite (PUT)", "sharpe"], 0.525)
@@ -123,21 +123,34 @@ def main() -> int:
 
     bv = pd.read_csv(T / "backtest_variants.csv")
     bv = bv[bv["window"] == "oos"].set_index("name")
-    chk("volatility targeting alone, Sharpe", bv.loc["no crash budget (vol target only)", "sharpe"], 0.056, 0.05)
+    chk("volatility targeting alone, Sharpe", bv.loc["no crash budget (vol target only)", "sharpe"], -0.026, 0.05)
     chk("volatility targeting alone, drawdown",
-        bv.loc["no crash budget (vol target only)", "max_drawdown"], -0.432)
+        bv.loc["no crash budget (vol target only)", "max_drawdown"], -0.435)
     chk("no signals, worst day", bv.loc["no signals (always on)", "worst_day"], -0.242)
+    chk("one-day-leak calibration Sharpe", bv.loc["signal_lag = 0", "sharpe"], 1.54, 0.02)
 
     ar = pd.read_csv(T / "alpha_regression.csv").set_index("window")
-    chk("H5 alpha", ar.loc["oos", "alpha_annual"], -0.014, 0.05)
-    chk("H5 alpha t", ar.loc["oos", "alpha_t"], -0.52, 0.03)
+    chk("H5 alpha", ar.loc["oos", "alpha_annual"], -0.022, 0.05)
+    chk("H5 alpha t", ar.loc["oos", "alpha_t"], -0.77, 0.03)
 
     sp = pd.read_csv(T / "specification_distribution.csv")
-    chk("grid median", sp["sharpe"].median(), 0.06, 0.06)
-    chk("grid maximum", sp["sharpe"].max(), 0.53, 0.02)
-    chk("grid minimum", sp["sharpe"].min(), -0.35, 0.02)
-    chk("chosen percentile", (sp["sharpe"] < po.loc["strategy", "sharpe"]).mean(), 0.78, 0.02)
-    chk("share of cells positive", (sp["sharpe"] > 0).mean(), 0.646)
+    chk("grid median", sp["sharpe"].median(), 0.058, 0.06)
+    chk("grid maximum", sp["sharpe"].max(), 0.50, 0.02)
+    chk("grid minimum", sp["sharpe"].min(), -0.37, 0.02)
+    chk("chosen percentile", (sp["sharpe"] < po.loc["strategy", "sharpe"]).mean(), 0.74, 0.02)
+    chk("share of cells positive", (sp["sharpe"] > 0).mean(), 0.674)
+
+    # The look-ahead claim itself, which used to live only in prose and in a column of
+    # hard-coded False. A-05: the table is computed now, so it belongs in this check.
+    ta = pd.read_csv(T / "timing_audit.csv")
+    if bool(ta["use_precedes_availability"].any()):
+        bad = ta.loc[ta["use_precedes_availability"], "input"].tolist()
+        fails.append(f"timing audit: input(s) used before available: {bad}")
+    chk("timing audit rows", len(ta), 19, 0.0)
+    vix = ta[ta["input"] == "VIX close"].iloc[0]
+    chk("VIX rows carrying a real extra-lag requirement",
+        vix["dates_needing_extra_lag"], 1482, 0.01)
+    chk("extra lag applied to the VIX close", vix["extra_lag_applied"], 1, 0.0)
 
     rp = pd.read_csv(T / "robustness_parameters.csv")
     pick = lambda p_, v_, c: float(rp[(rp["parameter"] == p_) & (rp["value"] == v_)][c].iloc[0])  # noqa: E731
@@ -149,7 +162,7 @@ def main() -> int:
     below = rc[rc <= 0]
     hi = below.index[0]
     lo = rc.index[rc.index.get_loc(hi) - 1]
-    chk("cost breakeven (ticks)", lo + (hi - lo) * rc[lo] / (rc[lo] - rc[hi]), 2.05, 0.02)
+    chk("cost breakeven (ticks)", lo + (hi - lo) * rc[lo] / (rc[lo] - rc[hi]), 1.77, 0.02)
 
     # ---- numbers first quoted in reports/report.md and reports/summary_one_page.md ----
 
@@ -229,14 +242,14 @@ def main() -> int:
     # Section 6: the red-team answers the report quotes.
     rt = pd.read_csv(T / "redteam_answers.csv").set_index("question")
     leak = [q for q in rt.index if q.startswith("2.")][0]
-    if "1.12" not in str(rt.loc[leak, "number"]):
-        fails.append("report section 6: the leak-calibration Sharpe is no longer 1.12")
+    if "1.54" not in str(rt.loc[leak, "number"]):
+        fails.append("report section 6: the leak-calibration Sharpe is no longer 1.54")
     conc = [q for q in rt.index if q.startswith("6.")][0]
-    for token in ("11.7%", "17.0%"):
+    for token in ("11.7%", "21.8%"):
         if token not in str(rt.loc[conc, "number"]):
             fails.append(f"report section 6: concentration answer no longer quotes {token}")
     per = [q for q in rt.index if q.startswith("5.")][0]
-    for token in ("68.7%", "-8.9%", "-4.8%", "-3.2%", "25.5%"):
+    for token in ("53.6%", "-8.9%", "-4.8%", "+0.1%", "25.5%"):
         if token not in str(rt.loc[per, "number"]):
             fails.append(f"report section 6: period answer no longer quotes {token}")
 

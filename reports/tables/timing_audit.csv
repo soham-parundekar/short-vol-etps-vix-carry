@@ -1,19 +1,20 @@
-input,indexed_by,available,first_used,use_precedes_availability
-SPY open/high/low/close,t,close of t (4:00 pm ET),close of t+1,False
-rv_proxy (overnight + Rogers-Satchell),t,close of t,close of t+1,False
-"HAR predictors rv_d, rv_w, rv_m",t,close of t (windows end at t),close of t+1,False
-HAR coefficients,refit date t,"close of t; trained on rows s <= t-21-1, whose targets end by t-1",close of t+1,False
-HAR forecast,t,close of t,close of t+1,False
-VIX close,t,4:15 pm ET on t,close of t+1,False
-VIX3M close,t,4:15 pm ET on t,close of t+1 (robustness only),False
-"VX settlements -> cm30, cm90",t,3:15 pm CT to 2020-10-23; 3:00 pm CT after,close of t+1,False
-"VRP, slopes, signals",t,latest of the above: 4:15 pm ET on t,close of t+1,False
-realised_next_h (evaluation only),t,close of t+21,never used in a decision,False
-index return r_t,t,futures settlement on t,close of t (sizing inputs),False
-trailing 21-day realised volatility,t,close of t,close of t+1,False
-GJR-GARCH parameters + EVT tail,fitted once on data to 2015-12-31,2015-12-31,first used 2016-01-01 out of sample; in sample before,False
-conditional 99.9% move for t+1,t,close of t (state filtered to t),close of t+1,False
-crash floor (running maximum),t,close of t,close of t+1,False
-weight w,t,close of t,return of t+1,False
-T-bill accrual,t,previous business day's discount rate,return of t,False
-futures price for costs,t,settlement on t,costs charged on t,False
+input,indexed_by,available,strike_et,first_used,extra_lag_applied,dates_needing_extra_lag,n_dates_use_precedes_availability,use_precedes_availability
+SPY open/high/low/close,t,close of t (4:00 pm ET),16:00,return of t+1,0,0,0,False
+rv_proxy (overnight + Rogers-Satchell),t,close of t,16:00,return of t+1,0,0,0,False
+"HAR predictors rv_d, rv_w, rv_m",t,close of t (windows end at t),16:00,return of t+1,0,0,0,False
+HAR coefficients,refit date t,"close of t; trained on rows s <= t-21-1, whose targets end by t-1",16:00,return of t+1,0,0,0,False
+HAR forecast,t,close of t,16:00,return of t+1,0,0,0,False
+VIX close,t,4:15 pm ET on t,16:15,return of t+2,1,1482,0,False
+VIX3M close,t,4:15 pm ET on t (robustness only),16:15,return of t+2,1,1482,0,False
+"VX settlements -> cm30, cm90",t,"the execution settlement itself: 3:15 pm CT to 2020-10-23, 3:00 pm CT after",,return of t+1,0,0,0,False
+VRP (VIX close less HAR forecast),t,latest of its inputs: 4:15 pm ET on t,16:15,return of t+2,1,1482,0,False
+signal (contango and VRP),t,latest of its inputs: 4:15 pm ET on t,16:15,return of t+2,1,1482,0,False
+realised_next_h (evaluation only),t,close of t+21,,never used in a decision,0,0,0,False
+index return r_t,t,futures settlement on t,,close of t (sizing inputs),0,0,0,False
+trailing 21-day realised volatility,t,close of t (from settlement returns),,return of t+1,0,0,0,False
+GJR-GARCH parameters + EVT tail,fitted once on data to 2015-12-31,2015-12-31,,first used 2016-01-01 out of sample; in sample before,0,0,0,False
+conditional 99.9% move for t+1,t,close of t (state filtered to t),,return of t+1,0,0,0,False
+crash floor (running maximum),t,close of t,,return of t+1,0,0,0,False
+weight w,t,close of t,,return of t+1,0,0,0,False
+T-bill accrual,t,previous business day's discount rate,,return of t,0,0,0,False
+futures price for costs,t,settlement on t,,costs charged on t,0,0,0,False

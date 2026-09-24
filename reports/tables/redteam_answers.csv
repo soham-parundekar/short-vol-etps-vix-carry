@@ -1,10 +1,10 @@
 question,answer,number
 1. Weakest assumption,The contango filter's threshold. It cleared 1.0 by 0.72% at the close of 2 Feb 2018; at 1.025 the position is held into the event.,"Feb 2018 return by threshold: 0.95: -0.1%, 0.975: -0.1%, 1.0: -0.1%, 1.025: -24.3%"
-2. Could look-ahead explain the result?,"No: a one-day leak multiplies the Sharpe, it does not create the honest one.",lag 0 Sharpe 1.12 vs chosen 0.27; whole-chain perturbation test passes and is mutation-checked
+2. Could look-ahead explain the result?,"No: a one-day leak multiplies the Sharpe, it does not create the honest one.",lag 0 Sharpe 1.54 vs chosen 0.20; whole-chain perturbation test passes and is mutation-checked
 3. Survivorship,XIV is in the product sample for its whole life including its termination; no product was dropped.,"{""XIV"": {""inception"": ""2010-11-30"", ""terminated"": ""2018-02-21""}, ""SVXY"": {""inception"": ""2011-10-03"", ""terminated"": ""-""}, ""UVXY"": {""inception"": ""2011-10-03"", ""terminated"": ""-""}, ""VXX"": {""inception"": ""2009-01-29"", ""terminated"": ""-""}, ""VIXY"": {""inception"": ""2011-01-03"", ""terminated"": ""-""}, ""SVIX"": {""inception"": ""2022-03-28"", ""terminated"": ""-""}}"
-4. Cost at which the OOS Sharpe reaches zero,Interpolated on the cost grid.,2.05 ticks per side (0.102 VIX points)
-5. Does one period dominate?,Total out-of-sample return decomposed by stress window and by year.,"total 68.7%; volmageddon_2018: -8.9%, covid_2020: -4.8%, yen_carry_2024: -3.2%; best year 2017 +25.5%"
-6. Does one day dominate?,Largest single day as a share of the total out-of-sample return.,"2017-08-10 +11.7%, 17.0% of the total"
-7. Parameter selection,Distribution of out-of-sample Sharpe over the full grid.,"n = 144 cells: min -0.35, median 0.06, max 0.53; chosen 0.27 at the 78% percentile"
+4. Cost at which the OOS Sharpe reaches zero,Interpolated on the cost grid.,1.77 ticks per side (0.088 VIX points)
+5. Does one period dominate?,Total out-of-sample return decomposed by stress window and by year.,"total 53.6%; volmageddon_2018: -8.9%, covid_2020: -4.8%, yen_carry_2024: +0.1%; best year 2017 +25.5%"
+6. Does one day dominate?,Largest single day as a share of the total out-of-sample return.,"2017-08-10 +11.7%, 21.8% of the total"
+7. Parameter selection,Distribution of out-of-sample Sharpe over the full grid.,"n = 144 cells: min -0.37, median 0.06, max 0.50; chosen 0.20 at the 74% percentile"
 8. Asset-outstanding bounds,"H2 is stated at the lower bound already (Phase 08); the upper bound only strengthens it, and the flow claim is excluded outside the anchors.",lower bound 25.0% of front-month open interest; upper bound exceeds 100%
-9. Is the economic story fitted?,"The alpha is indistinguishable from zero and the equity beta is asymmetric, which is the story the design predicted before the data was seen.",alpha -1.33% a year (t = -0.48); a constant-weight short earns more per unit of risk than the dynamic rule
+9. Is the economic story fitted?,"The alpha is indistinguishable from zero and the equity beta is asymmetric, which is the story the design predicted before the data was seen.",alpha -2.06% a year (t = -0.74); a constant-weight short earns more per unit of risk than the dynamic rule

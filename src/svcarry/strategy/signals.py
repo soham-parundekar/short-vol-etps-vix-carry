@@ -151,11 +151,22 @@ def build_signal_panel(
     lags: tuple = (1, 5, 22), log: bool = True, train_min: int = 1000,
     refit_every: int = 21, contango_threshold: float = 1.0, vrp_min: float = 0.0,
     periods_per_year: int = 252, retransform: str = "normal",
+    vix_extra_lag_from=None,
 ):
     """Every series that feeds the entry decision, on the index's trading calendar.
 
     ``rv``     daily variance proxy on the equity calendar.
     ``curve``  index-dated frame with ``vix, vix3m, cm30, cm90, f1, days_to_exp1``.
+
+    ``vix_extra_lag_from``
+        Date from which the VIX-cash-derived signals take one extra day of lag. The
+        position a signal informs is booked at the VX daily settlement, and Cboe moved
+        that settlement from 4:15 p.m. ET to 4:00 p.m. ET on 26 October 2020, while the
+        VIX and VIX3M cash indices stayed at 4:15 p.m. ET. From that date a VIX-derived
+        value is struck fifteen minutes *after* the price the position is booked at, so
+        using it same-day is look-ahead — the same fifteen-minute gap this project's
+        first finding is about. ``None`` reproduces the pre-Pass-1 behaviour and leaves
+        the overlap in place; see :mod:`svcarry.timing` and final audit A-02.
 
     Returns ``(panel, har)``. Each row of ``panel`` uses information available at
     that date's close and nothing later; the realised outcome the forecast is judged
@@ -163,6 +174,11 @@ def build_signal_panel(
     so a later stage cannot pick it up by accident. Nothing is forward-filled: on a
     date when the equity market was shut but futures traded, the forecast is missing
     and so is the signal.
+
+    The raw ``vrp`` and ``slope_vix3m`` columns are left unlagged because they are
+    descriptive series that the figures and statistics report; the ``*_aligned``
+    columns are the ones the signals are built from, so the panel shows both what was
+    observed and what was tradeable.
     """
     from svcarry.econometrics.har import har_oos_forecast
 
@@ -187,9 +203,24 @@ def build_signal_panel(
     p["cm90"] = curve["cm90"]
     p["slope_cm"] = p["cm30"] / p["cm90"]
     p["slope_vix3m"] = p["vix"] / p["vix3m"]
+
+    # Execution alignment. cm30/cm90 come off the VX settlement itself, so they are
+    # observable exactly when the position is booked and take no extra lag. The VIX
+    # cash close does not; see the docstring and svcarry.timing.
+    lag_from = None if vix_extra_lag_from is None else pd.Timestamp(vix_extra_lag_from)
+    if lag_from is None:
+        p["vix_input_lagged"] = False
+        p["vrp_aligned"] = p["vrp"]
+        p["slope_vix3m_aligned"] = p["slope_vix3m"]
+    else:
+        m = pd.Series(p.index >= lag_from, index=idx)
+        p["vix_input_lagged"] = m
+        p["vrp_aligned"] = p["vrp"].where(~m, p["vrp"].shift(1))
+        p["slope_vix3m_aligned"] = p["slope_vix3m"].where(~m, p["slope_vix3m"].shift(1))
+
     p["sig_contango"] = contango_signal(p["slope_cm"], contango_threshold)
-    p["sig_contango_vix3m"] = contango_signal(p["slope_vix3m"], contango_threshold)
-    p["sig_vrp"] = vrp_signal(p["vrp"], vrp_min)
+    p["sig_contango_vix3m"] = contango_signal(p["slope_vix3m_aligned"], contango_threshold)
+    p["sig_vrp"] = vrp_signal(p["vrp_aligned"], vrp_min)
     p["signal"] = combine_signals({"c": p["sig_contango"], "v": p["sig_vrp"]}, rule="all")
     c, v = p["sig_contango"], p["sig_vrp"]
     bind = pd.Series("none", index=idx, dtype=object)

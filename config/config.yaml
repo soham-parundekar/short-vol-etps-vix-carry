@@ -27,6 +27,22 @@ sample:
   # Held-out evaluation window. Contains 5 Feb 2018, Mar 2020 and Aug 2024.
   oos_start: "2016-01-01"
 
+# ---------------------------------------------------------------------------
+# Execution timing. The index is struck at the VX daily settlement, so that settlement
+# is the price a position is booked at. Cboe moved it from 3:15 p.m. CT (4:15 p.m. ET)
+# to 3:00 p.m. CT (4:00 p.m. ET) effective 26 October 2020, while the VIX and VIX3M cash
+# indices stayed at 4:15 p.m. ET. From that date a VIX-derived signal is struck fifteen
+# minutes after the price it would trade at, so it takes one extra day of lag. Setting
+# vix_extra_lag_from to null reproduces the pre-audit behaviour and leaves the overlap
+# in place. See svcarry.timing, docs/methodology.md M7a and final audit A-02.
+# ---------------------------------------------------------------------------
+timing:
+  settlement_change: "2020-10-26"
+  settlement_close_et_before: "16:15"
+  settlement_close_et_from: "16:00"
+  vix_cash_close_et: "16:15"
+  vix_extra_lag_from: "2020-10-26"
+
 index:
   # 'sp_dji'  : dr/dt weights with the roll period running from one VIX futures
   #             settlement date to the next (S&P Dow Jones Indices methodology).
@@ -140,7 +156,13 @@ strategy:
   cost_ticks: 1.0               # per side, in 0.05 VIX points
   tick_value: 0.05
   rebalance: daily
-  signal_lag: 1                 # signal from close of t-1 traded at close of t
+  # A weight computed from information available at the settlement of t-1 is applied to
+  # the return of t, which runs from the settlement of t-1 to the settlement of t. So the
+  # position is booked at the settlement of t-1, not at the settlement of t: the comment
+  # here said "traded at close of t" through Phase 16, which describes a two-day
+  # convention and is what let A-02 through. The engine performs the shift itself; see
+  # svcarry.strategy.backtest and svcarry.timing.
+  signal_lag: 1                 # decide at the settlement of t-1, earn the return of t
 
 robustness:
   cost_ticks_grid: [0.0, 1.0, 2.0, 4.0]

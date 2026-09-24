@@ -3,10 +3,10 @@ days after burn-in,4695,
 days with the combined signal defined,4692,0.9993610223642172
 contango (cm30/cm90) on,3898,0.8307757885763001
 VRP on,4103,0.874467178175618
-combined on (invested),3465,0.7384910485933504
-both signals agree,3621,0.7717391304347826
-"off, binding constraint: contango",638,0.13597612958226768
-"off, binding constraint: vrp",433,0.0922847399829497
-"off, binding constraint: both",156,0.03324808184143223
-cm30/cm90 and VIX/VIX3M agree (overlap),3922,0.9172123479887746
+combined on (invested),3466,0.7387041773231031
+both signals agree,3623,0.7721653878942881
+"off, binding constraint: contango",637,0.13576300085251491
+"off, binding constraint: vrp",432,0.09207161125319693
+"off, binding constraint: both",157,0.03346121057118499
+cm30/cm90 and VIX/VIX3M agree (overlap),3914,0.9153414405986904
 VIX/VIX3M on (overlap),3951,0.9239943872778298

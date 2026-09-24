@@ -1032,9 +1032,11 @@ def stage_signals(cfg) -> dict:
 
     # ---- 3. the panel: real-time forecasts, VRP, slopes, signals -----------------
     curve = idx[["vix", "vix3m", "cm30", "cm90", "f1", "days_to_exp1"]]
+    VLAG = cfg.dotted("timing.vix_extra_lag_from")
     panel, har = build_signal_panel(rv, curve, horizon=H, lags=LAGS, log=LOG,
                                     train_min=TMIN, refit_every=REFIT,
-                                    contango_threshold=THR, vrp_min=VMIN)
+                                    contango_threshold=THR, vrp_min=VMIN,
+                                    vix_extra_lag_from=VLAG)
     burn_in = panel["signal"].first_valid_index()
 
     # ---- 4. out-of-sample evaluation against naive benchmarks --------------------
@@ -1146,23 +1148,30 @@ def stage_signals(cfg) -> dict:
         ov.index[ov["cm30_spot_anchored"]]].mean())
 
     # ---- 7. timing table (look-ahead audit, step 2) -------------------------------
+    # Computed, not asserted. Through Phase 16 this table ended in
+    # `timing["use_precedes_availability"] = False`, a literal that the project then
+    # cited as mechanical evidence of no look-ahead; it concealed A-02 for 1,483 days.
+    # svcarry.timing compares clock times per date and counts the failures, so a row
+    # can come back True. The whole table is written here rather than half here and
+    # half in stage_backtest, which also removes the de-duplication hack that existed
+    # because re-running a stage used to append the same rows again.
+    from svcarry.timing import timing_audit_table
+
     lag = int(cfg.dotted("strategy.signal_lag"))
-    timing = pd.DataFrame([
-        ("SPY open/high/low/close", "t", "close of t (4:00 pm ET)", f"close of t+{lag}"),
-        ("rv_proxy (overnight + Rogers-Satchell)", "t", "close of t", f"close of t+{lag}"),
-        ("HAR predictors rv_d, rv_w, rv_m", "t", "close of t (windows end at t)", f"close of t+{lag}"),
-        ("HAR coefficients", "refit date t", f"close of t; trained on rows s <= t-{H}-1, whose "
-         f"targets end by t-1", f"close of t+{lag}"),
-        ("HAR forecast", "t", "close of t", f"close of t+{lag}"),
-        ("VIX close", "t", "4:15 pm ET on t", f"close of t+{lag}"),
-        ("VIX3M close", "t", "4:15 pm ET on t", f"close of t+{lag} (robustness only)"),
-        ("VX settlements -> cm30, cm90", "t", "3:15 pm CT to 2020-10-23; 3:00 pm CT after",
-         f"close of t+{lag}"),
-        ("VRP, slopes, signals", "t", "latest of the above: 4:15 pm ET on t", f"close of t+{lag}"),
-        ("realised_next_h (evaluation only)", "t", f"close of t+{H}", "never used in a decision"),
-    ], columns=["input", "indexed_by", "available", "first_used"])
-    timing["use_precedes_availability"] = False
+    timing = timing_audit_table(
+        idx.index, signal_lag=lag, horizon=H,
+        design_end=cfg.dotted("sample.design_end"),
+        oos_start=cfg.dotted("sample.oos_start"),
+        change=cfg.dotted("timing.settlement_change"),
+    )
     timing.to_csv(tables / "timing_audit.csv", index=False)
+    n_leak = int(timing["use_precedes_availability"].sum())
+    if n_leak:
+        raise SystemExit(
+            f"timing audit: {n_leak} input(s) would be used before they exist:\n"
+            + timing.loc[timing["use_precedes_availability"],
+                         ["input", "n_dates_use_precedes_availability"]].to_string(index=False)
+        )
 
     # ---- 8. outputs --------------------------------------------------------------
     panel.to_csv(processed / "signals_daily.csv", index_label="date")
@@ -1474,28 +1483,16 @@ def stage_backtest(cfg) -> dict:
         "worst_day_with_lag_2": float(lag_runs[2].returns.min()),
     }
 
-    # ---- 9c. timing table, extended over the sizing chain ------------------------
-    tpath = tables / "timing_audit.csv"
-    tt = pd.read_csv(tpath) if tpath.exists() else pd.DataFrame()
-    rows = [
-        ("index return r_t", "t", "futures settlement on t", "close of t (sizing inputs)"),
-        ("trailing 21-day realised volatility", "t", "close of t", f"close of t+{LAG}"),
-        ("GJR-GARCH parameters + EVT tail", f"fitted once on data to {DESIGN_END.date()}",
-         f"{DESIGN_END.date()}", f"first used {OOS_START.date()} out of sample; in sample before"),
-        ("conditional 99.9% move for t+1", "t", "close of t (state filtered to t)",
-         f"close of t+{LAG}"),
-        ("crash floor (running maximum)", "t", "close of t", f"close of t+{LAG}"),
-        ("weight w", "t", "close of t", f"return of t+{LAG}"),
-        ("T-bill accrual", "t", "previous business day's discount rate", "return of t"),
-        ("futures price for costs", "t", "settlement on t", "costs charged on t"),
-    ]
-    add = pd.DataFrame(rows, columns=["input", "indexed_by", "available", "first_used"])
-    add["use_precedes_availability"] = False
-    # Replace this stage's own rows rather than appending them: re-running the stage
-    # used to duplicate every line, which would make the audit table grow silently.
-    if len(tt):
-        tt = tt[~tt["input"].isin(add["input"])]
-    pd.concat([tt, add], ignore_index=True).to_csv(tpath, index=False)
+    # ---- 9c. weight alignment, checked against the artefacts ---------------------
+    # The sizing-chain rows of the timing table are written once, by stage_signals, from
+    # the registry in svcarry.timing. What is verified here is the one relationship the
+    # whole timing argument rests on and that nothing used to check: that the weight the
+    # engine emits for date t really is the weight computed at t - signal_lag.
+    from svcarry.timing import verify_weight_alignment
+
+    align = verify_weight_alignment(W["weight"], bt.weight, signal_lag=LAG)
+    if not align["aligned"]:
+        raise SystemExit(f"weight alignment check failed: {align}")
 
     # ---- 10. audit and H5 ---------------------------------------------------------
     sr = lambda s, lo, hi: performance_stats(s.loc[lo:hi], rf=acc.loc[lo:hi])["sharpe"]  # noqa: E731
@@ -1715,13 +1712,17 @@ def stage_robust(cfg) -> dict:
             _sig_cache[key] = build_signal_panel(
                 rv, curve, horizon=horizon, lags=lags, log=har_log, train_min=TMIN,
                 refit_every=REFIT, contango_threshold=1.0, vrp_min=0.0,
-                retransform=retransform)[0]
+                retransform=retransform,
+                vix_extra_lag_from=cfg.dotted("timing.vix_extra_lag_from"))[0]
         p_ = _sig_cache[key]
-        slope_col = "slope_cm" if slope == "cm" else "slope_vix3m"
+        # The execution-aligned columns, not the raw ones: the robustness grid has to be
+        # built on the same timing as the headline or the sweep is not a sweep of the
+        # headline specification (final audit A-02).
+        slope_col = "slope_cm" if slope == "cm" else "slope_vix3m_aligned"
         c = (p_[slope_col] < threshold).astype(float)
         c[p_[slope_col].isna()] = np.nan
-        v = (p_["vrp"] > vrp_min).astype(float)
-        v[p_["vrp"].isna()] = np.nan
+        v = (p_["vrp_aligned"] > vrp_min).astype(float)
+        v[p_["vrp_aligned"].isna()] = np.nan
         return combine_signals({"c": c, "v": v}, rule="all")
 
     def move_quantile(returns, evt_q):
