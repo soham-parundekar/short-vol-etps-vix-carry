@@ -1296,3 +1296,57 @@ check passed should be the output of a check that could have failed.
 Pass 3 found one issue, so it is not a clean pass and the audit continues.
 
 ---
+
+## 2026-09-24 — Session 16: recursive audit, Pass 4
+
+### A-13: the Sortino column was not the Sortino ratio
+
+`performance_stats` took the standard deviation of the negative excess returns **about
+their own mean**, over the count of losses. The Sortino denominator is the target downside
+deviation, `sqrt((1/n) sum min(ex,0)^2)` over every observation. Selecting the subset by
+the target and then measuring dispersion within it reports how varied the losses were, not
+how large — and a series whose losses were all the same size would have had a denominator
+of zero.
+
+It ran conservative: out of sample 0.177 against a true 0.245, full 0.309 against 0.405,
+design 0.492 against 0.598. No Sortino value appears in the prose of any write-up, so no
+conclusion moved. The suite had **no Sortino test at all**, which is why a plausible
+one-liner was never confronted with a case that distinguishes it from the correct formula.
+Two tests now do: one requires the target-downside form on a series where the two cannot
+coincide, the other requires that doubling every loss worsens the ratio and that identical
+losses stay finite.
+
+The full pipeline re-run changed **only the `sortino` column, in exactly the eight tables
+that carry it**. All 24 figures and all 8 processed datasets byte-identical.
+
+### A-14: the audit auditing its own work
+
+M7a — written in Pass 1 to pin down strike times — presented the settlement clock as two
+rows and missed a third change that `data_sources.md` already recorded: Cboe replaced the
+settlement calculation with a tiered VWAP/TWAP procedure on 9 September 2024. It changes
+how the 3:00 p.m. CT price is formed, not when, so no number moves; but a section written
+to be definitive about timing should not be less complete than the data documentation it
+draws on. M7a now records it, and notes that fifteen minutes is therefore a lower bound on
+the overlap rather than an exact figure.
+
+### What Pass 4 could not break
+
+The Lo/Mertens Sharpe standard error to 8.3e-16, and every other statistic in the
+evaluation layer — drawdown, VaR, CVaR at both levels, Calmar, skewness, kurtosis, hit
+rate, the 1,998-day longest underwater run — to 1e-13 or better. The stationary bootstrap
+on four independent properties: block length, equal-probability resampling,
+autocorrelation preservation (0.675 against a sample 0.709, where iid gives 0.000), and
+95% CI coverage of 92.3% on an AR(1) where iid manages 55.7%. `figure_index.md` against
+the figures, with no gaps in either direction. `data_sources.md` against all 338 manifest
+entries, including the Stooq fallback that is documented and honestly marked unused.
+
+And the Phase 07 gate, which is worth recording: the prompt's own failure band is a
+tracking error above 25 bp/day, the measurement was 133.2, and the project wrote down that
+the gate had failed rather than passing it quietly. That failure is now the project's first
+headline finding.
+
+### Status
+
+Pass 4 found two issues, so the audit continues.
+
+---

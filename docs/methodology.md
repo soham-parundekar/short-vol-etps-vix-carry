@@ -271,6 +271,18 @@ indices are struck at 4:15 p.m. ET throughout. So:
 | to 2020-10-23 | 4:15 p.m. ET | 4:15 p.m. ET | simultaneous — admissible |
 | from 2020-10-26 | **4:00 p.m. ET** | 4:15 p.m. ET | **fifteen minutes of hindsight** |
 
+**A third change, which does not alter the above.** Cboe also replaced the settlement
+*calculation* with a tiered VWAP/TWAP procedure effective 9 September 2024
+(`docs/data_sources.md`). That changes how the 3:00 p.m. CT price is formed — from a
+single mark to an average over a short window — not when it is struck, so the row above
+still governs. It does mean "strike time" is the end of a brief window rather than an
+instant from that date, which makes the fifteen-minute gap a lower bound on the overlap
+rather than an exact figure: a window ending at 3:00 p.m. CT is fully observable by then,
+and one extending past it would be struck later still, which only widens the gap to the
+4:15 p.m. VIX close. The correction is one full trading day in either case, so nothing in
+the implementation depends on resolving this. Recorded because the first version of this
+section presented the two-row table as the whole story (recursive audit A-14).
+
 `cm30` and `cm90` come off the settlement itself, so the contango filter is observable
 exactly when the position is booked and needs no adjustment. The VRP filter does not: it is
 built from the VIX cash close. From 26 October 2020 it therefore takes **one extra day of

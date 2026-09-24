@@ -643,7 +643,7 @@ processed datasets came back byte-identical to the pre-change state.
 
 ---
 
-## Pass 4 (in progress)
+## Pass 4
 
 ### A-13 · Financial theory / Statistics · **Moderate**
 
@@ -708,3 +708,46 @@ column of any table moved. Suite 264 passed, 2 skipped. The value is now asserte
 `specification_distribution.csv`. No figure, no prose number, no conclusion.
 
 **Status.** **Resolved.**
+
+---
+
+### A-14 · Documentation · **Minor**
+
+**What was wrong.** A finding against Pass 1's own work. `docs/methodology.md` M7a, added by
+this audit to state the execution-timing convention, presented the settlement clock as a
+two-row table: 4:15 p.m. ET to 23 October 2020, 4:00 p.m. ET after. `docs/data_sources.md`
+records a **third** change the new section did not mention — Cboe replaced the settlement
+*calculation* with a tiered VWAP/TWAP procedure effective 9 September 2024.
+
+**Why it mattered.** It does not change the correction or any number: the procedure change
+alters how the 3:00 p.m. CT price is formed, not when it is struck. But a section whose
+whole purpose is to pin down strike times should not omit a documented change to how a
+strike time is computed, and from September 2024 "strike time" is the end of a short
+window rather than an instant. A reader checking M7a against `data_sources.md` would find
+the latter more complete than the section written to be definitive.
+
+**Where found.** `docs/methodology.md` M7a, against `docs/data_sources.md`.
+
+**Correction.** M7a now records the 9 September 2024 procedure change, states why the
+two-row table still governs, and notes that the consequence is that fifteen minutes is a
+*lower bound* on the overlap rather than an exact figure — a window ending at 3:00 p.m. CT
+is observable by then and one extending past it is struck later still, which only widens
+the gap to the 4:15 p.m. VIX close. The correction is a full trading day either way, so
+nothing in the implementation depends on resolving it.
+
+**Status.** **Resolved.**
+
+## Checked and found clean in Pass 4
+
+| Check | Method | Result |
+|---|---|---|
+| Sharpe standard error | Lo/Mertens non-normal asymptotic variance implemented independently | reproduces to **8.3e-16** in all three windows — and the skewness and kurtosis terms matter here, with excess kurtosis at 31 out of sample |
+| Drawdown, VaR, CVaR, Calmar, skew, kurtosis, hit rate | independent reimplementation, all three windows | every one reproduces to ≤ 1e-13; longest underwater run 1,998 days exact |
+| Rolling Sharpe | independent | reproduces |
+| Stationary bootstrap | four properties tested independently | realised mean block length 4.99 / 20.76 / 61.2 against 5 / 21 / 63; equal-probability resampling consistent with a multinomial (sd 23.2 against 24.5 theoretical); AR(1) autocorrelation preserved at 0.675 against a sample 0.709, where an iid bootstrap gives 0.000; **95% CI coverage 92.3%** on an AR(1) against 55.7% for iid |
+| `figure_index.md` against the figures | set comparison and row parsing | 24 on disk, 24 indexed, registry identical, and every row carries both a question and an input — no gaps |
+| `data_sources.md` against the manifest | host, URL-prefix and family comparison | all four hosts and every URL family documented; the Stooq entry is labelled a **fallback** and the status row says Yahoo was used, which the manifest confirms — documented but unused, and honestly so |
+| The 2024 Cboe notice | followed up as a threat to A-02 | it changes the settlement *procedure*, not its time; A-02 unaffected (and A-14 records the omission) |
+| Phase-07 tracking gate | prompt's own failure band (>25 bp/day) against the measured 133.2 and 31.7 | the gate **failed** and the project recorded it as failed — "H1 rejected … against a 25 bp criterion" — rather than quietly passing it. The failure became the project's headline finding |
+| Phase-11 plausibility gates | prompt's bands against the corrected numbers | OOS Sharpe 0.20 within the "≤ 1.5" band; leak calibration 1.54 "far above the honest one"; cost sensitivity monotone; design and evaluation windows reported separately |
+| Index coverage gate | prompt requires ≥ 99% of sample trading days | 4,710 of 4,711 returns defined (99.98%) |
