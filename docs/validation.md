@@ -980,12 +980,12 @@ The shift test (step 3) needs the backtest and belongs to Phase 11.
 |---|---|---|
 | Perturbation over the whole chain | inputs after a cut-off changed by a record +150% day; every applied weight and every strategy return before it bit-identical | **Pass** |
 | Mutation check on that test | a one-day peek in the floor, and one in the volatility state, both caught | Pass |
-| Timing table | `timing_audit.csv`, eighteen inputs, no row where use precedes availability | **Pass** |
-| Shift test (Sharpe, out of sample) | lag 0: **1.12**, lag 1: **0.27**, lag 2: **-0.13** | **Pass**, strictly decreasing |
+| Timing table | `timing_audit.csv`, nineteen inputs, each input's strike time compared against the settlement its position is booked at, **per date**; no row where use precedes availability | **Pass** - but see A-02/A-05: this row was a hard-coded `False` until the recursive audit, and it was concealing 1,482 days of fifteen-minute overlap |
+| Shift test (Sharpe, out of sample) | lag 0: **1.54**, lag 1: **0.20**, lag 2: **-0.13** | **Pass**, strictly decreasing |
 | Parameter provenance | every strategy parameter in `config/config.yaml` at commit 2bdeb31, before the first data retrieval; the two Phase 11 changes committed at 69b748d before any backtest was run | **Pass** |
 
 The leak calibration is the second row of the shift test: a one-day leak would have
-turned a Sharpe of 0.27 into 1.12 and cut the worst day from -11.7% to -4.2%. Whatever
+turned a Sharpe of 0.20 into 1.54 and cut the worst day from -11.7% to -4.2%. Whatever
 the honest result is, it is not a contaminated version of a good one.
 
 ## V26. The crash floor, and what the amendment cost
@@ -997,25 +997,27 @@ threshold at the 0.90 quantile by the Phase 09 rule, xi = 0.054) has a median of
 so the floor is the binding half of the scenario on **75.9%** of days.
 
 Run with the configured hindsight floor instead (0.961 throughout), the strategy's
-out-of-sample Sharpe is **0.33** rather than 0.27, its worst day -6.6% rather than
--11.7% and its maximum drawdown -19.9% rather than -26.3%. Knowing the answer in
-advance is worth about 0.06 of Sharpe and half the worst day - the honest version is
+out-of-sample Sharpe is **0.25** rather than 0.20, its worst day -6.6% rather than
+-11.7% and its maximum drawdown -20.4% rather than -26.8%. Knowing the answer in
+advance is worth about 0.05 of Sharpe and half the worst day - the honest version is
 the weaker one, which is the direction that makes the amendment credible.
 
 ## V27. Costs and turnover
 
-Annual turnover of 11.3 (out of sample): 7.1 rebalancing the drift back to target and
-4.2 from the index's own roll, which is 38.7% of the cost bill. Costs are 3.2% of
-capital a year against a collateral accrual of 2.3%.
+Annual turnover of 11.4 (out of sample): 7.2 rebalancing the drift back to target and
+4.2 from the index's own roll, which is 39.2% of the out-of-sample cost bill. Costs are
+3.2% of capital a year against a collateral accrual of 2.3%. (The figure quoted here was
+38.7% until the recursive audit: that is the *full-sample* share, quoted inside an
+out-of-sample breakdown - A-08.)
 
 | Cost (ticks per side) | 0 | **1 (default)** | 2 | 4 |
 |---|---|---|---|---|
-| Out-of-sample Sharpe | 0.52 | **0.27** | 0.01 | -0.50 |
+| Out-of-sample Sharpe | 0.46 | **0.20** | -0.06 | -0.58 |
 
 **Pass** (monotone), with the caveat that matters more than the pass: at two ticks the
-strategy earns nothing. An accounting that charged only changes in the target weight -
-as the engine did before this phase - would have reported 0.29, and one that ignored
-the roll as well, 0.37.
+strategy loses money, and the Sharpe reaches zero at 1.77 ticks. An accounting that
+charged only changes in the target weight - as the engine did before Phase 11 - would
+have reported 0.22, and one that ignored the roll as well, 0.30.
 
 ## V28. Performance, by window, never pooled
 
@@ -1023,7 +1025,7 @@ Out of sample (2016-01-04 to 2026-09-18, 2,695 days), on excess returns:
 
 | | Sharpe (Lo se) | CAGR | Vol | Max DD | Worst day | Worst week |
 |---|---|---|---|---|---|---|
-| **Strategy** | **0.27 (0.31)** | 5.0% | 12.6% | -26.3% | -11.7% | -13.5% |
+| **Strategy** | **0.20 (0.31)** | 4.1% | 12.5% | -26.8% | -11.7% | -13.5% |
 | Constant weight 0.173 short | 0.40 (0.32) | 7.0% | 13.4% | -29.4% | -16.6% | -18.3% |
 | Buy-and-hold -1x (XIV fee) | 0.50 (0.33) | **-7.8%** | 77.6% | -99.2% | -96.1% | -96.6% |
 | Buy-and-hold -0.5x (SVXY fee) | 0.49 (0.33) | 13.9% | 38.8% | -71.0% | -48.0% | -51.1% |
@@ -1035,19 +1037,23 @@ In the design window the strategy's Sharpe is 0.45 against the constant weight's
 Three things this table says and the headline does not:
 
 1. **The dynamic rule does not beat a fixed small short.** A constant 0.173 short has a
-   higher Sharpe out of sample (0.40 against 0.27) and a higher CAGR. What the signals
+   higher Sharpe out of sample (0.40 against 0.20) and a higher CAGR. What the signals
    and the budget buy is the tail: the worst day is -11.7% against -16.6%, the worst
    week -13.5% against -18.3%, and the skew -3.0 against -4.1. On this evidence the
    dynamic parts earn their keep as a risk control, not as a source of return.
 2. **A Sharpe ratio is not a verdict here.** Buy-and-hold -1x has the second-highest
    Sharpe in the table and lost 7.8% a year: the ratio is computed on daily returns
    whose -96% day it can barely see, while compounding cannot ignore it.
-3. **The strategy's own Sharpe is not distinguishable from zero.** 0.27 with a Lo (2002)
+3. **The strategy's own Sharpe is not distinguishable from zero.** 0.20 with a Lo (2002)
    standard error of 0.31.
 
-Variants, out-of-sample Sharpe: no crash budget (volatility targeting alone) **0.06**
-with a -43.2% drawdown; no signals (always on) 0.26 with a -24.2% worst day; both parts
-therefore do something, and the crash budget does more for return than the signals do.
+Variants, out-of-sample Sharpe: no crash budget (volatility targeting alone) **-0.03**
+with a -43.5% drawdown; no signals (always on) **0.26** with a -24.2% worst day. After the
+A-02 timing correction these two no longer point the same way. The crash budget carries
+the return: removing it costs 0.23 of Sharpe and widens the drawdown by 17 points. The
+signals cost 0.07 of Sharpe and buy the tail: removing them *raises* the ratio to 0.26
+while doubling the worst day to -24.2%. The honest statement is that the budget earns the
+return and the filters pay for the tail, not that both add return.
 
 ## V29. February 2018: what the escape rests on
 
@@ -1075,21 +1081,21 @@ Newey-West at 8 lags:
 
     r_strategy = alpha + b_PUT r_PUT + b_SPX r_SPX + b_VXX r_VXXlike + e
 
-**alpha = -1.4% a year, t = -0.52, p = 0.61**, R^2 = 0.45, n = 2,691. The alpha is
+**alpha = -2.2% a year, t = -0.77, p = 0.44**, R^2 = 0.44, n = 2,691. The alpha is
 insignificant in all five specifications run (three-factor, PUT+SPX, VXX only, PUT
-only, SPX only): between -1.4% and +1.2% a year, every |t| below 0.53.
+only, SPX only): between -2.2% and +0.4% a year, every |t| below 0.78.
 
 The individual betas should not be read as economic loadings: PUT and SPX correlate
-0.897, so the three-factor PUT coefficient (-0.38) is a partial coefficient in a
+0.897, so the three-factor PUT coefficient (-0.35) is a partial coefficient in a
 badly conditioned regression. Univariate betas are +0.33 on PUT and +0.31 on SPX.
-The up/down split of the equity beta is the informative one: **0.19 in up markets,
-0.42 in down markets** (difference p = 0.014). The average beta understates what this
+The up/down split of the equity beta is the informative one: **0.18 in up markets,
+0.43 in down markets** (difference p = 0.009). The average beta understates what this
 position does when the market falls.
 
 | H5 | Criterion | Result |
 |---|---|---|
-| First half | positive out-of-sample Sharpe net of 1 tick per side | 0.27 - **holds**, but with a standard error of 0.31 |
-| Second half | alpha not distinguishable from zero at 5% | t = -0.52 - **holds** |
+| First half | positive out-of-sample Sharpe net of 1 tick per side | 0.20 - **holds**, but with a standard error of 0.31 |
+| Second half | alpha not distinguishable from zero at 5% | t = -0.77 - **holds** |
 
 **H5 is not rejected.** The uncomfortable reading, which the write-up keeps: the
 premium survives crash budgeting in the sense that what is left is positive and
@@ -1107,13 +1113,13 @@ each run end to end and each written to `specification_distribution.csv`.
 
 | | Out-of-sample Sharpe |
 |---|---|
-| Minimum | -0.35 |
-| First quartile | -0.05 |
+| Minimum | -0.37 |
+| First quartile | -0.04 |
 | **Median** | **0.06** |
-| Third quartile | 0.24 |
-| Maximum | 0.53 |
-| **Chosen configuration** | **0.27 - the 78th percentile** |
-| Share of cells above zero | 64.6% |
+| Third quartile | 0.20 |
+| Maximum | 0.50 |
+| **Chosen configuration** | **0.20 - the 74th percentile** |
+| Share of cells above zero | 67.4% |
 
 **Warning, by the phase's own criterion.** The chosen configuration is not the maximum,
 but it sits in the upper quartile rather than near the median. The parameters were
@@ -1128,44 +1134,53 @@ project has run about 220 in total, all reported.
 
 ## V32. One-at-a-time sweeps
 
-`robustness_parameters.csv`, out-of-sample Sharpe, baseline 0.27:
+`robustness_parameters.csv`, out-of-sample Sharpe, baseline 0.20:
 
 | Parameter | Cells | Range | Where the baseline sits |
 |---|---|---|---|
-| Contango threshold | 0.95 / 0.975 / **1.0** / 1.025 | -0.17 to 0.27 | **the best of the four** |
-| Crash budget `l_max` | 0.10 / **0.20** / 0.30 / 1.00 | 0.06 to 0.43 | second of four; tighter is better |
-| Rebalance interval | **1** / 5 / 21 days | 0.01 to 0.42 | middle; 5 days is the worst |
-| Volatility target | 0.10 / **0.15** / 0.20 | 0.18 to 0.37 | middle |
-| Volatility lookback | 10 / **21** / 63 | 0.27 to 0.38 | lowest of three |
-| Slope measure | **cm30/cm90** / VIX/VIX3M | 0.27 / 0.33 | the robustness variant does better |
-| Variance proxy | **rs** / parkinson / gk / close-to-close | 0.08 to 0.28 | close-to-close is much worse |
-| HAR horizon | 10 / **21** / 42 | 0.09 to 0.28 | middle |
-| HAR lags | **(1,5,22)** / (1,5,10) / (1,10,44) | 0.16 to 0.27 | the best of three |
-| Retransformation | **normal** / smearing | 0.27 / 0.20 | as designed |
-| Crash floor | **running max** / event (hindsight) | 0.27 / 0.33 | the honest one is lower |
-| EVT threshold | eight quantiles | 0.27 flat | the floor binds, so the tail model barely matters |
-| Index construction | **rolled** / shifted / constant-maturity / calendar spread | 0.07 to 0.27 | see V33 |
-| Signal lag | 0 / **1** / 2 | -0.13 to 1.12 | the leak calibration |
+| Contango threshold | 0.95 / 0.975 / **1.0** / 1.025 | -0.17 to 0.20 | **the best of the four** |
+| Crash budget `l_max` | 0.10 / **0.20** / 0.30 / 1.00 | -0.03 to 0.37 | second of four; tighter is better |
+| Rebalance interval | **1** / 5 / 21 days | 0.03 to 0.38 | middle; 5 days is the worst |
+| Volatility target | 0.10 / **0.15** / 0.20 | 0.11 to 0.29 | middle |
+| Volatility lookback | 10 / **21** / 63 | 0.18 to 0.30 | middle; 63 days is the best |
+| Slope measure | **cm30/cm90** / VIX/VIX3M | 0.20 / 0.16 | the primary does better - **reversed by A-02**, because VIX3M is a cash index and is now execution-aligned too |
+| Variance proxy | **rs** / parkinson / gk / close-to-close | 0.06 to 0.27 | third of four; close-to-close is much worse |
+| HAR horizon | 10 / **21** / 42 | 0.16 to 0.26 | middle |
+| HAR lags | **(1,5,22)** / (1,5,10) / (1,10,44) | 0.15 to 0.20 | the best of three |
+| HAR log transform | **log** / level | 0.20 / 0.24 | the level specification does better - **reversed by A-02** |
+| Retransformation | **normal** / smearing | 0.20 / 0.23 | smearing does better - **reversed by A-02** |
+| Crash floor | **running max** / event (hindsight) | 0.20 / 0.25 | the honest one is lower |
+| EVT threshold | eight quantiles | 0.20 flat | the floor binds, so the tail model barely matters |
+| Index construction | **rolled** / shifted / constant-maturity / calendar spread | 0.04 to 0.20 | see V33 |
+| Signal lag | 0 / **1** / 2 | -0.13 to 1.54 | the leak calibration |
+
+**Four orderings reverse after the A-02 timing correction**, and they are listed above
+rather than smoothed over: the VIX3M slope, the level HAR, smearing retransformation and
+the Parkinson variance proxy all now beat the pre-registered choice. Three of the four are
+alternative *forecast* specifications, which is consistent with the correction having
+removed information from the VRP filter rather than with any of them being better models.
+The configuration is not changed after the fact; but the honest reading of this table is
+now that the pre-registered cell is a middling choice on several axes, not a good one.
 
 Two cells change the interpretation rather than the number:
 
 * **Rebalancing weekly turns the February 2018 result inside out.** At a 5-day
   interval the exit signalled on Friday 2 February is not executed until the next
   rebalance, so the position is held through the event: worst day **-38.0%**, February
-  return **-31.7%**, Sharpe 0.01. At 21 days the grid happens to rebalance clear of it
-  and the Sharpe is 0.42. The protection is therefore not a property of the sizing
+  return **-31.7%**, Sharpe 0.03. At 21 days the grid happens to rebalance clear of it
+  and the Sharpe is 0.38. The protection is therefore not a property of the sizing
   rule; it is a property of acting on the signal the same day.
 * **A threshold of 1.025 holds the position into the event**: February return
-  **-24.3%**, worst day -24.2%, Sharpe 0.07.
+  **-24.3%**, worst day -24.2%, Sharpe 0.01.
 
 ## V33. Alternative constructions
 
 | Construction | Out-of-sample Sharpe |
 |---|---|
-| Rolled index (the reconstruction used throughout) | 0.27 |
-| One-day-shifted roll convention | 0.27 |
-| Constant-maturity 30-day basket | 0.27 |
-| Calendar spread, front against fourth month | 0.07 |
+| Rolled index (the reconstruction used throughout) | 0.20 |
+| One-day-shifted roll convention | 0.20 |
+| Constant-maturity 30-day basket | 0.20 |
+| Calendar spread, front against fourth month | 0.04 |
 
 The reconstruction choice does not carry the result: the two alternative ways of
 holding the curve give the same answer to two decimal places. The calendar-spread
@@ -1175,14 +1190,18 @@ strategy is paid for is being short the level, not the shape.
 ## V34. Subsamples
 
 `robustness_subsamples.csv`. Configured periods: 2008-2012 **0.92**, 2013-2017 0.28,
-2018-2021 **-0.34**, 2022-onwards 0.38. Single years inside the evaluation window run
-from **-1.24** (2020) and -1.04 (2018) to **+1.45** (2023) and +1.20 (2017).
+2018-2021 **-0.27**, 2022-onwards 0.10. Single years inside the evaluation window run
+from **-1.12** (2020), -1.04 (2018) and -0.97 (2022) to **+1.20** (2017) and +0.93 (2023).
 
-Leave-one-year-out on the evaluation window: 0.11 (excluding 2017) to 0.40 (excluding
-2020). So no single year manufactures the result, but 2017 carries a large share of
-it: drop that one year and the Sharpe falls from 0.27 to 0.11. Leave-one-stress-window-
-out moves it to at most 0.34, and no stress window accounts for more than half the
-total return (the windows are losses: -8.9%, -4.8%, -3.2% against a total of +68.7%).
+Leave-one-year-out on the evaluation window: 0.03 (excluding 2017) to 0.32 (excluding
+2018). So no single year manufactures the result, but 2017 carries a large share of
+it: drop that one year and the Sharpe falls from 0.20 to 0.03 - a thinner margin than
+before the A-02 correction, and the sharpest single statement of how little this strategy
+earns outside one year. Leave-one-stress-window-out moves it to at most 0.27, and no
+stress window accounts for more than half the total return (-8.9% and -4.8% for
+Volmageddon and Covid; the August 2024 window is **+0.1%**, a small gain rather than a
+loss, because the correctly lagged VRP filter kept the position flat - against a total of
++53.6%).
 
 ## V35. The red team, answered with numbers
 
@@ -1190,21 +1209,23 @@ total return (the windows are losses: -8.9%, -4.8%, -3.2% against a total of +68
 
 1. **Weakest assumption**: the contango threshold. February 2018 by threshold: -0.1%
    at 0.95, 0.975 and 1.0; **-24.3% at 1.025**.
-2. **Could look-ahead explain it?** No. A one-day leak gives a Sharpe of 1.12 against
-   0.27; the whole-chain perturbation test passes and is mutation-checked.
+2. **Could look-ahead explain it?** A one-day leak gives a Sharpe of 1.54 against
+   0.20, and a *fifteen-minute* leak was in fact present until the recursive audit (A-02),
+   worth 0.069 of Sharpe; the whole-chain perturbation test passes and is mutation-checked.
 3. **Survivorship**: XIV is in the product sample for its whole life, including its
    acceleration on 2018-02-21, and no product was dropped.
-4. **Cost breakeven**: **2.05 ticks per side** (0.102 VIX points) takes the
+4. **Cost breakeven**: **1.77 ticks per side** (0.088 VIX points) takes the
    out-of-sample Sharpe to zero.
-5. **Period dominance**: 2017 contributes +25.5% of a +68.7% total; excluding it the
-   Sharpe is 0.11. No stress window exceeds half the total.
+5. **Period dominance**: 2017 contributes +25.5% of a +53.6% total; excluding it the
+   Sharpe is 0.03. No stress window exceeds half the total.
 6. **Single-day dominance**: the largest day is -11.7% (10 August 2017), 17% of the
-   total return in absolute terms; the tail jackknife is V19.
-7. **Parameter selection**: grid median 0.06, chosen 0.27 at the 78th percentile.
+   total return in absolute terms - 21.8%, up from 17.0% before the A-02 correction
+   shrank the denominator; the tail jackknife is V19.
+7. **Parameter selection**: grid median 0.06, chosen 0.20 at the 74th percentile.
 8. **Asset bounds**: H2 is already stated at the lower bound (Phase 08); the upper
    bound only strengthens it.
-9. **Is the story fitted?** The alpha is -1.4% a year (t = -0.52) and the equity beta
-   is asymmetric (0.19 up, 0.42 down) - which is what the design predicted before the
+9. **Is the story fitted?** The alpha is -2.2% a year (t = -0.77) and the equity beta
+   is asymmetric (0.18 up, 0.43 down) - which is what the design predicted before the
    data was seen. But a constant-weight short earns more per unit of risk than the
    dynamic rule, so the part of the story that says the *rule* adds value is not
    supported.
@@ -1262,7 +1283,44 @@ test asserts the labels do not overlap and fails on the pre-fix behaviour.
 **What this test does not establish.** That the tables themselves reproduce from raw
 data — that needs the 338 raw files, which this environment cannot fetch (see the note
 in `README.md`). The clone test establishes that the code, the tests, the number checks
-and 20 of the 24 figures reproduce from what the repository actually contains.
+and 20 of the 24 figures reproduce from what the repository actually contains. **V37
+closes this gap.**
+
+## V37. Full reproduction from raw data (recursive audit, Pass 1)
+
+The gap V36 left open — whether the *tables* reproduce from the raw files — was closed in
+the recursive audit. A fresh `git clone` into an empty Linux container, the 338 raw files
+restored and verified against the manifest, and `scripts/run_pipeline.py` run end to end
+with no other change.
+
+| Step | Result |
+|---|---|
+| Interpreter and libraries | Python 3.11.15, **numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, matplotlib 3.10.9** — every one materially newer than the lower bounds in `requirements.txt` |
+| `scripts/run_tests.py` (no pytest present, bundled shim) | **245 passed, 0 failed, 2 skipped** |
+| `verify_manifest()` over 338 entries | **clean** |
+| `scripts/run_pipeline.py` (full, from raw) | completes; all eight stages |
+| **42 of 42 tables** against the committed versions | **byte-identical** |
+| **24 of 24 figures** against the committed versions | **byte-identical** |
+| 8 of 8 processed datasets | byte-identical |
+
+This is a stronger result than the project had previously established, and it is what
+made the rest of Pass 1 possible: with the unchanged pipeline reproducing every committed
+artefact bit for bit, every difference produced by the A-02 correction is attributable to
+that correction alone and to nothing about the environment.
+
+**Independent recalculation alongside it.** The headline statistics were also recomputed
+from the committed `backtest_daily.csv` by a separate implementation that imports none of
+`svcarry`. CAGR, annualised volatility, maximum drawdown, hit rate, worst and best day,
+time invested, average and maximum weight and annualised turnover all agree in all three
+windows to within 4.2e-15. The engine's internal identities hold: `ret = gross - costs`
+to 1.0e-16, `costs = cost_rebalance + cost_roll` to 1.0e-16, `turnover = rebalance + roll`
+to 2.2e-16, `equity = cumprod(1 + ret)` to 5.6e-14. The Sharpe convention was confirmed to
+be excess of the T-bill accrual by backing the implied rate out of the ratio: 1.43% a year
+full sample, 0.24% design, 2.32% out of sample, each consistent with realised bill yields
+in that window.
+
+**Test count.** The suite is **258 passed, 2 skipped** after the recursive audit added
+thirteen tests in `tests/test_timing_and_costs.py`.
 
 ---
 
@@ -1280,7 +1338,7 @@ and 20 of the 24 figures reproduce from what the repository actually contains.
 6. Why the strategy's partial PUT beta is negative while its univariate beta is
    positive is collinearity, not a finding; the separate loadings are not identified
    (V30).
-7. Why a 21-day rebalance does better than a daily one (0.42 against 0.27) is not
+7. Why a 21-day rebalance does better than a daily one (0.38 against 0.20) is not
    established: lower costs and a lucky alignment around February 2018 both
    contribute, and this sample cannot separate them.
 8. `shade_windows` resolves an open window's right edge with `ax.get_xlim()[1]`, which

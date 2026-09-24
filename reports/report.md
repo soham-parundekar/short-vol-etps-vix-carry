@@ -21,10 +21,10 @@ open interest at the lower asset bound, which the 2018 de-levering to −0.5× a
 would have reduced to 20,884 contracts and 9.4% — arithmetic from disclosed assets and
 the leverage identity, not an estimate. **Bounding position size by an explicitly
 estimated crash loss rather than by recent volatility does change the loss distribution —
-an out-of-sample Sharpe of 0.27 and a −26.3% drawdown against 0.06 and −43.2% for
+an out-of-sample Sharpe of 0.20 and a −26.8% drawdown against −0.03 and −43.5% for
 volatility targeting alone — but it does not create return: a constant 0.173 short earns
 0.40 over the same window, the strategy's alpha over PUT, SPX and a VXX-like factor is
-−1.4% a year (t = −0.52), and the median of the 144-specification grid from which the
+−2.2% a year (t = −0.77), and the median of the 144-specification grid from which the
 pre-registered configuration was drawn is 0.06.**
 
 ---
@@ -519,17 +519,17 @@ is the primary entry condition would have been long the carry into Volmageddon.
 ### 5.7 Crash budgeting changes the loss distribution; it does not create return
 
 Out of sample (1 January 2016 – 18 September 2026, 2,695 sessions) the strategy earns a
-Sharpe of **0.27 with a Lo (2002) standard error of 0.31**, a CAGR of **5.0%**, a maximum
-drawdown of **−26.3%**, a worst day of **−11.7%** and a worst week of **−13.5%**
-(`performance_oos.csv`). Volatility targeting without the crash budget earns **0.06 with a
-−43.2% drawdown** (`backtest_variants.csv`). The budget binds on 45.7% of out-of-sample
+Sharpe of **0.20 with a Lo (2002) standard error of 0.31**, a CAGR of **4.1%**, a maximum
+drawdown of **−26.8%**, a worst day of **−11.7%** and a worst week of **−13.5%**
+(`performance_oos.csv`). Volatility targeting without the crash budget earns **−0.03 with a
+−43.5% drawdown** (`backtest_variants.csv`). The budget binds on 45.6% of out-of-sample
 days.
 
 H5 required *both* a positive out-of-sample Sharpe net of costs *and* an alpha over
-PUT/SPX/VXX indistinguishable from zero. The alpha is **−1.4% a year, t = −0.52**
+PUT/SPX/VXX indistinguishable from zero. The alpha is **−2.2% a year, t = −0.77**
 (`alpha_regression.csv`), insignificant in all five specifications tried. Both halves hold,
 so H5 is **not rejected** — but the hypothesis was written to be uncomfortable in both
-directions, and what it establishes is weak. A Sharpe of 0.27 with a standard error of 0.31
+directions, and what it establishes is weak. A Sharpe of 0.20 with a standard error of 0.31
 is not distinguishable from zero. It sits below the Cboe PutWrite index (**0.53**) and the
 S&P 500 (**0.75**) over the same window.
 
@@ -555,14 +555,14 @@ Nine adversarial questions were put to the project and answered with numbers rat
 prose (`redteam_answers.csv`). The ones that changed how the results are reported:
 
 **Specification dependence.** Across **144 specifications** the out-of-sample Sharpe runs
-from **−0.35 to 0.53 with a median of 0.06**; the pre-registered configuration's 0.27 is
-the **78th percentile**, and 64.6% of cells are positive
+from **−0.37 to 0.50 with a median of 0.06**; the pre-registered configuration's 0.20 is
+the **74th percentile**, and 67.4% of cells are positive
 (`specification_distribution.csv`). Two choices dominate: the contango threshold decides
 whether the position is held into February 2018, and the rebalance interval decides whether
 the exit signal can be acted on. At a threshold of 1.025 the February 2018 return is
 **−24.3%**; at a 5-day rebalance it is **−31.7%** with a worst day of **−38.0%**
 (`robustness_parameters.csv`). The parameters were fixed before any data was retrieved and
-the commit history proves it, so 0.27 is not a mined result — but a pre-registered draw
+the commit history proves it, so 0.20 is not a mined result — but a pre-registered draw
 from a distribution whose median is 0.06 is still a draw, and both numbers belong in any
 honest summary.
 
@@ -570,20 +570,20 @@ honest summary.
 the close of 2 February 2018. The escape from Volmageddon rests on that margin and on
 same-day execution at the close.
 
-**Costs.** The out-of-sample Sharpe reaches zero at **2.05 ticks per side** (0.102 VIX
+**Costs.** The out-of-sample Sharpe reaches zero at **1.77 ticks per side** (0.088 VIX
 points). One tick is the quoted spread in calm markets; two is not unusual in a crisis,
 which is when this strategy trades most (`robustness_costs.csv`).
 
 **Look-ahead.** A deliberately leaked signal (same-day information) earns a Sharpe of
-**1.12** against the honest 0.27. The whole-chain perturbation test — perturb every input
+**1.54** against the honest 0.20. The whole-chain perturbation test — perturb every input
 after a cut-off date and require every earlier weight and return to be bit-identical —
 passes, and is itself mutation-checked so that a test that would pass on broken code is
 caught. A one-day leak multiplies the Sharpe; it does not create the honest one.
 
 **Concentration.** The largest single out-of-sample day (+11.7% on 10 August 2017)
-accounts for 17.0% of the total return of 68.7%. The three stress windows each cost the
+accounts for 21.8% of the total return of 53.6%. The three stress windows each cost the
 strategy money: Volmageddon 2018 −8.9%, COVID 2020 −4.8%, the yen-carry unwind of August
-2024 −3.2%. No single period creates the result, but the best year (2017, +25.5%) is a
+2024 +0.1%. No single period creates the result, but the best year (2017, +25.5%) is a
 large share of it.
 
 **Survivorship.** XIV is in the product sample for its entire life including its
@@ -627,8 +627,8 @@ from zero with a negative point-estimate alpha (§5.7). The premium exists — 8
 have a positive VRP — but by the time it is sized for the tail that its own left side
 implies, it is not worth harvesting at these costs.
 
-**The most useful methodological result is the gap between 0.27 and 0.06.** A
-pre-registered configuration that lands at the 78th percentile of its own specification
+**The most useful methodological result is the gap between 0.20 and 0.06.** A
+pre-registered configuration that lands at the 74th percentile of its own specification
 grid is the most instructive warning this project produces about backtests in general,
 including this one. Pre-registration protects against searching the grid; it does not
 protect against having drawn a good cell. Reporting the grid alongside the chosen cell is
@@ -669,7 +669,7 @@ claim:
   annualised variance, and the realised-variance proxy's 4.6% excess over close-to-close
   variance understates it by more.
 - **A backtest is not an expected return.** The strategy trades an index with stylised
-  costs and reaches zero Sharpe at 2.05 ticks per side.
+  costs and reaches zero Sharpe at 1.77 ticks per side.
 - **Nothing here generalises beyond VIX futures in 2008–2026** — one asset class, one
   history, one crash of this size in it.
 
@@ -695,7 +695,7 @@ Five pre-registered hypotheses, two rejected:
 | **H2** rebalancing demand > 10% of front-month OI | **Not rejected** | 25.0% at the lower bound on 5 Feb 2018; supported on 3 of 10 days (two marginally), indeterminate on 7 |
 | **H3** P(+80%) ≥ 10× P(+160%), threshold-stable | **Not rejected, magnitude unmet** | ratio 8.7×; ordering and survival gap stable at every threshold |
 | **H4** Kelly short strictly below 1.0 | **Rejected** | 0.62 [0.05, 1.34] full sample; 1.11 [0.22, 2.07] pre-2018 |
-| **H5** positive OOS Sharpe, alpha indistinguishable from zero | **Not rejected** | Sharpe 0.27 ± 0.31; alpha −1.4%/yr, t = −0.52 |
+| **H5** positive OOS Sharpe, alpha indistinguishable from zero | **Not rejected** | Sharpe 0.20 ± 0.31; alpha −2.2%/yr, t = −0.77 |
 
 The short-volatility trade of the 2010s was a real premium attached to a real tail, and the
 products that sold it were fragile in a way that was visible in advance from their own
@@ -709,9 +709,9 @@ a tenth.
 Bounding position size by an estimated crash loss rather than by recent volatility does
 what it is designed to do: it changes the shape of the loss distribution, halving the
 drawdown against volatility targeting and cutting the worst day against a constant short.
-It does not turn the premium into something worth holding. The resulting Sharpe of 0.27 is
+It does not turn the premium into something worth holding. The resulting Sharpe of 0.20 is
 indistinguishable from zero, below a passive PutWrite index, below a constant short of the
-same average size, at the 78th percentile of a specification grid whose median is 0.06, and
+same average size, at the 74th percentile of a specification grid whose median is 0.06, and
 zero at two ticks of transaction cost.
 
 That is a negative result on the question the project set out to answer, and it is reported

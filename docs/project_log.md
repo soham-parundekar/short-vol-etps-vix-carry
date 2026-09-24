@@ -3,6 +3,13 @@
 Append-only. Entries record what actually happened, including what failed. A decision
 that was later changed appears twice, with both entries kept.
 
+> **Reading the performance numbers in this log.** Entries up to Session 13 quote an
+> out-of-sample Sharpe of **0.27**. That number was superseded on 2026-09-24 by the
+> recursive audit, which found a fifteen-minute look-ahead in the VRP filter after October
+> 2020 (Session 14, register A-02). The current figure is **0.20**. Earlier entries are not
+> rewritten — that is the point of an append-only log — so take any performance figure here
+> as what was believed at the date of its entry, and `docs/results.md` as what is true now.
+
 ---
 
 ## 2026-09-20 — Session 1: environment, econometrics core, design, prompt pack
@@ -1105,9 +1112,18 @@ engine. An auditor who stopped there would have reported a false critical findin
 ### Clean-room reproduction
 
 Zero unexplained discrepancies. 245 tests, the number check, `make verify` over 338 files,
-and **all 24 figures byte-identical** — a change from Phase 15, where the same test found
-three stale figures. Four figures still cannot be built in a clone because they read
-cached price files; that is the intended design and is disclosed.
+and **all 20 rebuildable figures byte-identical** — a change from Phase 15, where the same
+test found three stale figures. Four figures cannot be built in a clone at all because they
+read cached price files; that is the intended design and is disclosed.
+
+> Corrected by the recursive audit (register A-06). This paragraph said "**all 24 figures
+> byte-identical**" and then, two sentences later, that four of them cannot be built in a
+> clone. Both cannot be true: the clean-room test rebuilt 20 and the other 4 exited with an
+> error. The overstated version is the one that was copied into the project completion
+> note. It is exactly the failure this section's own closing paragraph names — a number
+> that lived only in prose — and it survived because the figure count was never in a
+> table. All 24 figures *have* since been reproduced byte-identically, but from the full
+> raw data rather than from a clone; that result is V37, not this one.
 
 ### The lesson
 
@@ -1121,3 +1137,94 @@ prevent it, had never been given this one.
 
 The project is complete. All sixteen phases run, the completion gate is ticked, and the
 one conclusion the audit required to change has been changed.
+
+---
+
+## 2026-09-24 — Session 14: recursive audit, Pass 1
+
+**Objective.** Re-audit the finished project as a system of dependencies rather than a
+sequence of phases, assuming something is still wrong. Entered from a fresh clone in an
+empty container with no project history, so nothing could be taken on trust from the
+working tree.
+
+### What the entry checks established before anything was changed
+
+The unchanged pipeline was run end to end from the raw data, in a container with **numpy
+2.4.4, pandas 3.0.2, Python 3.11.15** — all materially newer than the pinned lower bounds.
+**All 42 tables and all 24 figures came back byte-identical**, as did all 8 processed
+datasets (V37). The suite passed 245 / 2 skipped under the bundled shim with no pytest
+installed. The manifest re-hashed clean over 338 entries. The local working tree was shown
+to be content-identical to `origin/main` at `c4c5ec6` by LF-normalised blob hashing. The
+headline statistics were reproduced to 4.2e-15 by an independent implementation importing
+none of `svcarry`.
+
+This mattered for what followed: with the baseline reproducing bit for bit, every later
+difference was attributable to a correction and not to the environment.
+
+### A-02: the project's own first finding, inside the project
+
+The engine applies `w = w_raw.shift(1)` and `R_t = a_t − w_t r_t`, so a weight built from
+information dated `t−1` is a position held **at the settlement of `t−1`**. `r` is a VX
+settlement-to-settlement return. Cboe moved that settlement from 4:15 p.m. ET to **4:00
+p.m. ET on 26 October 2020**. The VIX cash close stayed at 4:15 p.m. ET. So from that date
+the VRP filter was set from a price struck fifteen minutes after the price the position was
+booked at — for 1,482 trading days.
+
+This is the same fifteen-minute gap as H1, which is the project's headline finding about
+other people's index-versus-product comparisons.
+
+Cost: out-of-sample Sharpe **0.27 → 0.20**, CAGR 5.0% → 4.1%, alpha −1.4% → −2.2% a year
+(t −0.52 → −0.77). 161 decision days change, all after October 2020. **The design window is
+unchanged at 0.4508**, so no parameter was chosen on contaminated information. 14 of 42
+tables, 9 of 24 figures and 4 processed datasets were regenerated.
+
+The correction makes the project's conclusion *stronger*: 0.20 sits further below the
+constant-weight short's 0.40 and the PutWrite index's 0.53, and volatility targeting alone
+now earns a **negative** Sharpe (−0.03, was +0.06), which sharpens the crash-budget case.
+Two things got worse and are reported as such: one day now carries **21.8%** of total
+return, up from 17.0%, and four one-at-a-time alternatives now beat the pre-registered cell
+where they previously did not (V32).
+
+### A-05: why sixteen phases and a six-perspective audit missed it
+
+`timing_audit.csv` was cited in `docs/final_audit.md` as *mechanical* evidence of no
+look-ahead — "0 of 18 inputs". The column was
+`timing["use_precedes_availability"] = False`, assigned as a literal in two places. Nothing
+was computed, so the table could not have reported a violation however bad the timing was.
+The convention itself was stated in three places in three mutually inconsistent forms — the
+config comment described a two-day lag, two rows of the timing table described a two-day
+lag, and the engine implemented one day — and **no test pinned the relationship between a
+signal date, a weight date and the return it earns.**
+
+`svcarry.timing` now holds a registry of each input's strike time, compares it against the
+execution settlement per date, and writes a computed verdict with a count of offending
+dates; the pipeline exits non-zero if any row is `True`. Strip the extra lag and it reports
+1,482 violating dates across four inputs, and a mutation test requires exactly that.
+
+### Also corrected in this pass
+
+| | |
+|---|---|
+| **A-01** | No `.gitattributes`. Committed blobs are LF, the authoring tree is CRLF, so any clone with `core.autocrlf=false` reported **all 168 tracked text files as modified** — 63,788 insertions against 63,788 deletions, not one real change. The project reads "local and remote agree" off `git status`, so that signal has to mean the same thing on every machine |
+| **A-03** | The drift-turnover denominator is the gross return; the docstring's formula said the net return, which the code never computed. Exact is circular within a day, so the approximation stays — but it is now stated and **bounded by a test** against an exact sequential reference. Measured cost: 2.4e-05 of out-of-sample Sharpe |
+| **A-04** | Tests built figures and never closed them, so matplotlib warned partway through `test_viz`. Fixed centrally in the runner and in a new `tests/conftest.py`, not in twenty tests |
+| **A-06** | The Phase 16 entry above claimed "all 24 figures byte-identical" and, two sentences later, that four cannot be built in a clone. 20 were rebuilt; 4 errored. The overstated version had been copied into the project completion note |
+| **A-08** | V27 quoted an out-of-sample turnover breakdown and then a **full-sample** roll share of the cost bill (38.7%) inside the same sentence. The out-of-sample figure is 39.2% |
+
+### The lesson, restated
+
+Phase 16 drew the lesson that every number in prose should be in a table and in the number
+check. Pass 1 says the same thing about *verifications*: every claim that a check passed
+should be the output of a check that could have failed. The look-ahead table, the test
+count in the README (244 against 245 everywhere else), and the figure-reproduction claim
+were all assertions in the shape of evidence. `check_results_numbers.py` now asserts the
+timing audit's verdict and row count directly, so this specific failure cannot recur
+silently either.
+
+### Status
+
+Pass 1 corrections are complete, regenerated and revalidated. The audit continues:
+Pass 1 has not yet reached the econometrics implementations, the EVT and survival layer,
+the index reconstruction, the literature review or the prompt system, and by the recursive
+rule Pass 2 re-examines the whole project rather than only what changed here. The register
+is [`final_audit_issue_register.md`](final_audit_issue_register.md).

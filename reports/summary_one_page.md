@@ -45,10 +45,10 @@ their rejection criteria were committed 50 minutes before the first data retriev
    assets, not an estimate.
 
 3. **Crash budgeting changes the shape of the loss distribution without creating
-   return.** Out of sample the strategy earns a Sharpe of **0.27** (Lo standard error
-   0.31), 5.0% a year, maximum drawdown −26.3%. Volatility targeting without the crash
-   budget earns 0.06 with a −43.2% drawdown. But a **constant 0.173 short earns 0.40**,
-   and the alpha over PUT, SPX and a VXX-like factor is **−1.4% a year (t = −0.52)**.
+   return.** Out of sample the strategy earns a Sharpe of **0.20** (Lo standard error
+   0.31), 4.1% a year, maximum drawdown −26.8%. Volatility targeting without the crash
+   budget earns −0.03 with a −43.5% drawdown. But a **constant 0.173 short earns 0.40**,
+   and the alpha over PUT, SPX and a VXX-like factor is **−2.2% a year (t = −0.77)**.
    The sizing rule buys a better tail, not a better return.
 
 **Verdicts against the pre-registered criteria:** H1 rejected · H2 not rejected · H3 not
@@ -57,10 +57,10 @@ rejected but the stated 10× magnitude unmet at 8.7× · H4 rejected · H5 not r
 ## The caveat that matters most
 
 **The strategy result is specification-dependent.** Across 144 specifications the
-out-of-sample Sharpe runs from −0.35 to 0.53 with a **median of 0.06**; the
-pre-registered configuration's 0.27 sits at the 78th percentile. The parameters were
-fixed before any data was retrieved and the commit history proves it, so 0.27 is not a
+out-of-sample Sharpe runs from −0.37 to 0.50 with a **median of 0.06**; the
+pre-registered configuration's 0.20 sits at the 74th percentile. The parameters were
+fixed before any data was retrieved and the commit history proves it, so 0.20 is not a
 mined result — but a pre-registered draw from a distribution whose median is 0.06 is
-still a draw. The strategy earns nothing at 2.05 ticks of transaction cost per side, and
+still a draw. The strategy earns nothing at 1.77 ticks of transaction cost per side, and
 its escape from February 2018 rests on the contango filter clearing its threshold by
 0.72% at the previous close.

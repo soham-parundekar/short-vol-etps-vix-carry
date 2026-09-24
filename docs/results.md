@@ -24,7 +24,7 @@ Written from the pre-registered criteria, before any narrative.
 | **H2** | Mechanical rebalancing demand exceeded 10% of front-month open interest on the largest up-moves of 2016-18 | 25.0% of front-month open interest on 5 Feb 2018 at the lower asset bound (`rebalancing_flows.csv`) | rejected if it fails at *either* bound on those days | **Not rejected** - supported at the lower bound on 3 of 10 days (two of them by under a quarter of a point), indeterminate on 7 |
 | **H3** | Under a model fitted to data ending 2017-12-31, P(index +80% in a day) >= 10x P(+160%), with a threshold-stable survival gap | ratio **8.7x**; ordering holds at every EVT threshold; five-year survival gap 12.6 points unbounded, 8.7 capped (`termination_probabilities.csv`, `survival_curves.csv`, `survival_by_threshold.csv`) | rejected if the ordering reverses, the gap is threshold-dependent, or the event is not foreseeable | **Not rejected, stated magnitude unmet** |
 | **H4** | Kelly-optimal short exposure strictly below 1.0, bootstrap interval excluding 1.0 | 0.62 [0.05, 1.34] full sample; **1.11 [0.22, 2.07]** pre-2018 (`kelly.csv`) | rejected if the interval contains 1.0 | **Rejected** |
-| **H5** | Positive out-of-sample Sharpe net of costs, **and** alpha over PUT/SPX/VXX indistinguishable from zero | Sharpe **0.27** (Lo se 0.31); alpha **-1.4% a year**, t = -0.52 (`performance_oos.csv`, `alpha_regression.csv`) | rejected if either half fails | **Not rejected** |
+| **H5** | Positive out-of-sample Sharpe net of costs, **and** alpha over PUT/SPX/VXX indistinguishable from zero | Sharpe **0.20** (Lo se 0.31); alpha **-2.2% a year**, t = -0.77 (`performance_oos.csv`, `alpha_regression.csv`) | rejected if either half fails | **Not rejected** |
 
 Two of the five were rejected by their own criteria, one passed with its stated
 magnitude unmet, and the two that were not rejected are weaker than their sentences
@@ -193,10 +193,10 @@ the premium filter, is what kept the strategy out.
 
 ### 2.7 Crash budgeting changes the loss distribution; it does not create return
 
-**What happened.** Out of sample the strategy earns a Sharpe of **0.27** (Lo standard
-error 0.31), 5.0% a year with a -26.3% drawdown, a worst day of -11.7% and a worst week
+**What happened.** Out of sample the strategy earns a Sharpe of **0.20** (Lo standard
+error 0.31), 4.1% a year with a -26.8% drawdown, a worst day of -11.7% and a worst week
 of -13.5% (`performance_oos.csv`). Volatility targeting without the crash budget earns
-0.06 with a -43.2% drawdown (`backtest_variants.csv`). A constant short at the same
+-0.03 with a -43.5% drawdown (`backtest_variants.csv`). A constant short at the same
 average exposure earns **0.40** with a worst day of -16.6%.
 
 **Mechanism.** The budget caps size by a stated crash loss rather than by recent
@@ -204,7 +204,7 @@ volatility, so it does not expand the position in calm periods - which is where
 volatility targeting would be largest and where the spikes begin. It binds on 45.7% of
 out-of-sample days (`backtest_daily.csv`).
 
-**Alternative explanation.** That the difference between 0.27 and 0.06 is one period's
+**Alternative explanation.** That the difference between 0.20 and -0.03 is one period's
 luck rather than the rule. Against it: the drawdown difference (-26% against -43%) and
 the worst-day difference are distributional, not a single episode. For it: the whole
 result is specification-dependent (2.8), and the two numbers come from the same single
@@ -215,7 +215,7 @@ deserve the credit for February 2018. The decomposition says the filters: with t
 signals removed and the budget left in place, the worst day is -24.2%
 (`backtest_variants.csv`).
 
-**Economic significance.** 5.0% a year against 3.2% of transaction costs and a 2.3%
+**Economic significance.** 4.1% a year against 3.2% of transaction costs and a 2.3%
 collateral yield, with a Sharpe indistinguishable from zero and below the PutWrite
 index (0.53) and the S&P 500 (0.75) over the same window (`performance_oos.csv`). As an
 investment case that is not one. As a demonstration that the sizing rule changes the
@@ -223,22 +223,22 @@ shape of the loss distribution, it is evidence.
 
 ### 2.8 The strategy result is specification-dependent, and the chosen cell was a good one
 
-**What happened.** Across 144 specifications the out-of-sample Sharpe runs from -0.35 to
-0.53 with a **median of 0.06**; the pre-registered configuration's 0.27 is the 78th
-percentile, and 64.6% of cells are positive (`specification_distribution.csv`).
+**What happened.** Across 144 specifications the out-of-sample Sharpe runs from -0.37 to
+0.50 with a **median of 0.06**; the pre-registered configuration's 0.20 is the 74th
+percentile, and 67.4% of cells are positive (`specification_distribution.csv`).
 
 **Mechanism.** Two choices dominate: the contango threshold decides whether the
 position is held into February 2018, and the rebalance interval decides whether the
 exit signal can be acted on. At a threshold of 1.025 the February return is -24.3%; at a
 5-day rebalance it is -31.7% with a worst day of -38.0% (`robustness_parameters.csv`).
 
-**Alternative explanation.** That the pre-registration makes the 0.27 the right number
+**Alternative explanation.** That the pre-registration makes the 0.20 the right number
 to quote. The parameters were fixed before any data was retrieved and the commit
-history proves it (V24), so 0.27 is not a mined result - but a pre-registered draw from
+history proves it (V24), so 0.20 is not a mined result - but a pre-registered draw from
 a distribution whose median is 0.06 is still a draw, and both numbers belong in any
 honest summary.
 
-**Economic significance.** The breakeven transaction cost is **2.05 ticks per side**
+**Economic significance.** The breakeven transaction cost is **1.77 ticks per side**
 (`robustness_costs.csv`). One tick is the quoted spread in calm markets; two is not
 unusual in a crisis, which is when this strategy trades most.
 
@@ -258,15 +258,15 @@ unusual in a crisis, which is when this strategy trades most.
    only, so it understates the complex; it is a statement about the size of the
    requirement, not about who filled it or about causation.
 3. **Sizing by a stated crash loss rather than by recent volatility changes the loss
-   distribution** - Sharpe 0.27 against 0.06, drawdown -26% against -43%.
+   distribution** - Sharpe 0.20 against -0.03, drawdown -27% against -44%.
    *Qualification*: the median specification earns 0.06, a constant-weight short earns
-   0.40 with a worse tail, and the strategy earns nothing at 2.05 ticks of cost.
+   0.40 with a worse tail, and the strategy earns nothing at 1.77 ticks of cost.
 4. **The reconstruction's disagreement with the traded products is a measurement-time
    artefact, not an error** - tracking error falls from 133.2 to 31.7 bp a day on the
    date the settlement time changed. *Qualification*: 1-3% of the post-2020 slope
    remains unexplained.
 5. **Nothing here establishes skill.** The alpha over PUT, SPX and a VXX-like factor is
-   -1.4% a year (t = -0.52) and insignificant in all five specifications tried.
+   -2.2% a year (t = -0.77) and insignificant in all five specifications tried.
    *Qualification*: with PUT and SPX correlated at 0.897 the individual loadings are not
    identified; only the alpha is.
 
@@ -291,7 +291,7 @@ Specific to this project, not generic:
   and the willingness to exit on a morning that still read as 1 in 3,200 trading days.
 - **That any of this generalises beyond VIX futures in 2008-2026.** One asset class,
   one history, one crash of this size in it.
-- **That the strategy's 0.27 Sharpe is its expected return.** The standard error is
+- **That the strategy's 0.20 Sharpe is its expected return.** The standard error is
   0.31 and the specification median is 0.06.
 - **That the reconstructed index is the licensed S&P index.** It is an independent
   reconstruction that tracks the products to 32 bp a day in the era where they are
@@ -309,7 +309,7 @@ Specific to this project, not generic:
    from arithmetic on disclosed assets. It puts a number on what the 2018 product
    redesign did to the mechanical demand the market has to absorb in a spike - the
    question the whole episode raised.
-3. **The gap between 0.27 and 0.06 (2.8).** A pre-registered configuration that lands in
+3. **The gap between 0.20 and -0.03 (2.8).** A pre-registered configuration that lands in
    the upper quartile of its own specification grid is the most useful warning this
    project produces about backtests in general, including this one.
 

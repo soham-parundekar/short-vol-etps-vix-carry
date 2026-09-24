@@ -282,14 +282,14 @@ are losses of 3-8%, none of which turns on a single day's signal.
 ## L19. The dynamic rule does not beat a fixed small short
 
 Out of sample a constant 0.173 short earns a Sharpe of 0.40 against the strategy's
-0.27, and 7.0% a year against 5.0%. The signals and the crash budget buy a better
+0.20, and 7.0% a year against 4.1%. The signals and the crash budget buy a better
 tail - worst day -11.7% against -16.6%, skew -3.0 against -4.1 - not a better ratio.
 The strategy's Sharpe is also below the PutWrite index (0.53) and the S&P 500 (0.75).
 
 **What it bears on.** Any claim that the entry rules add return. They do not, on this
 sample. The claim the evidence supports is narrower: that sizing by a stated crash
 loss rather than by recent volatility changes the shape of the loss distribution -
-volatility targeting alone gives a Sharpe of 0.06 and a 43% drawdown.
+volatility targeting alone gives a Sharpe of -0.03 and a 44% drawdown.
 
 ---
 
@@ -308,9 +308,9 @@ SPY are total returns, and the T-bill accrual is subtracted before every Sharpe.
 
 ## L21. Costs decide the result
 
-At the configured tick the strategy earns 5.0% a year against 3.2% of costs, so the
-answer is roughly "half the gross return goes to friction". At two ticks per side the
-out-of-sample Sharpe is 0.01. The tick model charges a full tick on each leg of the
+At the configured tick the strategy earns 4.1% a year against 3.2% of costs, so the
+answer is roughly "more than half the gross return goes to friction". At two ticks per
+side the out-of-sample Sharpe is -0.06, and it reaches zero at 1.77 ticks. The tick model charges a full tick on each leg of the
 roll, where a calendar spread would usually trade inside that, so the default is
 conservative - but the conclusion is not robust to the cost assumption in either
 direction, and no result from this strategy should be quoted without it.
@@ -319,11 +319,11 @@ direction, and no result from this strategy should be quoted without it.
 
 ## L22. The result is specification-dependent, and the chosen cell is a good one
 
-Across the 144-cell grid the out-of-sample Sharpe runs from -0.35 to 0.53 with a
-**median of 0.06**. The pre-registered configuration earns 0.27, the 78th percentile.
+Across the 144-cell grid the out-of-sample Sharpe runs from -0.37 to 0.50 with a
+**median of 0.06**. The pre-registered configuration earns 0.20, the 74th percentile.
 The parameters were fixed before any data was retrieved and the provenance is in the
 commit history, so this is not selection after the fact - but a reader should treat
-0.27 as one draw from that distribution rather than as the property of the strategy,
+0.20 as one draw from that distribution rather than as the property of the strategy,
 and the median cell as the honest central estimate.
 
 **What it bears on.** Every strategy claim. Phase 13 states them at this confidence,
@@ -342,8 +342,8 @@ same-day execution.
 
 **What it bears on.** Any claim that crash budgeting alone makes the trade survivable.
 The evidence supports a narrower claim: budgeting bounds the loss from a position you
-are still holding (Sharpe 0.27 against 0.06 for volatility targeting alone, drawdown
--26% against -43%), and the filters decide whether you are holding one.
+are still holding (Sharpe 0.20 against -0.03 for volatility targeting alone, drawdown
+-27% against -44%), and the filters decide whether you are holding one.
 
 ---
 
@@ -361,6 +361,38 @@ under either.
 change - is the finding, and it is the same in both columns.
 
 ---
+
+## L25. A fifteen-minute timing overlap sat in the headline for 1,482 days
+
+**What it is.** From 26 October 2020 the VRP filter was set from the VIX cash close, struck
+at 4:15 p.m. ET, while the position it informed was booked at the VX daily settlement,
+struck from that date at 4:00 p.m. ET. For every one of the 1,482 trading days after the
+settlement-time change, the entry decision used a price fifteen minutes in its own future.
+Before that date the two coincide and there is no overlap. Found and corrected in the
+recursive audit as A-02; the mechanism is documented in M7a.
+
+**What it cost.** The out-of-sample Sharpe falls from **0.27 to 0.20**, the CAGR from 5.0%
+to 4.1%, and the alpha from −1.4% to −2.2% a year. 161 decision days change, all after
+October 2020. The design window is untouched, so no parameter of the strategy was chosen
+with contaminated information.
+
+**What it bears on.** Every out-of-sample number in this project, all of which are now
+quoted post-correction. It also bears on how much weight the earlier look-ahead evidence
+should carry: `timing_audit.csv` reported "0 of 18 inputs" with a hard-coded `False`
+(A-05), and that reassurance is what allowed this to persist through sixteen phases and a
+six-perspective final audit. The perturbation test in the suite is genuine and still
+passes, but it tests day-level shifts and cannot see an intraday overlap.
+
+**The uncomfortable part.** H1 — this project's own first finding — is that the index and
+the products were measured fifteen minutes apart, and that this, not fee drag, explained
+their apparent disagreement. The same fifteen minutes was inside the strategy. A project
+can identify a measurement problem in the literature and reproduce it in its own code.
+
+**What is different now.** The check is computed rather than asserted, per date, and the
+pipeline refuses to run if it fails; a mutation test requires the check to catch the defect
+it previously could not see. Whether any *further* sub-daily overlap remains is bounded
+rather than settled: daily data cannot rule out intraday sequencing effects inside the
+settlement window itself (L17).
 
 ## L8. Open questions carried forward
 

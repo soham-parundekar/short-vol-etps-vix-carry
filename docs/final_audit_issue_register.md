@@ -1,0 +1,425 @@
+# Final audit — issue register
+
+Recursive, project-wide audit of `short-vol-etps-vix-carry`, run against the state at
+commit `c4c5ec6` (27 commits, local tree content-identical to `origin/main`).
+
+This register is append-only. Every issue keeps its original description even after it
+is fixed, so the record shows what was wrong rather than only what is now right.
+
+**Severity.** *Critical* — potentially invalidates core results or reproducibility.
+*Major* — materially affects methodology, results, interpretation or documentation.
+*Moderate* — requires correction but does not invalidate the project. *Minor* —
+quality, consistency, clarity or hygiene.
+
+---
+
+## Pass 1
+
+Entry environment: fresh `git clone` into an empty Linux container with no project
+history, numpy 2.4.4, pandas 3.0.2, Python 3.11.15 — all materially newer than the
+lower bounds in `requirements.txt`. Raw data absent from the clone by design
+(`data/raw/**` is gitignored); verified separately against the authoritative local
+working copy, which holds it.
+
+### A-01 · Reproducibility / Git hygiene · **Minor**
+
+**What was wrong.** The repository contains no `.gitattributes`. The committed blobs
+are LF; the working tree on the authoring machine is CRLF, normalised on commit by
+that machine's global `core.autocrlf`. Any checkout or clone where `core.autocrlf` is
+`false` — the default on Linux and macOS, and what a CI runner gets — reports **all
+168 tracked text files as modified** immediately after cloning, with
+`63,788 insertions(+), 63,788 deletions(-)` and not one byte of real change.
+
+**Where found.** Repository root; reproduced on the authoritative local copy
+(`git status --porcelain` → 168 ` M` entries; `git diff --ignore-cr-at-eol --stat` →
+empty; `tr -d '\r' < LICENSE | git hash-object --stdin` → `9a15f5e`, exactly the
+committed blob).
+
+**Why it mattered.** The project leans on a clean working tree as a verification
+signal — the manifest check, the clean-clone reproduction and the completion gate all
+read "local and remote agree" from `git status`. That signal is platform-dependent as
+shipped: on the authoring machine it is clean, on any other machine it is 168 files
+of noise, which both hides real uncommitted changes and makes the documented
+verification irreproducible for a reader.
+
+**Root cause.** Line-ending policy left implicit, i.e. delegated to each user's
+global git config, rather than declared in the repository.
+
+**Blast radius.** No data, results, tables or figures. Affects `git status` output,
+the clean-clone reproduction procedure in `docs/validation.md`, and any CI.
+
+**What adding the policy then exposed.** With `.gitattributes` in place git immediately
+flagged three tracked text files whose *committed blobs* contained CRLF while the other ~170
+were LF: `data/raw/_manifest.json`, `references/filings/_index.json` and
+`reports/tables/filing_terms.csv`. The repository's committed text content was itself
+inconsistent, and which ending a file received depended on how it happened to be written
+rather than on any decision. This is the harm the missing policy had already done, not a new
+problem introduced by fixing it.
+
+**Correction.** `.gitattributes` declaring `* text=auto eol=lf`, with `*.png`, `*.pdf`,
+`*.htm`, `*.html` and `*.bundle` marked binary and the byte-compared text types
+(`*.csv`, `*.json`, `*.py`, `*.md`, `*.yaml`, `*.toml`, `*.txt`, `Makefile`) pinned
+explicitly. The three inconsistent files renormalised with `git add --renormalize`.
+
+**Validation performed.** After renormalisation the manifest still verifies clean over 338
+entries, both JSON files still parse, and `filing_terms.csv` still holds 28 rows with
+`found=True` on every one. `git status` is clean on a Linux checkout for the first time.
+
+**Status.** **Resolved.**
+
+---
+
+### A-02 · Bias (look-ahead) / Results / Documentation · **Major**
+
+**What was wrong.** From 26 October 2020 onward the headline strategy sets each day's
+position using an input struck **fifteen minutes after** the price at which that
+position is booked. The variance-risk-premium filter is the leaking input.
+
+The chain, each link verified empirically rather than read from a comment:
+
+1. The engine applies the lag itself: `w = w_raw.shift(signal_lag)`, `signal_lag = 1`,
+   and `gross_t = a_t − w_t · r_t` (`src/svcarry/strategy/backtest.py`).
+   Verified: `max |backtest_daily.weight − strategy_weights.weight.shift(1)| = 0`, and
+   `max |gross − (−weight_t · index_ret_t + accrual)| = 1.8e−16` at lag 0 on the
+   stored weight. So the weight built from date *t* information earns the return of
+   *t+1* — the position is in place at the **settlement of t**.
+2. Nothing else lags. `svcarry.strategy.signals` states "Nothing in this module looks
+   forward … the backtest can lag it by exactly one day"; `sizing.strategy_weights`
+   states "Nothing is lagged here". Verified on the committed panel:
+   `slope_cm(t) = cm30(t)/cm90(t)` to the digit (2008‑01‑02: 24.15647/24.33071 =
+   0.9928385), so the signal on date *t* is built from date-*t* data. Effective total
+   lag is therefore exactly one day, not two.
+3. `r` is a VX **settlement**-to-settlement return (`reconstruct.build_curve(...,
+   price_col="settle")`; `docs/methodology.md`: "The index is struck at the futures
+   settlement").
+4. Cboe moved the VX daily settlement from 3:15 p.m. CT to 3:00 p.m. CT — 4:15 p.m. ET
+   to **4:00 p.m. ET** — effective **26 October 2020**. Confirmed against the primary
+   source the project itself cites (Cboe notice, *Adjustment of Daily Settlement Time
+   for Proprietary Index Products*): "from 3:15 p.m. to 3:00 p.m. CT", effective
+   October 26, 2020.
+5. `vrp` is built from the VIX cash close, which the project's own
+   `reports/tables/timing_audit.csv` records as struck at **4:15 p.m. ET**.
+
+So before 26 October 2020 the signal input and the execution price are struck at the
+same instant (4:15 p.m. ET), which is the ordinary idealisation. From 26 October 2020
+the input is struck at 4:15 p.m. ET and the execution price at 4:00 p.m. ET, and the
+position is set with fifteen minutes of hindsight, on every one of the 1,483 trading
+days in that period.
+
+This is the *same fifteen-minute gap* the project identifies as its first headline
+finding — the gap between the 4:15 p.m. index and the 4:00 p.m. product close. The
+project found it in other people's index-versus-product comparisons and did not look
+for it inside its own signal chain.
+
+**Where found.** `config/config.yaml` `strategy.signal_lag`;
+`src/svcarry/strategy/backtest.py`; `src/svcarry/strategy/signals.py`;
+`reports/tables/timing_audit.csv` rows *VIX close*, *VRP, slopes, signals*, *weight w*.
+
+**Why it mattered — quantified.** Re-running the project's own
+`strategy_weights` and `run_backtest` with the committed inputs and **only** the VRP
+filter's timing changed. Harness first validated against the committed artefacts:
+every sizing column and the return series reproduce to ≤ 1.9e−16.
+
+| variant | OOS Sharpe | OOS CAGR | ann. vol | max DD | Δ Sharpe |
+|---|---|---|---|---|---|
+| as committed | **0.2680** | 5.01% | 12.61% | −26.3% | — |
+| **A** VRP lagged 1d from 2020‑10‑26 (minimal fix) | **0.1989** | 4.10% | 12.53% | −26.8% | **−0.069** |
+| B VRP lagged 1d, whole sample | 0.1765 | 3.81% | 12.56% | −29.7% | −0.092 |
+| C whole signal lagged 1d (upper bound) | −0.0417 | 0.56% | 14.70% | −45.2% | −0.310 |
+
+161 decision days change under the minimal fix, all of them after October 2020. The
+headline out-of-sample Sharpe of **0.27 is overstated by 0.069 — roughly a quarter of
+its own magnitude.** The design window is untouched (0.4508 either way), so no
+parameter choice is affected.
+
+**Direction matters for how this is reported.** The correction makes the project's
+conclusion *stronger*, not weaker: the strategy's corrected 0.199 sits further below
+the constant-weight short's 0.40 and further below the PutWrite index's 0.53. Nothing
+about the negative headline is at risk. What is at risk is the specific number 0.27,
+which appears in the report, the one-page summary, the README, `docs/results.md`,
+`docs/validation.md`, `docs/limitations.md`, `docs/project_log.md` and the project
+completion note.
+
+**Secondary defect, same root.** `reports/tables/timing_audit.csv` is an 18-row table
+whose every row reads `use_precedes_availability = False` — a positive claim that no
+input is used before it is available. Two rows do not describe the implemented engine:
+*VIX close* and *VRP, slopes, signals* both give `first_used = "close of t+1"`, which
+would require an effective two-day lag; the engine uses one. The row for *weight w*
+(`available close of t`, `first used return of t+1`) is correct and contradicts the
+other two. The table's own internal inconsistency is what allowed the overlap to pass
+sixteen phases and a six-perspective final audit unnoticed.
+
+**Third defect, same root.** `config/config.yaml` line 143 documents
+`signal_lag: 1` as "signal from close of t-1 traded at close of t". Under the engine
+the signal from the close of *t−1* is traded at the close of *t−1*. The comment
+describes a two-day convention; one day is implemented.
+
+**Root cause.** The timing convention is asserted in three places in three mutually
+inconsistent forms and verified in none. No test pins the relationship between a
+signal date, a weight date and the return it earns; `timing_audit.csv` is authored
+prose, not a computed artefact.
+
+**Blast radius.** Headline OOS performance → `performance_oos.csv`,
+`backtest_variants.csv`, `robustness_*.csv`, `alpha_regression*.csv`,
+`specification_distribution.csv`, `stress_windows.csv`, H5's verdict wording →
+equity-curve, drawdown, rolling-Sharpe, parameter-heatmap and specification-
+distribution figures → `reports/report.md`, `reports/summary_one_page.md`,
+`docs/results.md`, `docs/validation.md`, `docs/limitations.md`, `README.md`,
+`docs/project_log.md`, `docs/final_audit.md`, and the project completion note held
+outside the repository.
+
+**Correction.** Root cause fixed rather than disclosed, on the author's decision. New
+module `src/svcarry/timing.py` holds a registry of every input's strike time and the
+execution-settlement clock and derives the required lag per date.
+`build_signal_panel(vix_extra_lag_from=...)` applies one extra day of lag to the
+VIX-cash-derived signals from 2020-10-26; `config/config.yaml` gains a `timing:` block; the
+robustness sweep was switched to the aligned columns so the grid sweeps the same
+specification as the headline. The raw `vrp` and `slope_vix3m` columns are kept for
+reporting, with `vrp_aligned` and `slope_vix3m_aligned` added, so the panel shows both what
+was observed and what was tradeable. The config comment and `methodology.md` M7a now state
+the convention once, correctly.
+
+**Validation performed.** The counterfactual predicted an out-of-sample Sharpe of 0.1989;
+the full pipeline re-run produced **0.198909**. Before any change the unchanged pipeline was
+run from raw data and reproduced **all 42 tables and all 24 figures byte-identically**, so
+every difference is attributable to this correction alone. 14 of 42 tables, 9 of 24 figures
+and 4 of 8 processed datasets regenerated. `performance_design.csv` unchanged, confirming no
+parameter was contaminated. Suite 258 passed / 2 skipped. `check_results_numbers.py` passes
+against the new tables and now asserts the timing audit's verdict, its row count, and the
+1,482 dates carrying a real extra-lag requirement.
+
+**Final numbers.** OOS Sharpe 0.27 → **0.20** (se 0.31); CAGR 5.0% → **4.1%**; max drawdown
+−26.3% → **−26.8%**; Sortino 0.237 → 0.177; alpha −1.4%/yr (t −0.52) → **−2.2%/yr
+(t −0.77)**; grid percentile 78th → **74th**; grid range −0.35…0.53 → −0.37…0.50; cost
+breakeven 2.05 → **1.77 ticks**; one-day-leak calibration 1.12 → **1.54**; volatility
+targeting alone +0.06 → **−0.03**; concentration on 2017-08-10 17.0% → **21.8%**; August
+2024 stress window −3.2% → **+0.1%**.
+
+**Status.** **Resolved** — corrected at the root, regenerated, revalidated and propagated to
+`README.md`, `reports/report.md`, `reports/summary_one_page.md`, `docs/results.md`,
+`docs/validation.md` (V25–V28, V30–V35, new V37), `docs/limitations.md` (new L25),
+`docs/methodology.md` (new M7a), `docs/research_design.md`, `docs/final_audit.md` (note),
+`docs/project_log.md` (Session 14) and `scripts/check_results_numbers.py`.
+
+---
+
+### A-03 · Code · **Minor**
+
+**What was wrong.** The backtest's drift-turnover term divides by the **gross**
+return where its own documented formula divides by the net return. The docstring
+defines `R_t = a_t − w_{t−1} r_t − c_t` and then gives
+`turnover_t = |w_t − w_{t−1}(1 + r_{t−1})/(1 + R_{t−1})|`, but the code is
+`drifted = w_pos.shift(1) * (1 + r.shift(1)) / (1 + gross.shift(1))`.
+
+**Where found.** `src/svcarry/strategy/backtest.py`, drift-turnover block.
+
+**Why it mattered.** Equity compounds at the net return, so the position's drifted
+weight is very slightly misstated and turnover with it. The error is of the order of
+the daily cost itself (a few basis points on a denominator near 1), so it does not
+move any reported figure — but the code and its stated formula disagree, and the
+formula is the one a reader would check.
+
+**Blast radius.** `turnover`, `cost_rebalance`, `ann_turnover`, and the cost
+attribution table, all at the fifth decimal or beyond.
+
+**Correction.** The docstring now states what is computed and why — the net return is
+circular within a day, since `R_{t-1}` needs `c_{t-1}` needs `turnover_{t-1}` — and
+`tests/test_timing_and_costs.py::test_drift_denominator_approximation_is_bounded` builds the
+exact sequential series and requires the difference to stay inside a stated tolerance. The
+code is unchanged: putting a 4,711-iteration Python loop into a vectorised engine that runs
+once per cell of a 144-cell grid, to move the fifth decimal place, is the worse trade. What
+was wrong was an unmeasured approximation; it is measured now.
+
+**Validation performed.** Exact sequential reference over the full sample: worst single
+day's turnover differs by 1.8e-03, worst single day's return by 6.2e-06, out-of-sample
+Sharpe by **2.4e-05**.
+
+**Status.** **Resolved** (documented and bounded by test).
+
+---
+
+### A-04 · Code hygiene · **Minor**
+
+**What was wrong.** Figures are created with `plt.subplots` and never closed, so a
+run that builds many of them accumulates open figures. The test suite emits
+matplotlib's `RuntimeWarning: More than 20 figures have been opened` from
+`src/svcarry/viz/style.py:182` during `test_viz`.
+
+**Where found.** `src/svcarry/viz/style.py:182`; surfaced by `tests/test_viz.py`.
+
+**Why it mattered.** A warning in an otherwise clean 245-test run trains a reader to
+ignore warnings, and the figure stage holds 24 figures' worth of state longer than it
+needs to.
+
+**Blast radius.** Test output and figure-stage memory. No figure content.
+
+**Revised diagnosis.** `save_figure` already calls `plt.close(fig)`, so production code does
+not leak. The leak is in the tests, which call the plot builders directly and never save. The
+root cause is that neither harness reset process-wide state between tests.
+
+**Correction.** Fixed centrally: `_reset_global_state()` in `scripts/run_tests.py` closes all
+figures after every test, and a new `tests/conftest.py` does the same through an autouse
+fixture under a real pytest. Twenty test functions are untouched.
+
+**Validation performed.** The `RuntimeWarning: More than 20 figures have been opened` no
+longer appears in a full run.
+
+**Status.** **Resolved**.
+
+---
+
+### A-05 · Verification integrity · **Major**
+
+**What was wrong.** `reports/tables/timing_audit.csv` — the artefact the project cites as
+*mechanical* evidence that nothing leaks — had its verdict column assigned as a literal:
+
+```python
+timing["use_precedes_availability"] = False    # stage_signals
+add["use_precedes_availability"] = False       # stage_backtest
+```
+
+Nothing was computed. The table could not have reported a violation however bad the timing
+was, and it was concealing one (A-02) on 1,482 days.
+
+**Where found.** `scripts/run_pipeline.py`, both halves of the table. Cited as evidence in
+`docs/final_audit.md` §B and §D ("The look-ahead evidence is mechanical, not asserted…
+`timing_audit.csv`: **0 of 18** inputs have use preceding availability") and in
+`docs/validation.md` V25.
+
+**Why it mattered.** This is the more important of the two findings. A-02 is a defect; A-05
+is the reason a defect of that kind could survive sixteen phases and a six-perspective audit
+that explicitly looked for look-ahead. A check that cannot fail is not a check, and citing
+one as mechanical evidence overstates the project's rigour in exactly the way §55 forbids.
+
+Compounding it, the convention was asserted in three mutually inconsistent forms —
+`config.yaml` line 143 ("traded at close of t", a two-day description), the *VIX close* and
+*VRP, slopes, signals* rows of the table (`first_used = close of t+1`, also two-day), and
+the engine (one day) — and **no test pinned the relationship between a signal date, a weight
+date and the return it earns.** `docs/final_audit.md` §A records an auditor shifting the
+emitted weight a second time and finding 2,567 phantom violations, which is what happens
+when a convention lives only in prose.
+
+**Root cause.** A verification artefact authored as prose in the shape of a computation.
+
+**Correction.** `src/svcarry/timing.py` holds a declarative registry of each input's strike
+time; `timing_audit_table()` compares it against the execution settlement per date and emits
+`strike_et`, `dates_needing_extra_lag`, `n_dates_use_precedes_availability` and a **computed**
+`use_precedes_availability`. The pipeline raises `SystemExit` if any row is `True`. The table
+is now written once, in one stage, which also removed the de-duplication hack that existed
+because re-running a stage appended its rows again. `verify_weight_alignment()` checks the
+signal-to-weight-to-return relationship against the artefacts, and the pipeline fails if it
+does not hold.
+
+**Validation performed.** `tests/test_timing_and_costs.py` pins the clock rule, the panel's
+behaviour with and without the flag, the end-to-end convention on constructed data whose
+answer is known, and — the mutation check — requires the table to report **1,482 violating
+dates across four inputs** when the extra lag is removed. `check_results_numbers.py` now
+asserts the table's verdict and row count, so the claim is in the number check rather than
+only in prose.
+
+**Blast radius.** No data or results of its own; it is the control that failed to catch
+A-02. Documentation: `docs/final_audit.md`, `docs/validation.md` V25, `docs/methodology.md`
+M7a.
+
+**Status.** **Resolved.**
+
+---
+
+### A-06 · Reporting · **Moderate**
+
+**What was wrong.** `docs/project_log.md` claimed, of the Phase 16 clean-room test, "245
+tests, the number check, `make verify` over 338 files, and **all 24 figures
+byte-identical**" — and then, two sentences later, "Four figures still cannot be built in a
+clone because they read cached price files." Both cannot be true. The test rebuilt 20
+figures and the other four exited with an error. `docs/final_audit.md` §F,
+`docs/validation.md` V36 and `docs/project_log.md` at its Phase 15 entry all say 20 of 24
+correctly; this one sentence does not, and it is the version that was copied verbatim into
+the project completion note held outside the repository.
+
+**Where found.** `docs/project_log.md`, Phase 16 "Clean-room reproduction".
+
+**Why it mattered.** It overstates a reproducibility result in the document a reader is most
+likely to quote, and §55 puts reproducibility claims among those that must not exceed the
+evidence. It is also self-indicting: the same section's closing paragraph draws the lesson
+that every number in prose should be in a table, and the figure count was never in one.
+
+**Root cause.** A summary sentence written from the intent of the test rather than from its
+output, in a document with no executable check over it.
+
+**Correction.** Corrected in place to "all 20 rebuildable figures byte-identical", with the
+original claim, why it was wrong, and why it survived recorded beside it. The completion note
+is corrected separately. Pass 1 has since reproduced **all 24 figures byte-identically from
+the full raw data** — a different and stronger test, recorded as V37, and not the one this
+sentence was describing.
+
+**Blast radius.** `docs/project_log.md`; the external completion note.
+
+**Status.** **Resolved.**
+
+---
+
+### A-07 · Reporting · **Minor**
+
+**What was wrong.** `README.md` reported "**244 tests passing**, 2 skipped". Every other
+document, and the suite itself, said 245.
+
+**Where found.** `README.md`, Status table.
+
+**Why it mattered.** Small in itself, but it is a third instance of the same pattern as A-05
+and A-06: a verification result quoted from memory rather than from output, in the file a
+reader sees first. Three of them in one project is a pattern, not a typo.
+
+**Correction.** Updated to 258 passing / 2 skipped, the count after this pass's additions.
+
+**Status.** **Resolved.**
+
+---
+
+### A-08 · Reporting · **Minor**
+
+**What was wrong.** `docs/validation.md` V27 reads "Annual turnover of 11.3 (out of sample):
+7.1 rebalancing … and 4.2 from the index's own roll, which is 38.7% of the cost bill." The
+turnover figures are out-of-sample; **38.7% is the full-sample share**. The out-of-sample
+figure is 39.5% before the A-02 correction and 39.2% after. Three windows' worth of
+arithmetic in one sentence, presented as one.
+
+**Where found.** `docs/validation.md` V27.
+
+**Why it mattered.** Not material to any conclusion, but it is a window mismatch inside a
+single sentence in the document whose job is to make every number traceable — and it is
+undetectable by `check_results_numbers.py`, which checks table-to-prose links and not which
+window a prose figure came from.
+
+**Correction.** Restated on the out-of-sample basis (39.2%), with the original figure and its
+basis recorded.
+
+**Status.** **Resolved.**
+
+---
+
+## Checked and found clean in Pass 1
+
+Recorded so that a later pass does not re-litigate settled ground, and so the
+register shows the audit's coverage rather than only its catches.
+
+| Check | Method | Result |
+|---|---|---|
+| Test suite from a clean clone | bundled zero-dependency runner, no pytest available | **245 passed, 0 failed, 2 skipped** — matches the claim exactly, on numpy 2.4.4 / pandas 3.0.2 |
+| Forward compatibility | suite run against dependencies far newer than the pins | no failures; the lower-bound-only pins hold up |
+| Local tree vs `origin/main` | LF-normalised blob hashing | content-identical at `c4c5ec6`; **local and remote genuinely agree** |
+| Retrieval manifest | `verify_manifest()` on the authoritative copy | **clean**, 338 entries (331 raw files + 7 filings) re-hashed |
+| Project's own number checker | `scripts/check_results_numbers.py` | passes across `results.md`, `report.md`, `summary_one_page.md`, `README.md` |
+| Headline performance statistics | independent reimplementation, no project imports | CAGR, ann. vol, max drawdown, hit rate, worst/best day reproduce to **≤ 4.2e−15** across all three windows |
+| Weight and turnover statistics | independent reimplementation | `time_invested`, `avg_weight`, `max_weight`, `ann_turnover` reproduce exactly in all three windows |
+| Backtest internal identities | independent | `ret = gross − costs` (1.0e−16), `costs = cost_rebalance + cost_roll` (1.0e−16), `turnover = t_rebalance + t_roll` (2.2e−16), `equity = cumprod(1+ret)` (5.6e−14) |
+| Sharpe / Sortino convention | implied-rate back-out | excess of the T-bill accrual, as documented; implied annual rate 1.43% full, 0.24% design, 2.32% OOS — consistent with realised bill yields in each window |
+| Constant-weight benchmark | independent reconstruction | the gap against a naive replication is transaction costs, correctly charged; its in-window sizing **is** disclosed (`docs/limitations.md`, `docs/methodology.md`, `docs/research_design.md`) — not a hidden look-ahead |
+| Cited primary source, settlement time | fetched the Cboe notice | says "from 3:15 p.m. to 3:00 p.m. CT", effective October 26, 2020 — **citation accurate** |
+| Overclaiming vocabulary | full-text sweep | zero occurrences of "fully reproducible", "fully automated", "production-ready", "statistically significant", "outperformed", "replicated" |
+| Full pipeline re-run from raw data, unchanged code | 338 raw files restored and manifest-verified; pipeline run end to end | **42 of 42 tables and 24 of 24 figures byte-identical**, 8 of 8 processed datasets — a stronger reproduction than the project had established, and the control that makes the A-02 diff interpretable |
+| Signal-to-weight-to-return alignment | empirical, on the committed artefacts | `backtest_daily.weight` equals `strategy_weights.weight.shift(1)` exactly; a signal that turns on at date *d* first earns the return of *d+1* |
+| Design-window contamination | `performance_design.csv` before and after the correction | byte-identical; no parameter of the strategy was chosen on leaked information |
+| H2 flow arithmetic | pipeline recomputation | 55,690 contracts and 24.995% of front-month open interest on 2018-02-05, reproducing the 25.0% claim; de-levering counterfactual 20,884 and 9.4% |
+| F-A1's resolution | `docs/methodology.md` M5 | both `A_t` (25.0%) and `A_{t−1}` (24.8%) are reported, with the ambiguity stated — the Phase 16 action was actually carried out |
+| Cited primary source, VX settlement time | fetched the Cboe notice the project cites | "from 3:15 p.m. to 3:00 p.m. CT", effective October 26, 2020 — **verbatim as claimed** |
+| Inventory against claims | file counts | 42 tables, 24 figures, `report.md` 790 lines, `validation.md` 1,289, `project_log.md` 1,123 — all as claimed |

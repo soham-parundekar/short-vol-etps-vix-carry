@@ -3,6 +3,17 @@
 Phase 16. The repository reviewed from six perspectives at commit `50a6c3b`, the commit
 at which the project was declared finished.
 
+> **Superseded in part.** A later, recursive audit found a **Major** defect this audit
+> missed: a fifteen-minute look-ahead in the VRP filter from 26 October 2020, worth 0.069
+> of out-of-sample Sharpe, together with the reason it was missed — the look-ahead table
+> cited below as "mechanical" evidence assigned `False` to every row as a literal. The
+> headline out-of-sample Sharpe is **0.20**, not the 0.27 quoted throughout this document.
+> Numbers here are left as they stood at `50a6c3b` because this document's purpose is to
+> record what the project looked like when it was called complete. The current figures are
+> in `docs/results.md`; the findings, their blast radius and their corrections are in
+> [`final_audit_issue_register.md`](final_audit_issue_register.md); the timing convention
+> is in `methodology.md` M7a.
+
 The findings below were **written before any fix was made**, so this document records
 what the project looked like when it was called complete, not what it looks like after
 the audit. Each finding is classified:
@@ -234,6 +245,17 @@ the perturbation test is run permanently as part of the suite, and the one place
 look-ahead was found — the stress floor reading the 5 February 2018 move from 2008 — was
 caught by this project's own rule and fixed before any backtest ran, with the offending
 version kept and reported as a calibration of what knowing the answer is worth.
+
+> **This paragraph was wrong when it was written, and is the most important thing the
+> recursive audit found.** The timing audit table was *not* mechanical: its
+> `use_precedes_availability` column was the literal
+> `timing["use_precedes_availability"] = False`, assigned in two places in
+> `scripts/run_pipeline.py`. Nothing in it was computed, so it could not have reported a
+> violation however bad the timing was — and it was concealing one, on 1,482 days
+> (register A-02, A-05). The perturbation test referred to here is genuine and still
+> passes, but it perturbs inputs by whole days and cannot see a fifteen-minute overlap.
+> The table is computed per date now, by `svcarry.timing`, and the pipeline exits non-zero
+> if any row comes back `True`.
 
 ### D-1. The asset bounds rest on an assumption that daily data cannot test — **disclosed**
 

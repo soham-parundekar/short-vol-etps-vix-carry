@@ -248,6 +248,52 @@ requiring both. Thresholds from `config/config.yaml`, fixed in commit 2bdeb31
 Every signal is indexed by the date it is observable and is lagged by the backtest
 (`signal_lag = 1`), never pre-lagged here.
 
+## M7a. Execution timing: which inputs are observable when a position is booked
+
+Added by the recursive audit (A-02), because the convention was previously asserted in
+three places in three mutually inconsistent forms and verified in none.
+
+**The convention.** With `signal_lag = 1` the engine computes `w = w_raw.shift(1)` and
+`R_t = a_t − w_t r_t`. The index return `r_t` runs from the VX settlement of `t−1` to the
+settlement of `t`, so a weight built from information dated `t−1` is a position held at the
+settlement of `t−1`. **The decision is taken and executed at the same settlement; it earns
+the following day's move.** The `config/config.yaml` comment read "signal from close of
+t-1 traded at close of t" through Phase 16, which describes a two-day convention and is not
+what the engine does.
+
+**Why the time of day matters here and usually would not.** Cboe struck the VX daily
+settlement at 3:15 p.m. CT — 4:15 p.m. ET — through 23 October 2020, and at 3:00 p.m. CT
+(4:00 p.m. ET) from 26 October 2020 (M2, `docs/data_sources.md`). The VIX and VIX3M cash
+indices are struck at 4:15 p.m. ET throughout. So:
+
+| Period | Execution settlement | VIX cash close | Same-day VIX input |
+|---|---|---|---|
+| to 2020-10-23 | 4:15 p.m. ET | 4:15 p.m. ET | simultaneous — admissible |
+| from 2020-10-26 | **4:00 p.m. ET** | 4:15 p.m. ET | **fifteen minutes of hindsight** |
+
+`cm30` and `cm90` come off the settlement itself, so the contango filter is observable
+exactly when the position is booked and needs no adjustment. The VRP filter does not: it is
+built from the VIX cash close. From 26 October 2020 it therefore takes **one extra day of
+lag**, applied by `build_signal_panel(vix_extra_lag_from=...)` and configured under
+`timing:` in `config/config.yaml`. The panel keeps the raw `vrp` and `slope_vix3m` columns
+for reporting and adds `vrp_aligned` and `slope_vix3m_aligned`, which are what the signals
+are computed from, so a reader can see both what was observed and what was tradeable.
+
+**This is the project's own first finding, applied to the project.** H1 is about the index
+and the products being measured fifteen minutes apart. The same fifteen minutes sat inside
+the signal chain for 1,482 trading days. It cost 0.069 of out-of-sample Sharpe — the
+headline moved from 0.27 to 0.20 — and it changed no parameter, because the design window
+ends in 2015 and is unaffected.
+
+**How it is now checked rather than asserted.** `svcarry.timing` holds a registry of every
+input with the clock time at which it is struck, compares that against the execution
+settlement *per date*, and writes `timing_audit.csv` with a computed
+`use_precedes_availability` and a count of offending dates. The pipeline exits non-zero if
+any row is `True`. Remove the extra lag and the table reports 1,482 violating dates across
+four inputs; a test in `tests/test_timing_and_costs.py` requires exactly that, so the check
+can no longer pass by construction. Until the recursive audit the column was the literal
+`timing["use_precedes_availability"] = False` (A-05).
+
 ## M8. The strategy, and one amendment made before it was run
 
 **Position.** A collateralised short in the reconstructed index, entered only when both

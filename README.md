@@ -26,9 +26,9 @@ UVXY alone was an estimated **55,690 front-month contracts, 25.0% of that contra
 interest** at the lower asset bound, which the 2018 de-levering would have cut to **20,884
 contracts and 9.4%** — arithmetic from disclosed assets, not an estimate. **Bounding
 position size by an explicitly estimated crash loss does change the loss distribution** —
-an out-of-sample Sharpe of **0.27** and a **−26.3%** drawdown against **0.06** and
-**−43.2%** for volatility targeting alone — **but it does not create return:** a constant
-0.173 short earns **0.40**, the alpha over PUT/SPX/VXX is **−1.4% a year (t = −0.52)**, and
+an out-of-sample Sharpe of **0.20** and a **−26.8%** drawdown against **−0.03** and
+**−43.5%** for volatility targeting alone — **but it does not create return:** a constant
+0.173 short earns **0.40**, the alpha over PUT/SPX/VXX is **−2.2% a year (t = −0.77)**, and
 the median of the 144-specification grid the pre-registered configuration was drawn from is
 **0.06**.
 
@@ -43,12 +43,12 @@ verdicts and their qualifications: [`docs/results.md`](docs/results.md).
 | | |
 |---|---|
 | **Research design** | Fixed and committed before any data was retrieved. Five hypotheses, each with a stated rejection criterion |
-| **Analysis library** | Complete and tested — **244 tests passing**, 2 skipped (cross-checks against packages not installed) |
+| **Analysis library** | Complete and tested — **258 tests passing**, 2 skipped (cross-checks against packages not installed) |
 | **Data** | Retrieved by `scripts/fetch_data.py`; 338 files, each with URL, retrieval time and SHA-256 in `data/raw/_manifest.json`. 4,711 index sessions, 2008-01-02 to 2026-09-18 |
-| **Phases complete** | 07 index validation · 08 mechanics and flows · 09 tail risk and survival · 10 forecasting and signals · 11 backtest and H5 · 12 robustness and red-team · 13 results · 14 figures · 15 documentation and report |
-| **Hypotheses** | H1 **rejected** · H2 **not rejected** (25.0% of front-month open interest at the lower asset bound) · H3 **not rejected, magnitude unmet** (8.7×, not 10×) · H4 **rejected** · H5 **not rejected** (out-of-sample Sharpe 0.27 ± 0.31; alpha −1.4% a year, t = −0.52) |
+| **Phases complete** | 07 index validation · 08 mechanics and flows · 09 tail risk and survival · 10 forecasting and signals · 11 backtest and H5 · 12 robustness and red-team · 13 results · 14 figures · 15 documentation and report · 16 final audit · **recursive audit** (`docs/final_audit_issue_register.md`) |
+| **Hypotheses** | H1 **rejected** · H2 **not rejected** (25.0% of front-month open interest at the lower asset bound) · H3 **not rejected, magnitude unmet** (8.7×, not 10×) · H4 **rejected** · H5 **not rejected** (out-of-sample Sharpe 0.20 ± 0.31; alpha −2.2% a year, t = −0.77) |
 | **What the backtest does not show** | The dynamic rule does not beat a constant 0.173 short (Sharpe 0.40); what it buys is the tail (worst day −11.7% against −16.6%). Its escape from 5 February 2018 rests on one filter clearing its threshold by 0.72% the day before |
-| **How robust** | Across 144 specifications the out-of-sample Sharpe runs −0.35 to 0.53, **median 0.06**; the pre-registered cell (0.27) is the 78th percentile. Breakeven cost 2.05 ticks per side. Rebalancing weekly instead of daily loses 31.7% in February 2018 |
+| **How robust** | Across 144 specifications the out-of-sample Sharpe runs −0.37 to 0.50, **median 0.06**; the pre-registered cell (0.20) is the 74th percentile. Breakeven cost 1.77 ticks per side. Rebalancing weekly instead of daily loses 31.7% in February 2018 |
 
 `python scripts/check_results_numbers.py` re-reads the committed tables and asserts every
 number quoted in this README, the report, the one-page summary and `docs/results.md`; it
@@ -272,21 +272,35 @@ Full record: [`docs/validation.md`](docs/validation.md) (populated as each phase
 Stated here rather than only in the report, because they bound what the project can
 claim:
 
-- **The strategy result is specification-dependent.** The pre-registered cell earns 0.27
-  against a grid median of 0.06, at the 78th percentile of 144 cells. Pre-registration
+- **The strategy result is specification-dependent.** The pre-registered cell earns 0.20
+  against a grid median of 0.06, at the 74th percentile of 144 cells. Pre-registration
   protects against searching the grid; it does not protect against having drawn a good
   cell. Both numbers belong in any honest summary of this project.
 - **The strategy does not beat the naive alternative.** A constant 0.173 short earns a
-  Sharpe of 0.40 against the dynamic rule's 0.27. What the rule buys is the tail — a
-  worst day of −11.7% against −16.6% — not return. The alpha over PUT/SPX/VXX is −1.4% a
-  year (t = −0.52).
+  Sharpe of 0.40 against the dynamic rule's 0.20. What the rule buys is the tail — a
+  worst day of −11.7% against −16.6% — not return. The alpha over PUT/SPX/VXX is −2.2% a
+  year (t = −0.77).
+- **Several alternative specifications beat the pre-registered one.** Not log-transforming
+  the HAR earns 0.24, smearing retransformation 0.23, a Parkinson variance proxy 0.27, a
+  63-day volatility lookback 0.30 and a 21-day rebalance 0.38, all against the chosen
+  cell's 0.20. The configuration was fixed before any data existed and is not changed
+  after the fact, but it is not the best cell and this project does not present it as one.
 - **The escape from February 2018 rests on a 0.72% margin.** The contango filter cleared
   its threshold by that much at the close of 2 February. At a threshold of 1.025 the
   February return is −24.3%; rebalancing weekly instead of daily gives −31.7% with a worst
   day of −38.0%. And the VRP filter — the other half of the entry rule — was *on* that
   day, so only one of the two filters did any work.
-- **Breakeven cost is 2.05 ticks per side.** One tick is the quoted spread in calm
-  markets; two is not unusual in a crisis, which is when this strategy trades most.
+- **Breakeven cost is 1.77 ticks per side** (0.088 VIX points). One tick is the quoted
+  spread in calm markets and two is not unusual in a crisis, which is when this strategy
+  trades most — so the breakeven sits inside the range of spreads the strategy would
+  actually have faced.
+- **A fifteen-minute timing overlap was found and corrected after the project was first
+  declared complete.** From 26 October 2020 the VX settlement moved to 4:00 p.m. ET while
+  the VIX cash close stayed at 4:15 p.m. ET, so the VRP filter had been set from a price
+  struck after the one the position was booked at. Correcting it moved the out-of-sample
+  Sharpe from 0.27 to 0.20. The mechanism is the same fifteen-minute gap this project's
+  first finding is about; it is recorded as A-02 in
+  [`docs/final_audit_issue_register.md`](docs/final_audit_issue_register.md).
 - **Daily data only.** The intraday sequence on 5 February 2018 — including the
   after-hours move that triggered XIV's acceleration — cannot be resolved. The flow
   analysis shows mechanical demand was *large relative to* open interest; it does not
