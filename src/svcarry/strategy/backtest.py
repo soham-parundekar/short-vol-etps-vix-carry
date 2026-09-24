@@ -34,11 +34,22 @@ in VIX points is a larger fraction of a 12-point future (2017) than of a 40-poin
 it is ``w (1 + r) / (1 + R)`` of the new equity - a short grows as the index rises and
 equity falls. Returning it to the next target is the trade,
 
-    turnover_t = | w_t - w_{t-1} (1 + r_{t-1}) / (1 + R_{t-1}) |,
+    turnover_t = | w_t - w_{t-1} (1 + r_{t-1}) / (1 + G_{t-1}) |,
 
 and a missing weight is a flat position, so leaving the market and coming back through
 a data gap is charged. (Until Phase 11 turnover was ``|w_t - w_{t-1}|`` on the target
 alone, which misses the drift and charged nothing for entries after a gap.)
+
+The denominator is the *gross* return ``G = a - w r``, not the net return ``R = G - c``.
+Using ``R`` would be exact but circular within a day: ``R_{t-1}`` needs ``c_{t-1}``,
+which needs ``turnover_{t-1}``, which needs ``R_{t-2}``, so the series can only be built
+one row at a time. The cost of the approximation is bounded and measured rather than
+assumed: ``tests/test_timing_and_costs.py`` builds the exact sequential series and
+requires the difference to stay under a tolerance it states. Measured over the full
+sample it is 1.8e-3 at the worst single day's turnover, 6.2e-6 at the worst single day's
+return, and 2.4e-5 of out-of-sample Sharpe - the fifth decimal place. Through Phase 16
+this docstring wrote the denominator as ``R``, which the code never computed
+(final audit A-03).
 
 *Rolling.* Holding the index means holding its basket, which moves a fraction
 ``w1_{t-1} - w1_t`` of the notional from the front to the second contract every day:
