@@ -1052,3 +1052,72 @@ stops with exit code 2 and names the command to run rather than downloading impl
 ### Next
 
 Phase 16 — final audit.
+
+---
+
+## Session 13 — 24 September 2026
+
+**Phase 16 — final audit.** Six perspectives at commit `50a6c3b`, the commit at which the
+project was declared finished. The findings were written and committed (`700c45a`) before
+any fix, so the record shows what the project looked like when it was called complete.
+
+**2 material, 3 minor, 4 disclosed, 0 critical.** Full document: `docs/final_audit.md`.
+
+### The two material findings were both numbers that lived only in prose
+
+* **F-A2.** "H2 is supported at the lower bound on 4 of 10 days" appeared in five
+  documents across four phases. It is **3 of 10**. The fourth day, 2017-08-10, sits at
+  **9.97%** — which prints as "10.0%" at one decimal place and was counted as clearing a
+  threshold it does not clear. Worse for the claim: of the three that do clear it, two
+  clear by under a quarter of a point (10.18%, 10.23%), so H2 rests on 5 February 2018.
+  The verdict is unchanged — the pre-registered rule is failure at *both* bounds, and no
+  day fails at both — but the strength claim was overstated. Corrected everywhere, the
+  margins are now named, and the count is derived from the table by
+  `check_results_numbers.py` rather than asserted in prose.
+* **F-A1.** Methodology M5 documented `ΔE_t = L(L−1)·A_{t−1}·r_t` while the code uses
+  `A_t`. On 5 February 2018 the two give 25.0% and 24.8% at the lower bound. Neither is
+  exactly right — a fund rebalances against the `t−1` mark grown by the day's own move —
+  so M5 now states what the code does and why the choice is ambiguous, and reports both.
+  The code is unchanged: altering a published number for a reason the audit cannot
+  establish as correct would be worse than documenting the ambiguity.
+
+Both were found by re-deriving headline numbers **by hand from the raw contract panel**
+rather than reading them off the tables. That is the only part of the audit that found
+anything; the checklist sections found nothing because they were already instrumented.
+
+### What the hand checks confirmed
+
+One index return on an ordinary day and on a roll date, to 1e-12 — the naive front-month
+version would have booked **+1067 bp** of fake return on that roll date. The backtest
+identity `R = a − w·r − c` across the whole series to 1.8e-16. Collateral credited exactly
+once, to 1.0e-16. The February 2018 de-levering date confirmed **independently from
+implied leverage** in the price data (SVXY −1.21 → −0.24; UVXY +2.48 → +1.12). The
+pre-registration provable from git: config at 07:40:36Z, first data retrieval at
+08:30:04Z, both independently checkable.
+
+### One false alarm, recorded rather than hidden
+
+A first pass tested the backtest identity with an extra `shift(1)` and found 2,567
+violating rows, worst on 5 February 2018. The engine applies `signal_lag` internally, so
+the emitted `weight` is already the held weight. The audit check was wrong, not the
+engine. An auditor who stopped there would have reported a false critical finding.
+
+### Clean-room reproduction
+
+Zero unexplained discrepancies. 245 tests, the number check, `make verify` over 338 files,
+and **all 24 figures byte-identical** — a change from Phase 15, where the same test found
+three stale figures. Four figures still cannot be built in a clone because they read
+cached price files; that is the intended design and is disclosed.
+
+### The lesson
+
+Every number that appears in prose should be in a table and in the number check. Both
+material findings here were prose-only numbers: one contradicted the code it described,
+the other the table it summarised. This is the same failure mode as the V6 tracking
+numbers caught in Phase 13 — and `check_results_numbers.py`, which exists precisely to
+prevent it, had never been given this one.
+
+### Status
+
+The project is complete. All sixteen phases run, the completion gate is ticked, and the
+one conclusion the audit required to change has been changed.
