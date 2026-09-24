@@ -555,3 +555,88 @@ so nothing had previously compared these numbers with anything but themselves.
 | Secrets and portability | pattern scan across code, config, docs and notebooks | no secrets; no absolute or machine-specific paths in any code or configuration file (they appear only in the project log's environment record and the resume prompt, where they belong) |
 | Prompt-to-project file references | every path mentioned in the 35 prompt files resolved | two stale names found (A-10); everything else resolves |
 | Full re-reconciliation | swept all documents for the 21 values Pass 1 moved | no stale value survives in any document describing the current state. The only remaining occurrences are in `docs/project_log.md` and `docs/final_audit.md`, both explicitly historical, both carrying forward-pointing notes |
+
+---
+
+## Pass 3
+
+A third full pass. One finding, and it is the same shape as A-05: a statement about the
+project that was true in a docstring and false in the code.
+
+### A-12 · Code / Reproducibility · **Moderate**
+
+**What was wrong.** `stage_figures` in `scripts/run_pipeline.py` carries this docstring:
+
+> The figures live in one script rather than being scattered through the analysis stages,
+> so that each regenerates from committed data on its own and the registry there --
+> figure, question answered, inputs -- is the single list.
+
+The analysis stages were drawing **twenty of the twenty-four figures themselves**, so each
+of those twenty had two implementations: one in the stage that produced its inputs, one in
+`scripts/make_figures.py`.
+
+**And the two had drifted.** Measured by running each figure-writing stage against the
+`make_figures` output, **six of the twenty come out byte-different**:
+
+| Figure | Stage |
+|---|---|
+| `decay_regression` | mechanics |
+| `flow_vs_open_interest` | mechanics |
+| `rolling_sharpe` | backtest |
+| `weight_and_binding_constraint` | backtest |
+| `feb2018_detail` | backtest |
+| `survival_curves` | tail |
+
+The cause is series ordering, not data: a stage passes its series in the in-memory
+insertion order, while `make_figures` reads the committed CSV and `groupby`s it, which
+sorts. Legend order and draw order therefore differ, and so do the pixels.
+
+**Where found.** `scripts/run_pipeline.py`: twenty `save_figure` call sites across
+`stage_mechanics`, `stage_tail`, `stage_signals`, `stage_backtest` and `stage_robust`.
+
+**Why it mattered.** A full run hid it completely, because `stage_figures` runs last and
+overwrote every stage version -- which is why the committed figures were always the
+`make_figures` output and why Pass 1's byte-identical reproduction of all 24 was genuine.
+But `run_pipeline --only tail`, or `--only backtest`, left a committed figure quietly
+modified. That is the same failure as A-01: an artefact changing under a partial operation
+while `git status` is being relied on as a verification signal. And duplicated drawing
+logic that has already drifted once in a way that does not matter can drift again in a way
+that does.
+
+**Root cause.** Figure drawing was never removed from the analysis stages when it was
+centralised into `make_figures.py`, and the docstring was written as though it had been.
+No check compared the two paths, and none could, because nothing knew there were two.
+
+**Correction.** All twenty duplicate call sites removed, with the objects that existed
+only to be plotted and the imports they needed. `make_figures.py` is the sole writer, as
+the docstring always claimed -- verified by the fact that **no figure was written only by
+a stage**, so nothing is lost. Two comments worth keeping were preserved at the deletion
+sites: the note about a previous Kelly growth figure annualising an already-annualised
+series (a peak of 33 "per year" instead of 0.13), and the heatmap caption's provenance.
+The docstring now states what was untrue about it.
+
+**Validation performed.** `tests/test_figure_single_writer.py` (4 tests) asserts that the
+pipeline contains no unqualified `save_figure` call, constructs no `figdir / "*.png"`
+destination, that the committed figures and the `make_figures` registry are the same set,
+and that the registry has no duplicate key. Suite 262 passed, 2 skipped. The full pipeline
+was then re-run end to end from raw data and all 42 tables, all 24 figures and all 8
+processed datasets came back byte-identical to the pre-change state.
+
+**Blast radius.** Six figures under partial runs; no table, no number, no conclusion.
+
+**Status.** **Resolved.**
+
+## Checked and found clean in Pass 3
+
+| Check | Method | Result |
+|---|---|---|
+| Figure staleness | all 24 regenerated and byte-compared against the committed versions | **24 of 24 identical** -- no stale figure in the repository |
+| Monte-Carlo seeding | `--only tail` re-run and all ten of its outputs compared | **10 of 10 byte-identical**, including the 20,000-path survival simulation and the bootstrap intervals -- the seeding claim holds |
+| H3 return periods | recomputed as 1/(252·p) from the probabilities | agrees to **7.3e-12**; 78.9, 2835, 3877 and 12.8 years all reproduce |
+| H3 magnitude | ratio recomputed | **8.677×**, reported as 8.7× and correctly declared short of its pre-registered 10× |
+| Survival curves | final values against the write-ups | 0.811, 0.937, 0.899, 0.986 all reproduce; capped threshold-grid gap max 9.43 points |
+| Retrieval manifest structure | every entry's fields, hosts, statuses and timestamps | 338 entries, **no missing field**, all HTTP 200, four hosts (Cboe 320, Yahoo 8, SEC 7, FRED 3), earliest retrieval **2026-09-20T08:30:04Z** -- confirming the pre-registration gap against the 07:40:36Z config commit |
+| Research-question scope | conclusions read against the pre-registered question and sub-questions | conclusions stay inside it; the "what this project does not claim" section correctly disclaims causality for 5 February 2018 and explicitly names the daily-frequency limit |
+| Q5's own bar | "a strategy that survives only at zero costs has not survived" | survives at 1 tick (0.20) and not at 2 (−0.06); the bar is met on its own terms |
+| H4's consequence | searched for the leverage critique H4 failed to support | **no such claim anywhere.** The report states the result against its own thesis: "on the evidence available before the crash, growth-optimal sizing *favoured* the full inverse exposure the products sold" |
+| Claim-to-evidence on H4 | how the rejection is reported | reported as **Rejected** with mechanism, an alternative explanation, and what the data cannot settle -- not softened |

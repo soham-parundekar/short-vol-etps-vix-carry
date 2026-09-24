@@ -548,52 +548,13 @@ def stage_mechanics(cfg) -> dict:
                        "reduction": 1.0 - coef_after["SVXY"] / coef_before["SVXY"]})
     pd.DataFrame(cf).to_csv(tables / "delevering_counterfactual.csv", index=False)
 
-    # ---- 7. figures ----------------------------------------------------------
-    from types import SimpleNamespace
-
-    from svcarry.viz.figures import (
-        plot_asset_bounds, plot_decay_blocks, plot_decay_regression,
-        plot_flow_vs_open_interest,
-    )
-    from svcarry.viz.style import save_figure
-
-    figdir = ROOT / cfg.dotted("paths.figures")
-    nb = decay[(decay["blocks"] == "non_overlapping") & (decay["horizon"] == 21)]
-    dot = {}
-    for _, row in nb.iterrows():
-        lab = f"{row['symbol']} {row['leverage']:+g}x" + (
-            "  excl. Feb-2018 block" if row["window"] == "ex_feb2018" else "")
-        dot[lab] = SimpleNamespace(slope=row["slope"], slope_se=row["se"],
-                                   theoretical=row["theoretical"])
-    save_figure(plot_decay_regression(dot), figdir / "decay_regression.png")
-
-    panels = []
-    for sym, L, lo, hi, flag in (
-        ("SVXY", -1.0, None, BREAK - pd.Timedelta(days=1), "2018-02-07"),
-        ("SVXY", -0.5, BREAK, None, None),
-        ("UVXY", 2.0, None, BREAK - pd.Timedelta(days=1), "2018-02-07"),
-        ("UVXY", 1.5, BREAK, None, None),
-    ):
-        if sym not in rets:
-            continue
-        d = pd.concat({"p": rets[sym], "i": r_idx}, axis=1, sort=False).dropna()
-        if lo is not None:
-            d = d[d.index >= lo]
-        if hi is not None:
-            d = d[d.index <= hi]
-        era = "before" if hi is not None else "after"
-        panels.append({"title": f"{sym} at {L:+g}x ({era} 28 Feb 2018)",
-                       "blocks": decay_blocks(d["p"], d["i"], L, 21),
-                       "theory": theoretical_decay(L), "flag": flag})
-    save_figure(plot_decay_blocks(panels), figdir / "decay_blocks.png")
-
-    save_figure(plot_flow_vs_open_interest(flows["share_oi_front_lower"],
-                                           flows["share_oi_front_upper"],
-                                           annotate="2018-02-05"),
-                figdir / "flow_vs_open_interest.png")
-    save_figure(plot_asset_bounds({s: bounds[s] for s in ("SVXY", "UVXY", "VIXY")
-                                   if s in bounds}, anchors),
-                figdir / "product_assets_with_anchors.png")
+    # ---- 7. (figures are built by stage_figures; see the note there) ----------
+    # This stage used to draw decay_regression, decay_blocks, flow_vs_open_interest and
+    # product_assets_with_anchors itself, duplicating scripts/make_figures.py. The two
+    # implementations had drifted: six of the twenty duplicated figures came out
+    # byte-different depending on which path ran last, because the stages passed series
+    # in their in-memory insertion order while make_figures reads the committed CSV and
+    # groups it, which sorts. Recursive audit A-12.
 
     lo_max_oi = float(flows["share_oi_front_lower"].max())
     up_over = int((flows["share_oi_front_upper"] > 1.0).sum())
@@ -643,9 +604,9 @@ def stage_tail(cfg) -> dict:
     from scipy import stats
 
     from svcarry.econometrics.distributions import get_distribution
-    from svcarry.econometrics.evt import fit_gpd, mean_excess
+    from svcarry.econometrics.evt import fit_gpd
     from svcarry.econometrics.garch import GJRGarch
-    from svcarry.econometrics.kelly import growth_rate_curve, kelly_fraction
+    from svcarry.econometrics.kelly import kelly_fraction
     from svcarry.econometrics.tailrisk import (
         SplicedInnovations, filter_sigma, simulate_first_passage, simulate_returns,
         termination_table,
@@ -868,44 +829,15 @@ def stage_tail(cfg) -> dict:
                        "kelly_with": kb.f_star, "kelly_without": kj.f_star})
     pd.DataFrame(jk).to_csv(tables / "tail_jackknife.csv", index=False)
 
-    # ---- 8. figures ------------------------------------------------------------
-    from svcarry.viz.figures import (
-        plot_gpd_qq, plot_kelly_growth_curve, plot_mean_excess, plot_survival_curves,
-    )
-    from svcarry.viz.style import save_figure
-
-    zp = fp.std_resid
-    th, me, se = mean_excess(zp, tail="upper", n_points=60, q_lo=0.80, q_hi=0.99)
-    save_figure(plot_mean_excess(th, me, se, chosen=gpds["pre2018"][chosen_q["pre2018"]].threshold),
-                figdir / "mean_excess.png")
-    g = gpds["pre2018"][chosen_q["pre2018"]]
-    exc = np.sort(zp[zp > g.threshold] - g.threshold)
-    pp = (np.arange(1, len(exc) + 1) - 0.5) / len(exc)
-    theo = g.beta / g.xi * ((1 - pp) ** (-g.xi) - 1)
-    save_figure(plot_gpd_qq(exc, theo), figdir / "qq_gpd.png")
-    sc = {}
-    bands = {}
-    for label, sv in curves.items():
-        short = "unbounded" if label == "unbounded" else "capped"
-        for k in TH:
-            nm = f"{k}, {short}"
-            sc[nm] = pd.Series(sv[f"survival_{k}"].to_numpy(), index=sv["years"].to_numpy())
-            bands[nm] = (sv[f"survival_{k}"] - 1.96 * sv[f"se_{k}"],
-                         sv[f"survival_{k}"] + 1.96 * sv[f"se_{k}"])
-    from svcarry.viz.style import PALETTE as _P, LINESTYLES as _LS
-    sty = {nm: {"color": _P[0] if nm.startswith("-1x") else _P[1],
-                "linestyle": _LS[0] if "unbounded" in nm else _LS[1]} for nm in sc}
-    save_figure(plot_survival_curves(sc, bands, styles=sty), figdir / "survival_curves.png")
-    fg, gr = growth_rate_curve(R.to_numpy(), f_grid=np.linspace(0.0, 1.03, 250))
-    kf = kel.set_index("returns").loc["full sample", "f_star"]
-    # growth_rate_curve returns DAILY expected log growth and the figure annualises
-    # it; passing an annualised series here multiplied by 252 twice (a peak of 33
-    # "per year" instead of 0.13), which is how this line came to be written.
-    save_figure(plot_kelly_growth_curve(fg, gr, f_star=kf,
-                                        marks={"-1x offered": 1.0, "-0.5x": 0.5}),
-                figdir / "kelly_growth_curve.png")
-    from svcarry.viz.figures import plot_exante_warning
-    save_figure(plot_exante_warning(path.loc[:"2018-02-07"]), figdir / "exante_warning.png")
+    # ---- 8. (figures are built by stage_figures; see the note there) -----------
+    # mean_excess, qq_gpd, survival_curves, kelly_growth_curve and exante_warning were
+    # drawn here as well as in scripts/make_figures.py. survival_curves was one of the
+    # six that came out byte-different between the two paths (A-12). The mean-excess and
+    # GPD quantile-quantile inputs were the only things this stage computed solely to
+    # plot, so they are gone with it; make_figures rebuilds both from the committed
+    # tables. The note that survived the deletion, because it is worth keeping: a
+    # previous version of the Kelly growth figure annualised a daily expected-log-growth
+    # series that was already annualised, giving a peak of 33 "per year" instead of 0.13.
 
     # ---- summary ---------------------------------------------------------------
     hq = chosen_q["pre2018"]
@@ -1175,17 +1107,8 @@ def stage_signals(cfg) -> dict:
 
     # ---- 8. outputs --------------------------------------------------------------
     panel.to_csv(processed / "signals_daily.csv", index_label="date")
-    from svcarry.viz.figures import (
-        plot_har_forecast_vs_realised, plot_signal_state, plot_vrp_timeseries,
-    )
-    from svcarry.viz.style import save_figure
-    save_figure(plot_vrp_timeseries(panel), figdir / "vrp_timeseries.png")
-    save_figure(plot_har_forecast_vs_realised(
-        har.forecast.reindex(common), y.reindex(common), trail.reindex(common),
-        stats={"oos_r2": prim["oos_r2_vs_eval_mean"], "mz_beta": prim["mz_beta"],
-               "trail_r2": trl["oos_r2_vs_eval_mean"], "trail_mz": trl["mz_beta"]}),
-        figdir / "har_forecast_vs_realised.png")
-    save_figure(plot_signal_state(panel, THR), figdir / "signal_state.png")
+    # vrp_timeseries, har_forecast_vs_realised and signal_state are built by
+    # stage_figures from the committed panel; see the note there (A-12).
 
     st = stats_.set_index("statistic")["fraction"]
     qc = {
@@ -1440,31 +1363,10 @@ def stage_backtest(cfg) -> dict:
                                 cw_full_bt.returns, "accrual": acc})
     bench_daily.to_csv(processed / "benchmarks_daily.csv", index_label="date")
 
-    from svcarry.viz.figures import (
-        plot_drawdowns, plot_equity_curves, plot_event_detail, plot_weight_and_constraint,
-    )
-    from svcarry.viz.style import save_figure
-    eq = {nm: (1.0 + s.fillna(0.0)).cumprod() for nm, s in
-          {**series, f"constant weight {cw_full:.3f} short": cw_full_bt.returns}.items()}
-    save_figure(plot_equity_curves(eq, oos_start=str(OOS_START.date())),
-                figdir / "equity_curve.png")
-    save_figure(plot_drawdowns({nm: drawdown(s.fillna(0.0))["drawdown"]
-                                for nm, s in series.items()}), figdir / "drawdowns.png")
-    from svcarry.viz.figures import plot_rolling_sharpe
-    rs = {nm: rolling_sharpe(s, 252, rf=acc) for nm, s in series.items()
-          if nm != "buy-and-hold -1x (XIV fee)"}
-    save_figure(plot_rolling_sharpe(rs, 252, oos_start=str(OOS_START.date())),
-                figdir / "rolling_sharpe.png")
-    save_figure(plot_weight_and_constraint(bt.weight, W["binding"].shift(LAG)),
-                figdir / "weight_and_binding_constraint.png")
-    ev = idx.loc["2018-01-15":"2018-03-01"]
-    save_figure(plot_event_detail(
-        (1.0 + R.loc[ev.index]).cumprod(),
-        {"strategy": (1.0 + bt.returns.loc[ev.index]).cumprod(),
-         "buy-and-hold -1x": (1.0 + bh1.returns.loc[ev.index]).cumprod(),
-         "strategy, hindsight floor": (1.0 + runs["hindsight floor (calibration)"]
-                                       .returns.loc[ev.index]).cumprod()},
-        weight=bt.weight.loc[ev.index]), figdir / "feb2018_detail.png")
+    # equity_curve, drawdowns, rolling_sharpe, weight_and_binding_constraint and
+    # feb2018_detail are built by stage_figures from the committed series; see the note
+    # there. rolling_sharpe, weight_and_binding_constraint and feb2018_detail were three
+    # of the six that came out byte-different between the two paths (A-12).
 
     # ---- 9b. what the escape from 5 February 2018 rests on -----------------------
     thr_c = float(cfg.dotted("strategy.contango_threshold"))
@@ -1934,27 +1836,10 @@ def stage_robust(cfg) -> dict:
     pd.DataFrame(redteam, columns=["question", "answer", "number"]).to_csv(
         tables / "redteam_answers.csv", index=False)
 
-    # ---- 6. figures ----------------------------------------------------------------
-    from svcarry.viz.figures import (
-        _SOURCE as _SOURCE_NOTE, plot_cost_sensitivity, plot_parameter_heatmap,
-        plot_subsample_stability,
-    )
-    from svcarry.viz.style import save_figure
-    save_figure(plot_cost_sensitivity(costs["cost_ticks"], costs["sharpe"],
-                                      breakeven=breakeven), figdir / "cost_sensitivity.png")
-    hm = grid[(grid["rebalance"] == 1)].pivot_table(index="contango_threshold",
-                                                    columns="max_stress_loss",
-                                                    values="sharpe", aggfunc="mean")
-    save_figure(plot_parameter_heatmap(
-        hm, chosen=(BASE["contango_threshold"], BASE["max_stress_loss"]),
-        source=_SOURCE_NOTE + " Daily rebalancing, averaged over the three volatility "
-        "targets (0.10, 0.15, 0.20); the full 144-cell grid is in "
-        "specification_distribution.csv."), figdir / "parameter_heatmap.png")
-    est = {}
-    for _, r_ in subs[subs["kind"].isin(["configured subsample", "single year"])].iterrows():
-        est[r_["name"]] = (r_["sharpe"], r_.get("sharpe_se_lo", np.nan))
-    save_figure(plot_subsample_stability(est, reference=base_sharpe),
-                figdir / "subsample_stability.png")
+    # ---- 6. (figures are built by stage_figures; see the note there) ---------------
+    # cost_sensitivity, parameter_heatmap and subsample_stability were drawn here too.
+    # The heatmap's own caption text lives with the figure in make_figures now, which is
+    # the only place it can be checked against the table it describes (A-12).
 
     qc = {
         "chosen_oos_sharpe": base_sharpe,
@@ -2007,6 +1892,20 @@ def stage_figures(cfg) -> dict:
     stages, so that each regenerates from committed data on its own and the registry
     there - figure, question answered, inputs - is the single list. This stage is a
     thin wrapper so ``make figures`` and ``run_pipeline --only figures`` agree.
+
+    **This was not true until the recursive audit (A-12).** The sentence above was in
+    this docstring while the analysis stages drew twenty of the twenty-four figures
+    themselves, so every one of those twenty had two implementations. They had drifted:
+    six came out byte-different depending on which path ran last, because a stage passed
+    its series in the in-memory insertion order while ``make_figures`` reads the
+    committed CSV and groups it, which sorts. A full run hid it - this stage runs last
+    and overwrote the stage versions - but ``--only tail`` or ``--only backtest`` left a
+    committed figure quietly modified, which is the same class of problem as reading a
+    clean working tree as evidence (A-01).
+
+    The duplicates are gone and no figure is written anywhere else.
+    ``tests/test_figure_single_writer.py`` asserts that, so the invariant is checked
+    rather than described.
     """
     import importlib.util
 

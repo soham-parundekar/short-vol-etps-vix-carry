@@ -1228,3 +1228,71 @@ Pass 1 has not yet reached the econometrics implementations, the EVT and surviva
 the index reconstruction, the literature review or the prompt system, and by the recursive
 rule Pass 2 re-examines the whole project rather than only what changed here. The register
 is [`final_audit_issue_register.md`](final_audit_issue_register.md).
+
+---
+
+## 2026-09-24 — Session 15: recursive audit, Passes 2 and 3
+
+### Pass 2 — the instructions, and the estimators
+
+Three findings. The important one was upstream of everything in Pass 1:
+`prompts/tasks/lookahead_audit.md` specified a **date-granular** timing table and never
+required the verdict to be computed, which is why A-05's hard-coded `False` satisfied it
+and why a fifteen-minute overlap was out of scope. The same prompt already lists "*a
+signal computed from a close and traded at the same close*" among the ways look-ahead
+arrives. It named the failure mode and specified a check too coarse to catch it. The
+prompt now requires strike times, a computed per-date verdict, the pipeline gated on it,
+and a mutation test (A-11). Also: the literature that would have prevented A-02 was
+already cited and read too narrowly (A-09), and three prompts named output tables the
+project does not produce — one of them never produced under any name (A-10).
+
+What Pass 2 could not break, all by independent recomputation rather than by reading the
+project's own output: the GJR-GARCH log-likelihood (to 1.6e-04 from the published
+definitions, and confirmed a genuine optimum — re-optimisation gains 0.000000), all
+sixteen GPD fits via `scipy.stats.genpareto` (~4e-05), Kelly (2e-08), the variance proxy
+(1.6e-16), the HAR level specification exactly and the log specification's convention
+identified and found to match M7 word for word, Newey-West up to √(n/(n−k)), the entire
+index rebuilt from the 313 raw contract files (**all 4,710 returns to 4.0e-16**, including
+all 225 roll dates, where a naive front-month `pct_change` would have been wrong by 9.99%
+on average), the settlement calendar (of 227 expiries the 7 deviations are all correct
+holiday pull-backs), and all 28 filing quotations found verbatim in the source documents.
+
+### Pass 3 — a docstring that was true about the wrong thing
+
+One finding, the same shape as A-05. `stage_figures` said the figures "live in one script
+rather than being scattered through the analysis stages" while the stages drew **twenty of
+the twenty-four** themselves. Running each figure-writing stage against the `make_figures`
+output showed **six of the twenty came out byte-different** — ordering, not data: a stage
+passes series in insertion order, `make_figures` reads the CSV and `groupby`s it, which
+sorts. A full run hid it because `stage_figures` runs last; `--only tail` left a committed
+figure quietly modified, which is A-01's problem again. Twenty duplicate call sites
+removed, `make_figures` now the sole writer as the docstring always claimed, and
+`tests/test_figure_single_writer.py` asserts it (A-12).
+
+Verified after the change: the full pipeline from raw data reproduces **42 of 42 tables,
+24 of 24 figures and 8 of 8 processed datasets byte-identically**, and `--only mechanics`
+now leaves all 24 figures untouched.
+
+Also clean in Pass 3: the 20,000-path survival simulation and the bootstrap intervals are
+genuinely seeded (all ten tail-stage outputs byte-identical on re-run); H3's return periods
+reproduce to 7.3e-12 and its ratio to 8.677×, correctly declared short of its 10× bar; the
+manifest's 338 entries have no missing field and its earliest retrieval at 08:30:04Z
+confirms the pre-registration gap; and there is **no claim anywhere** of the leverage
+critique that H4's rejection failed to support — the report states the opposite, that
+pre-crash growth-optimal sizing favoured the full inverse exposure the products sold.
+
+### The pattern across three passes
+
+Every finding above the Minor line is the same defect in a different place: **a statement
+about the project that was true in prose and false in the code.** The timing convention
+(A-02/A-05), the prompt that specified it (A-11), the figure-reproduction claim (A-06),
+the test count (A-07), the window a percentage came from (A-08), and the single-writer
+claim (A-12). The project's Phase 16 lesson was that every number in prose should be in a
+table. The audit's lesson is the same sentence about verifications: every claim that a
+check passed should be the output of a check that could have failed.
+
+### Status
+
+Pass 3 found one issue, so it is not a clean pass and the audit continues.
+
+---
