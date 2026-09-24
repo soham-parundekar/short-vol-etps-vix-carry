@@ -640,3 +640,71 @@ processed datasets came back byte-identical to the pre-change state.
 | Q5's own bar | "a strategy that survives only at zero costs has not survived" | survives at 1 tick (0.20) and not at 2 (−0.06); the bar is met on its own terms |
 | H4's consequence | searched for the leverage critique H4 failed to support | **no such claim anywhere.** The report states the result against its own thesis: "on the evidence available before the crash, growth-optimal sizing *favoured* the full inverse exposure the products sold" |
 | Claim-to-evidence on H4 | how the rejection is reported | reported as **Rejected** with mechanism, an alternative explanation, and what the data cannot settle -- not softened |
+
+---
+
+## Pass 4 (in progress)
+
+### A-13 · Financial theory / Statistics · **Moderate**
+
+**What was wrong.** The `sortino` column in every performance table was not the Sortino
+ratio. `svcarry.evaluation.metrics.performance_stats` computed
+
+```python
+downside = ex[ex < 0]
+dsd = downside.std(ddof=1) * sqrt(periods)
+sortino = ex.mean() * periods / dsd
+```
+
+The Sortino denominator is the **target downside deviation**,
+`sqrt( (1/n) * sum_i min(ex_i - T, 0)^2 )` at target `T = 0`, with the mean taken over
+**every** observation. The code instead selected the sub-target subset and then took the
+standard deviation of that subset *about its own mean*, over the count of losses. That is
+neither the Sortino denominator nor any standard statistic: it measures how varied the
+losses were rather than how large them.
+
+Two consequences follow from the wrong centre and the wrong count:
+
+* A series whose losses were all the same size has zero dispersion about their own mean,
+  so the denominator goes to zero and the ratio to infinity — however large those
+  identical losses are.
+* Scaling every loss up does not necessarily worsen the ratio, because only the spread
+  between losses enters.
+
+**Where found.** `src/svcarry/evaluation/metrics.py`, `performance_stats`.
+
+**Why it mattered.** It is a named financial statistic reported in eight committed tables,
+and §46C's point applies exactly: a numerically valid result computed from an incorrect
+financial definition is still wrong. A reader comparing this column with any other
+published Sortino was comparing two different quantities.
+
+**Direction.** Conservative. The published figures were *below* the true ratio — out of
+sample **0.177 against 0.245**, full sample 0.309 against 0.405, design 0.492 against
+0.598 — so nothing was flattered, and no conclusion rested on the column: no Sortino value
+appears in the prose of any write-up, only in the tables and as a metric named in
+`research_design.md`.
+
+**Root cause.** A plausible-looking one-liner, and nothing pinning the definition. The
+project's own test suite had **no test for Sortino at all**, which is why the formula was
+never confronted with a case that distinguishes it from the correct one.
+
+**Correction.** The target downside deviation, over all observations, with the old formula
+and why it is wrong recorded at the site. Documented in `docs/methodology.md` under a new
+*Risk statistics* paragraph that also states the Sharpe and Lo-standard-error conventions,
+and named in `docs/research_design.md`.
+
+**Validation performed.** Two new tests in `tests/test_evaluation.py`: one constructs a
+series with two distinct loss magnitudes and more gains than losses, so the two formulas
+cannot coincide, and requires the target-downside form; the other requires that doubling
+every loss worsens the ratio and that a series of identical losses stays finite and ranks
+below a series of smaller ones — the two properties the old formula lacked. The full
+pipeline was re-run: **only the `sortino` column changed, in exactly the eight tables that
+carry it**; all 24 figures and all 8 processed datasets are byte-identical, and no other
+column of any table moved. Suite 264 passed, 2 skipped. The value is now asserted in
+`check_results_numbers.py`.
+
+**Blast radius.** The `sortino` column of `performance_{oos,full,design}.csv`,
+`backtest_variants.csv`, `robustness_{costs,parameters,subsamples}.csv` and
+`specification_distribution.csv`. No figure, no prose number, no conclusion.
+
+**Status.** **Resolved.**

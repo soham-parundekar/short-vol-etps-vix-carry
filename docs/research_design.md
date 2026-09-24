@@ -219,9 +219,10 @@ before it.
 a constant-weight short-index position sized to the same average exposure, and the
 S&P 500.
 
-**Evaluation.** Sharpe, Sortino, skewness, excess kurtosis, maximum drawdown, 99%
-CVaR, turnover, and returns in each of six named stress windows. Plus the alpha
-regression in H5.
+**Evaluation.** Sharpe, Sortino (target downside deviation at a target of zero, over all
+observations - see `docs/methodology.md`, and A-13 for the definition this replaced),
+skewness, excess kurtosis, maximum drawdown, 99% CVaR, turnover, and returns in each of
+six named stress windows. Plus the alpha regression in H5.
 
 ---
 

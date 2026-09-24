@@ -268,3 +268,57 @@ def test_regression_needs_enough_observations():
     idx = _idx(30)
     with pytest.raises(ValueError):
         alpha_regression(pd.Series(0.001, index=idx), {"f": pd.Series(0.001, index=idx)})
+
+
+def test_sortino_uses_the_target_downside_deviation():
+    """The denominator is sqrt(mean of squared shortfalls) over EVERY observation.
+
+    Until the recursive audit (A-13) it was ``ex[ex < 0].std(ddof=1)`` -- the dispersion
+    of the losses about their own mean, over the count of losses. That selects the subset
+    by the target and then measures spread about the subset's mean, which is neither the
+    Sortino denominator nor any standard statistic: it reports how varied the losses were
+    rather than how large. Nothing pinned the definition, which is why it survived.
+
+    Constructed so the two formulas cannot coincide: two distinct loss magnitudes, so the
+    losses have non-zero spread about their own mean, and more gains than losses, so the
+    two denominators use different counts.
+    """
+    idx = _idx(252)
+    r = pd.Series(0.001, index=idx)
+    r.iloc[:8] = -0.01
+    r.iloc[8:16] = -0.03
+    st = performance_stats(r, name="s")
+
+    ex = r.to_numpy()
+    shortfall = np.minimum(ex, 0.0)
+    dsd = np.sqrt(np.mean(shortfall ** 2)) * np.sqrt(252)
+    assert st["sortino"] == pytest.approx(ex.mean() * 252 / dsd, rel=1e-12)
+
+    # and it is NOT the old formula
+    losses = pd.Series(ex[ex < 0])
+    old = ex.mean() * 252 / (losses.std(ddof=1) * np.sqrt(252))
+    assert abs(st["sortino"] - old) > 1e-6
+
+
+def test_sortino_scales_with_loss_size_not_loss_dispersion():
+    """Doubling every loss must worsen Sortino; making losses equal must not flatter it.
+
+    The pre-audit formula had the second property backwards: a series whose losses were
+    all the same size had zero dispersion about their own mean, so its denominator went to
+    zero and the ratio to infinity, however large those identical losses were.
+    """
+    idx = _idx(252)
+    base = pd.Series(0.001, index=idx)
+    base.iloc[:20] = -0.01
+    doubled = base.copy()
+    doubled.iloc[:20] = -0.02
+    s_base = performance_stats(base, name="a")["sortino"]
+    s_doubled = performance_stats(doubled, name="b")["sortino"]
+    assert s_doubled < s_base
+
+    # identical losses: finite, and worse than a series with smaller identical losses
+    equal_big = pd.Series(0.001, index=idx)
+    equal_big.iloc[:20] = -0.05
+    s_equal = performance_stats(equal_big, name="c")["sortino"]
+    assert np.isfinite(s_equal)
+    assert s_equal < s_base

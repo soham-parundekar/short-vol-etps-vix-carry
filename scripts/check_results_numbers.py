@@ -113,6 +113,9 @@ def main() -> int:
     chk("H5 Sharpe standard error", po.loc["strategy", "sharpe_se_lo"], 0.31, 0.03)
     chk("strategy CAGR", po.loc["strategy", "cagr"], 0.041)
     chk("strategy max drawdown", po.loc["strategy", "max_drawdown"], -0.268)
+    # A-13: the Sortino column was not the Sortino ratio until the recursive audit.
+    # Pinned here so a change of denominator cannot pass silently again.
+    chk("strategy Sortino (target downside deviation)", po.loc["strategy", "sortino"], 0.245, 0.02)
     chk("strategy worst day", po.loc["strategy", "worst_day"], -0.117)
     chk("strategy worst week", po.loc["strategy", "worst_week"], -0.135)
     chk("PutWrite Sharpe", po.loc["Cboe PutWrite (PUT)", "sharpe"], 0.525)

@@ -349,5 +349,29 @@ cash leg.
 (XIV's and SVXY's fees), the Cboe PutWrite index, a constant-weight short sized to the
 strategy's average exposure in the same window, and the S&P 500 (SPY, total return).
 
+**Risk statistics, stated because one of them was wrong.** Every ratio is on excess
+returns, with the T-bill accrual as the risk-free rate. The Sharpe ratio is
+`mean(ex)/sd(ex) * sqrt(252)` with `ddof=1`, and its standard error is the non-normal
+asymptotic form `(1 + SR^2/2 - SR*skew + SR^2 (kurt-3)/4) / n`, annualised - the skewness
+and kurtosis terms matter here because excess kurtosis is 31 out of sample.
+
+The **Sortino** ratio is `mean(ex) * 252 / DD`, where `DD` is the *target* downside
+deviation at a target of zero,
+
+    DD = sqrt( (1/n) * sum_i min(ex_i, 0)^2 ) * sqrt(252),
+
+the mean taken over **every** observation rather than over the losses only. Through the
+final audit this was computed as the standard deviation of the negative excess returns
+about *their own mean*, over the count of losses - which selects the subset by the target
+and then measures dispersion within it. That reports how varied the losses were, not how
+large, and a series whose losses were all the same size would have had a denominator of
+zero. It ran conservative, so the published figures were below the true ratio (out of
+sample 0.177 against 0.245), and no conclusion rested on it - but the column was not the
+statistic its name claimed. Corrected, documented here, and pinned by two tests in
+`tests/test_evaluation.py` (recursive audit A-13).
+
+VaR and CVaR at 95% and 99% are empirical quantiles of the **total** return, and the
+maximum drawdown is on the compounded total-return path.
+
 **Windows.** Design window to 31 December 2015, evaluation window from 1 January 2016,
 reported separately and never pooled into a headline.
