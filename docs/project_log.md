@@ -1402,3 +1402,53 @@ unpushed work as pushed." That is what was done.
 Pass 5 found two issues, so the audit continues.
 
 ---
+
+## 2026-09-24 — Session 18: recursive audit, Passes 6 and 7
+
+Both passes found exactly one issue, both in the audit's own text, and Pass 7 closes the
+class that produced them.
+
+**A-17.** A-02's record in the register quoted "Sortino 0.237 → 0.177". Both figures were on
+the definition A-13 later replaced, so neither appears in the table any more. V37 had the
+same exposure: its comparison is against "the committed versions", and those moved when
+Passes 1, 3 and 4 changed 14, 0 and 8 tables. Both are now dated rather than restated.
+
+**A-18.** Pass 6's own clean-checks table recorded "three audit commits local-only" — stale
+before that pass was even committed, and stale again whenever the author pushes. The row now
+records the invariant, that the remote head was *read* rather than inferred and unpushed work
+was reported as unpushed, and says explicitly that no count is kept because the count moves.
+The register's remaining suite-size figures each carry the pass that measured them.
+
+**The observation these four findings add up to.** A-16, A-17 and A-18 are the same defect,
+and so is the reason Passes 4 to 7 found nothing in the original project: **an audit that
+records measurements as it goes creates a drift surface of its own, and after Pass 3 that was
+the only surface left.** Recording a measurement is making a claim, and a claim about a
+quantity that moves has to be dated or it silently becomes false. Every quantity in the
+audit's text is now either invariant or dated, which is what makes a clean pass possible
+rather than an infinite regress of the audit correcting itself.
+
+### What Passes 6 and 7 could not break
+
+`dr` and `dt` recomputed from the module's documented definition: 4,708 of 4,711 rows exact,
+the three exceptions being the sample's final roll period, where the implementation's padded
+calendar is right and a truncated one is not. And the boundary convention is worth naming:
+the docstring *states* that vendors implement the roll boundary with an off-by-one in either
+direction, builds the weights both ways, and resolves it by tracking error against the traded
+products rather than by assertion.
+
+`fit_gpd` reproduces the committed tail fit from residuals off an independent GARCH filter —
+a third confirmation after scipy in Pass 2. The spliced innovation distribution round-trips
+`cdf(ppf(q)) = q` to machine precision at seven quantiles, and its jump at the threshold
+scales linearly with the step, so the splice is continuous rather than merely close.
+
+All 31 numbers this audit introduced, recomputed from the current artefacts: zero mismatches.
+The palette carries 8 colours and 8 distinct linestyles, so colour is never the only encoding
+and the 7 close luminance pairs are the warning the project says they are. `requirements.txt`
+and `pyproject.toml` agree exactly. The fetch layer sends a contact address, throttles per
+host, backs off exponentially and hashes every payload into the manifest.
+
+### Status
+
+Pass 7 found one issue. Pass 8 is the candidate clean pass.
+
+---

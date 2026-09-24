@@ -184,7 +184,8 @@ the full pipeline re-run produced **0.198909**. Before any change the unchanged 
 run from raw data and reproduced **all 42 tables and all 24 figures byte-identically**, so
 every difference is attributable to this correction alone. 14 of 42 tables, 9 of 24 figures
 and 4 of 8 processed datasets regenerated. `performance_design.csv` unchanged, confirming no
-parameter was contaminated. Suite 258 passed / 2 skipped. `check_results_numbers.py` passes
+parameter was contaminated. Suite 258 passed / 2 skipped *(as measured at the close of Pass 1;
+later passes added tests — `README.md` carries the current figure)*. `check_results_numbers.py` passes
 against the new tables and now asserts the timing audit's verdict, its row count, and the
 1,482 dates carrying a real extra-lag requirement.
 
@@ -620,7 +621,8 @@ The docstring now states what was untrue about it.
 **Validation performed.** `tests/test_figure_single_writer.py` (4 tests) asserts that the
 pipeline contains no unqualified `save_figure` call, constructs no `figdir / "*.png"`
 destination, that the committed figures and the `make_figures` registry are the same set,
-and that the registry has no duplicate key. Suite 262 passed, 2 skipped. The full pipeline
+and that the registry has no duplicate key. Suite 262 passed, 2 skipped *(at the close of
+Pass 3)*. The full pipeline
 was then re-run end to end from raw data and all 42 tables, all 24 figures and all 8
 processed datasets came back byte-identical to the pre-change state.
 
@@ -702,7 +704,8 @@ every loss worsens the ratio and that a series of identical losses stays finite 
 below a series of smaller ones — the two properties the old formula lacked. The full
 pipeline was re-run: **only the `sortino` column changed, in exactly the eight tables that
 carry it**; all 24 figures and all 8 processed datasets are byte-identical, and no other
-column of any table moved. Suite 264 passed, 2 skipped. The value is now asserted in
+column of any table moved. Suite 264 passed, 2 skipped *(at the close of Pass 4)*. The value
+is now asserted in
 `check_results_numbers.py`.
 
 **Blast radius.** The `sortino` column of `performance_{oos,full,design}.csv`,
@@ -871,5 +874,43 @@ held — which is the point the row was making and is now stated rather than imp
 | Spliced innovation distribution | seven quantiles round-tripped, continuity, monotonicity, limits | `cdf(ppf(q)) = q` to **machine precision** at all seven; the threshold jump scales linearly with the step (2.2e-08 at ±1e-7, 2.2e-10 at ±1e-9), so the splice is **continuous, not merely close**; monotone over [−8, 15]; `cdf(−25) = 1.4e-08`, `cdf(80) = 0.999999998` |
 | Every number this audit introduced | 31 claims plus the red-team tokens, recomputed from the current artefacts | **zero mismatches** — the timing count, all the corrected headline figures, the grid statistics, the breakeven, the leak calibration, the variant Sharpes, the stress windows, the turnover decomposition, the leave-one-out ranges, the survival gap and the artefact counts |
 | Accessibility claim | the palette's greyscale luminance separation and the linestyle set | 8 colours and **8 distinct linestyles**, so colour is never the only encoding — which is what makes the 7 close luminance pairs a warning rather than a failure, exactly as the project states |
-| `Makefile` | `make verify`, `make test`, `make figures` each run | manifest clean; 264 passed, 2 skipped; 24 figures rebuilt **byte-identically**, leaving the tree clean |
-| Repository and remote state | `git ls-remote` read, not assumed | remote `main` at `05bdd65`; three audit commits local-only and reported as such |
+| `Makefile` | `make verify`, `make test`, `make figures` each run | manifest clean; the suite passed with 2 skips; 24 figures rebuilt **byte-identically**, leaving the tree clean |
+| Repository and remote state | `git ls-remote` read, not assumed | the remote head was read from GitHub rather than inferred, and the audit's commits that had not yet reached it were reported as unpushed. **No count is recorded here**: it moves every time a pass commits or the author pushes, and stating it is how A-18 happened |
+
+---
+
+## Pass 7
+
+One finding, and it is the last of the self-inflicted kind because this pass closes the
+class that produced it.
+
+### A-18 · Documentation · **Minor**
+
+**What was wrong.** Pass 6's own clean-checks table recorded "remote `main` at `05bdd65`;
+three audit commits local-only". That statement was **stale before the pass was committed** —
+committing Pass 6 made it four — and it would go stale again the moment the author pushed.
+A register entry had been written about a quantity that changes underneath it.
+
+**Why it mattered.** On its own, trivial. As the fourth consecutive finding of the same
+shape (A-16, A-17, A-18), it says something the earlier entries only hinted at: **an audit
+that records measurements as it goes creates a new drift surface, and it is the audit's own
+text, not the project's.** Every pass from 4 onward found its issues there and nowhere else.
+
+**Correction, and the class it closes.** Rather than update the number, the row now records
+the *invariant* — that the remote head was read from GitHub rather than inferred, and that
+unpushed commits were reported as unpushed — and states explicitly that no count is kept
+because the count moves. The three remaining suite-size figures in this register are now
+each attributed to the pass that measured them, and `README.md` is named as the one place
+the live figure is kept. Every quantity in the audit's own text is therefore either
+invariant or dated.
+
+**Status.** **Resolved.**
+
+## Checked and found clean in Pass 7
+
+| Check | Method | Result |
+|---|---|---|
+| `requirements.txt` against `pyproject.toml` | dependency sets compared | **identical**; `dev` and `crosscheck` extras correctly separate `pytest` from `statsmodels`/`arch`; `requires-python >= 3.10` holds for the 3.11 interpreter used throughout; `pythonpath = ["src"]` means the suite runs without installing the package |
+| LICENSE | read | MIT, with the correct holder and year |
+| The fetch layer | `src/svcarry/data/http.py` read in full | a descriptive User-Agent carrying a contact address (which SEC EDGAR requires), per-host throttling, exponential backoff capped at 20 s, SHA-256 of every payload written to the manifest with URL, timestamp, byte count, content type and status, and `verify_manifest` re-hashing against the record |
+| Drift sweep over the audit's own text | every statement in the audit's additions whose truth depends on a moving quantity | one found (A-18) and the class closed: what remains is either invariant or carries the pass that measured it |
