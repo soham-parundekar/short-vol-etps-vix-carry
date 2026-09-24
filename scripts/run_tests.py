@@ -240,6 +240,21 @@ def _load(path: Path) -> types.ModuleType:
     return mod
 
 
+def _reset_global_state() -> None:
+    """Drop process-wide state a test may have left behind.
+
+    Only pyplot so far. A test that builds a figure and does not save it leaves it
+    registered with pyplot, which retains figures until they are closed; the suite used
+    to accumulate them and matplotlib warned about it partway through ``test_viz``
+    (final audit A-04). Closing here rather than in twenty tests means the harness
+    guarantees the isolation instead of each test remembering to. ``tests/conftest.py``
+    does the same for a real pytest run.
+    """
+    mod = sys.modules.get("matplotlib.pyplot")
+    if mod is not None:
+        mod.close("all")
+
+
 def _call_with_fixtures(fn, mod, kw: dict, stack: contextlib.ExitStack):
     """Resolve a test's fixture arguments and call it.
 
@@ -338,6 +353,7 @@ def main() -> int:
                     failed += 1
                     line += "F"
                     failures.append((label, traceback.format_exc()))
+                _reset_global_state()
                 if args.verbose:
                     pass
         print(line)
