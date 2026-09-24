@@ -60,6 +60,22 @@ def main() -> int:
     chk("de-levering contracts", dl["contracts_after"], 20884, 1e-3)
     chk("de-levering share", dl["share_oi_front_after"], 0.094)
 
+    # H2's strength claim, which the final audit (F-A2) found wrong in five documents:
+    # "4 of 10 days" was really 3, because 2017-08-10 sits at 9.97% and printed as
+    # "10.0%". It lived only in prose, which is why it survived four phases. It is a
+    # table-derived number now, so it cannot drift again without failing here.
+    win = f.loc["2016-01-01":"2018-12-31"]
+    top = win["index_return"].nlargest(10)
+    over_lower = int((win.loc[top.index, "share_oi_front_lower"] > 0.10).sum())
+    both_below = int(((win.loc[top.index, "share_oi_front_lower"] <= 0.10)
+                      & (win.loc[top.index, "share_oi_front_upper"] <= 0.10)).sum())
+    chk("H2 days over 10% at the lower bound", over_lower, 3, 0.0)
+    chk("H2 days below 10% at BOTH bounds (would reject)", both_below, 0, 0.0)
+    chk("H2 marginal day 2016-01-07", f.loc["2016-01-07", "share_oi_front_lower"], 0.1018)
+    chk("H2 marginal day 2016-06-13", f.loc["2016-06-13", "share_oi_front_lower"], 0.1023)
+    chk("H2 the day that does NOT clear 10%",
+        f.loc["2017-08-10", "share_oi_front_lower"], 0.0997)
+
     t = pd.read_csv(T / "termination_probabilities.csv")
     t = t[(t["fit"] == "pre2018") & (t["headline_threshold"])].set_index(["state", "design"])
     chk("H3 unconditional -1x return period", t.loc[("unconditional", "-1x"), "return_period_years"], 78.9)

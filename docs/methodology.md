@@ -89,10 +89,30 @@ stated at the lower bound.
 
 ## M5. Rebalancing flows
 
-`Delta E_t = L(L - 1) A_{t-1} r_t` per fund, summed over SVXY and UVXY, at each asset
+`Delta E_t = L(L - 1) A_t r_t` per fund, summed over SVXY and UVXY, at each asset
 bound. Converted to contracts at `$1,000 x F1`, where F1 is the front-month
 settlement, and expressed against the open interest of the front-month contract and,
-separately, of the front two. Only the lower bound supports a claim; the upper bound
+separately, of the front two.
+
+**Which asset date, and why the choice is not clean.** The identity is usually written
+with `A_{t-1}`, and this document said so through Phase 15 while the code used `A_t`
+(final audit, F-A1). Neither is exactly right. A fund rebalances at the close of `t`
+against the assets it holds *going into* that close - the `t-1` mark grown by the day's
+own move - so the exact quantity is between the two. The interpolated bound at `t` is
+used because it reflects creations and redemptions during the day, which `A_{t-1}` cannot;
+the cost is that it also embeds the post-move share count, which on a day like 5 February
+2018 is contaminated in the direction the lower bound exists to avoid.
+
+The difference is small where it matters and is reported rather than hidden. On
+5 February 2018 at the lower bound:
+
+| | Contracts | Share of front-month OI |
+|---|---|---|
+| `A_t` (used) | 55,690 | **25.0%** |
+| `A_{t-1}` | 55,187 | 24.8% |
+
+Both are far above H2's 10% threshold, so the verdict does not turn on the choice. Daily
+data cannot resolve it; a daily shares-outstanding source would. Only the lower bound supports a claim; the upper bound
 is reported and plotted but exceeds the entire front-month contract on 7 sessions.
 
 Scope: SVXY and UVXY only, because they are the only geared products with disclosed

@@ -405,8 +405,10 @@ On 5 February 2018, SVXY and UVXY together needed to buy an estimated **55,690 f
 contracts at the lower asset bound — 25.0% of that contract's open interest**
 (`rebalancing_flows.csv`). The front VX contract closed at 33.20, its high of the day, on
 567,407 lots. H2's criterion required the 10% threshold to hold at *either* bound on the
-largest up-moves of 2016–18; it holds at the lower bound on 4 of 10 such days and is
-indeterminate on 6, so H2 is **not rejected**.
+largest up-moves of 2016–18; it holds at the lower bound on 3 of 10 such days and is
+indeterminate on 7, so H2 is **not rejected**. Two of those three clear the threshold by
+less than a quarter of a percentage point (10.18% and 10.23%), so H2's support outside
+5 February 2018 is thin.
 
 The mechanism is arithmetic: a product at leverage `L` must trade `L(L−1)·A·r` at the
 close, and for both −1× and +2× that coefficient is 2, so a +96% day requires buying
@@ -690,7 +692,7 @@ Five pre-registered hypotheses, two rejected:
 | | Verdict | Why |
 |---|---|---|
 | **H1** index tracks products within 10 bp/day | **Rejected** | 133.2 bp/day in 2011–2015; the cause is a fifteen-minute measurement gap, not tracking failure |
-| **H2** rebalancing demand > 10% of front-month OI | **Not rejected** | 25.0% at the lower bound on 5 Feb 2018; supported on 4 of 10 days, indeterminate on 6 |
+| **H2** rebalancing demand > 10% of front-month OI | **Not rejected** | 25.0% at the lower bound on 5 Feb 2018; supported on 3 of 10 days (two marginally), indeterminate on 7 |
 | **H3** P(+80%) ≥ 10× P(+160%), threshold-stable | **Not rejected, magnitude unmet** | ratio 8.7×; ordering and survival gap stable at every threshold |
 | **H4** Kelly short strictly below 1.0 | **Rejected** | 0.62 [0.05, 1.34] full sample; 1.11 [0.22, 2.07] pre-2018 |
 | **H5** positive OOS Sharpe, alpha indistinguishable from zero | **Not rejected** | Sharpe 0.27 ± 0.31; alpha −1.4%/yr, t = −0.52 |

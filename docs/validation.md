@@ -639,11 +639,29 @@ and never used for the claim.
 **H2, against its pre-registered rule.** Rejected only if the flow is below 10% of
 front-month open interest under both bounds on the largest up-moves of 2016-2018. Of
 the ten largest in the anchored window, none is below at both bounds, so **H2 is not
-rejected**. Stated at its actual strength: it is supported at the lower bound on 4 of
-the 10 (including the largest, 5 February 2018, at 25.0%), and indeterminate - above
-10% only at the upper bound - on the other 6. The lower bound covers SVXY and UVXY
-only; XIV, the largest -1x product on that day, is excluded, so it understates the
-complex.
+rejected**. Stated at its actual strength: it is supported at the lower bound on **3 of
+the 10**, and indeterminate - above 10% only at the upper bound - on the other 7. The
+lower bound covers SVXY and UVXY only; XIV, the largest -1x product on that day, is
+excluded, so it understates the complex.
+
+The three, and how much room they have:
+
+| Date | Index return | Lower bound | Upper bound |
+|---|---|---|---|
+| 2016-01-07 | +12.02% | 10.18% | 142.5% |
+| 2016-06-13 | +15.85% | 10.23% | 126.0% |
+| **2018-02-05** | **+96.10%** | **25.00%** | 131.6% |
+
+Two of the three clear 10% by less than a quarter of a percentage point. H2's support
+outside 5 February 2018 is therefore thin, and the honest reading is that the hypothesis
+rests on the one day.
+
+*Corrected by the final audit (F-A2).* Every version of this document through Phase 15
+said "4 of the 10 ... on the other 6". The fourth day was 2017-08-10, whose lower-bound
+share is **9.97%** - which prints as "10.0%" at one decimal place and was counted as
+clearing a threshold it does not clear. The number existed only in prose and was never in
+a table or in `check_results_numbers.py`, which is why it survived four phases. It is now
+asserted by that script.
 
 **What this does not show.** That the flow caused the move. Daily data establishes that
 the mechanical demand was large relative to the open interest that had to absorb it,

@@ -146,8 +146,29 @@ product on 5 February 2018 - and the other ETNs are excluded.
 **Consequence.** The lower-bound flow understates the complex by construction, which
 makes it a conservative basis for H2. The upper bound is not informative wherever a
 fund's share count moved sharply between annual anchors: it exceeds the whole
-front-month contract on 7 sessions, and on 6 of the 10 largest up-moves of 2016-2018
+front-month contract on 7 sessions, and on **7 of the 10** largest up-moves of 2016-2018
 the H2 threshold is met only at that bound.
+
+**How thin the support outside 5 February 2018 is** (corrected by the final audit, F-A2;
+every version through Phase 15 said 4 of 10 and 6 indeterminate). Three of the ten days
+clear 10% at the lower bound, and two of the three clear it by less than a quarter of a
+percentage point:
+
+| Date | Lower bound |
+|---|---|
+| 2016-01-07 | 10.18% |
+| 2016-06-13 | 10.23% |
+| 2018-02-05 | 25.00% |
+
+The fourth day previously counted, 2017-08-10, is at **9.97%** - it printed as "10.0%" at
+one decimal place. H2 is not rejected, because its pre-registered rule is failure at
+*both* bounds and no day fails at both; but the hypothesis rests on 5 February 2018, and
+the other two supporting days are at the threshold rather than above it.
+
+**Which asset date the flow uses.** The estimate uses assets at `t` rather than `t-1`
+(M5). Neither is exactly the quantity a fund rebalances against, and on 5 February 2018
+the two give 25.0% and 24.8% at the lower bound. Daily data cannot resolve the
+difference.
 
 **What would improve it.** Later ProShares 10-Ks (to extend the window past February
 2018) and a daily shares-outstanding source (to replace the bounding assumption in

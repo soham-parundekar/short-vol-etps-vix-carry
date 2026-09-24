@@ -299,7 +299,7 @@ each one supports *now*, at the confidence the robustness work leaves it.
 | | As stated | As the evidence leaves it |
 |---|---|---|
 | **H1** | The index tracks VIXY and VXX within 10 bp/day | **Rejected.** Tracking error is dominated by a dated settlement-time change, not by reconstruction error (V6, V9) |
-| **H2** | Rebalancing demand exceeded 10% of front-month open interest | **Not rejected**, at the lower asset bound (25.0%), for SVXY and UVXY only, on 4 of 10 candidate days with 6 indeterminate (V13, L10) |
+| **H2** | Rebalancing demand exceeded 10% of front-month open interest | **Not rejected**, at the lower asset bound (25.0%), for SVXY and UVXY only, on 3 of 10 candidate days with 7 indeterminate, and two of the three clear 10% by under a quarter of a point (V13, L10, final audit F-A2) |
 | **H3** | P(+80%) at least 10x P(+160%), stable across thresholds | **Not rejected, magnitude unmet**: 8.7x, not 10x. The ordering and the survival gap are stable (V16, V17) |
 | **H4** | Kelly-optimal short strictly below 1.0 | **Rejected**: the interval contains 1.0, and pre-2018 it was centred above it (V18) |
 | **H5** | Positive out-of-sample Sharpe, alpha indistinguishable from zero | **Not rejected**, and weaker than that sentence sounds: Sharpe 0.27 with a standard error of 0.31 at the chosen configuration, **0.06 at the median of the 144-cell grid**; alpha -1.4% a year (t = -0.52) (V28, V30, V31) |
