@@ -395,3 +395,131 @@ and in the number check. Both material findings here are numbers that lived only
 one contradicted the code it described, the other contradicted the table it summarised.
 `check_results_numbers.py` was extended in this phase to cover the corrected H2 count, so
 this specific failure cannot recur silently.
+
+---
+
+# Recursive audit — final summary
+
+Everything above this line is the Phase 16 audit, at `50a6c3b`, left as it stood. This
+section records the recursive audit that followed it.
+
+**Date of the final clean pass: 24 September 2026.**
+
+## Passes and findings
+
+| | |
+|---|---|
+| Full project-wide passes performed | **8** |
+| Issues found | **18** |
+| Issues resolved | **18** |
+| Unresolved at close | **none** |
+| Critical | **0** |
+| Major | 3 — A-02, A-05, A-11 |
+| Moderate | 3 — A-06, A-12, A-13 |
+| Minor | 12 |
+
+Categories encountered: bias/look-ahead, verification integrity, financial theory,
+statistics, code, reproducibility, reporting, documentation, literature, prompt system,
+Git hygiene.
+
+Findings by pass: Pass 1 six (A-01 to A-08, less A-09/A-10), Pass 2 three, Pass 3 one,
+Pass 4 two, Pass 5 two, Pass 6 one, Pass 7 one, **Pass 8 zero**.
+
+## The one sentence this audit is about
+
+Every finding above the Minor line was **a statement about the project that was true in
+prose and false in the code**. The Phase 16 lesson was that every number in prose should be
+in a table. The recursive audit's lesson is the same sentence applied one level up: *every
+claim that a check passed should be the output of a check that could have failed.*
+
+## Major corrections
+
+**A-05, the one that mattered most.** `timing_audit.csv` was cited in this document as
+*mechanical* evidence that nothing leaked — "0 of 18 inputs". Its verdict column was the
+literal `timing["use_precedes_availability"] = False`, assigned in two places. The check
+could not have failed. It is computed per date now, from declared strike times, the pipeline
+exits non-zero if any row is `True`, and a mutation test requires it to catch the defect
+when the correction is removed.
+
+**A-02, what that concealed.** From 26 October 2020 the VRP filter was set from the VIX cash
+close, struck at 4:15 p.m. ET, while the position it informed was booked at the VX
+settlement, struck at 4:00 p.m. ET from that date — fifteen minutes of hindsight on 1,482
+trading days. This is the same fifteen-minute gap as H1, the project's own first finding,
+reproduced inside its own signal chain. Cost: out-of-sample Sharpe **0.27 → 0.20**, CAGR
+5.0% → 4.1%, alpha −1.4% → −2.2% a year. The design window is untouched, so no parameter was
+chosen on leaked information.
+
+**A-11, the generative cause.** `prompts/tasks/lookahead_audit.md` specified a *date*-granular
+timing table and never required the verdict to be computed — while already listing "a signal
+computed from a close and traded at the same close" among the ways look-ahead arrives. It
+named the failure mode and specified a check too coarse to detect it. The prompt now requires
+strike times, a computed per-date verdict, the pipeline gated on it, and a mutation test.
+
+**A-13.** The `sortino` column was not the Sortino ratio: the denominator was the spread of
+the losses about their own mean, over the count of losses, rather than the target downside
+deviation over all observations. It ran conservative (0.177 against a true 0.245 out of
+sample) and no conclusion rested on it. The suite had no Sortino test at all.
+
+**A-12.** Twenty of the twenty-four figures had two writers, and six came out
+byte-different depending on which ran last — while `stage_figures`' docstring said the
+figures lived in one script. One writer now, asserted by test.
+
+## Backward corrections — where a late finding forced an earlier fix
+
+* A-02 was found from the *engine's* behaviour and corrected at the **signal construction**,
+  not at the output: `build_signal_panel` applies the lag, and `config.yaml` gained a
+  `timing:` block.
+* A-11 went further back still, to the **prompt** that specified the flawed check. Fixing
+  the code alone would have left the next project built from this pack to reproduce it.
+* A-13 was found in a table and corrected in `evaluation/metrics.py`, with the definition
+  written into `methodology.md` and pinned by tests.
+* A-12 was found in a figure byte-comparison and corrected by deleting twenty call sites in
+  five analysis stages.
+
+## Forward corrections — what had to be regenerated
+
+A-02 propagated to **14 of 42 tables, 9 of 24 figures and 4 of 8 processed datasets**, then
+into `README.md`, `reports/report.md`, `reports/summary_one_page.md`, `docs/results.md`,
+`docs/validation.md`, `docs/limitations.md`, `docs/research_design.md` and
+`scripts/check_results_numbers.py`, plus new sections M7a, V37 and L25. A-13 propagated to
+the `sortino` column of eight tables and nothing else. Twenty-one numbers changed in total;
+all were restated everywhere they appear, and the reasons recorded rather than the numbers
+quietly swapped.
+
+Four one-at-a-time robustness *orderings* reversed after A-02 and are reported as reversals
+in `docs/validation.md` V32 rather than smoothed over.
+
+## Final validation
+
+| Check | Result |
+|---|---|
+| Full pipeline from raw data, clean container | **42 of 42 tables, 24 of 24 figures, 8 of 8 processed datasets byte-identical** |
+| Environment | numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, matplotlib 3.10.9, Python 3.11 — all far newer than the pinned lower bounds |
+| Test suite | passes with 2 documented skips; `README.md` carries the count |
+| Retrieval manifest | clean, 338 entries re-hashed |
+| Number check | passes across four write-ups, and now asserts the timing verdict too |
+| Look-ahead | 0 of 19 rows, **computed per date**, pipeline gated on it, mutation-tested |
+| Independent recalculation | the index rebuilt from the 313 raw contract files — **all 4,710 returns to 4.0e-16**, including all 225 roll dates; the GJR-GARCH log-likelihood, all 16 GPD fits, Kelly, the variance proxy, the HAR, Newey-West, the Lo standard error, the whole Mincer-Zarnowitz regression, the leverage-decay regression end to end, and every statistic in the evaluation layer, each reproduced from published definitions without importing the project |
+| Archived filings | 28 of 28 quotations found verbatim in the source documents; 28 of 28 patterns re-match |
+| Settlement calendar | derived independently; of 227 expiries the 7 deviations are all correct holiday pull-backs |
+| Every number this audit introduced | 31 claims recomputed from the artefacts: zero mismatches |
+| Secrets, untracked files, broken links, cross-references | none, none, none, all resolve |
+
+## Final clean-pass result
+
+**Pass 8 was a complete, independent, project-wide pass and found zero issues** — no
+critical, major, moderate or minor. The confirmation scan then verified that no register
+entry is unresolved, every intended output exists, the documentation describes the current
+implementation, the conclusions match the current numbers, and the prompt system describes
+the process actually followed.
+
+**One criterion is outside this environment's reach.** GitHub could not be written to from
+either the analysis container or the local sandbox, so repository synchronisation is
+completed by the author's own `git push`. Until that push lands, the audit is *clean* but the
+project is not *published*, and this document does not claim otherwise.
+
+## Status
+
+**RECURSIVE AUDIT COMPLETE — clean pass achieved 24 September 2026.** Publication of the
+final commits awaits the author's push; see `docs/final_audit_issue_register.md` for the full
+record of all eighteen findings.

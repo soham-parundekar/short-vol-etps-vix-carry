@@ -1452,3 +1452,56 @@ host, backs off exponentially and hashes every payload into the manifest.
 Pass 7 found one issue. Pass 8 is the candidate clean pass.
 
 ---
+
+## 2026-09-24 — Session 19: recursive audit, Pass 8 — clean
+
+**Pass 8 found zero issues.** A complete, independent, project-wide pass: no critical, no
+major, no moderate, no minor.
+
+What it ran. The full pipeline from the raw data in a clean container — **42 of 42 tables,
+24 of 24 figures and 8 of 8 processed datasets byte-identical**. The manifest clean over 338
+entries. The number check across four write-ups. The suite with two documented skips. The
+timing gate computed and clean at nineteen rows. Both independent verification scripts
+re-run with zero mismatches, the index rebuild still reproducing all 4,710 returns to
+4.0e-16. `requirements.txt` against `pyproject.toml`, the LICENSE, and the fetch layer read
+in full. Zero broken relative links across every markdown file. Repository hygiene: nothing
+untracked, no secrets, no temp or backup files, the three files above 1 MB being the
+deliberately committed processed datasets. Every V, M, L and A cross-reference resolved —
+the only mentions of the absent L8 are the three places that explain its absence. A
+stale-value sweep over every current-state document, clean. Each number in all three
+headline findings checked against its own table. And a drift sweep over the audit's own
+additions, which A-18 had closed as a class and which came back clean.
+
+The confirmation scan then verified that no register entry is unresolved (eighteen findings,
+eighteen resolved, none critical), that every intended output exists, that the documentation
+describes the current implementation, that the conclusions match the current numbers, and
+that the prompt system describes the process actually followed.
+
+**What the audit could not do.** GitHub is unreachable from both environments available to
+this session, so repository synchronisation is completed by the author's own push. The audit
+is clean; the project is not published until that push lands, and nothing here claims
+otherwise — which is what `prompts/operations/github_push_verification.md` requires.
+
+### The shape of the whole thing, for the record
+
+Eighteen findings. Three Major, three Moderate, twelve Minor, none Critical. Findings by
+pass: 6, 3, 1, 2, 2, 1, 1, **0**.
+
+Passes 1-3 found the project's defects. Passes 4-7 found only the audit's own — four
+consecutive findings of one shape, which is how A-18 came to be written as a class fix rather
+than a patch. That transition is the honest signal that the original work was exhausted, and
+it is why Pass 8 could come back empty rather than the audit correcting itself forever.
+
+The single sentence the audit is about: every finding above the Minor line was **a statement
+about the project that was true in prose and false in the code**. Phase 16's lesson was that
+every number in prose should be in a table. This one is the same sentence one level up —
+*every claim that a check passed should be the output of a check that could have failed.*
+
+### Status
+
+**RECURSIVE AUDIT COMPLETE.** Clean pass achieved 24 September 2026. See
+`docs/final_audit.md` for the final summary and
+`docs/final_audit_issue_register.md` for all eighteen findings with their blast radius,
+correction and validation.
+
+---
