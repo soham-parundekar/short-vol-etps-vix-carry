@@ -189,7 +189,9 @@ against the new tables and now asserts the timing audit's verdict, its row count
 1,482 dates carrying a real extra-lag requirement.
 
 **Final numbers.** OOS Sharpe 0.27 → **0.20** (se 0.31); CAGR 5.0% → **4.1%**; max drawdown
-−26.3% → **−26.8%**; Sortino 0.237 → 0.177; alpha −1.4%/yr (t −0.52) → **−2.2%/yr
+−26.3% → **−26.8%**; Sortino 0.237 → 0.177 *(both on the pre-A-13 definition, which was
+not the Sortino ratio; on the corrected definition the out-of-sample figure is **0.245**)*;
+alpha −1.4%/yr (t −0.52) → **−2.2%/yr
 (t −0.77)**; grid percentile 78th → **74th**; grid range −0.35…0.53 → −0.37…0.50; cost
 breakeven 2.05 → **1.77 ticks**; one-day-leak calibration 1.12 → **1.54**; volatility
 targeting alone +0.06 → **−0.03**; concentration on 2017-08-10 17.0% → **21.8%**; August
@@ -824,3 +826,50 @@ present. The `docs/` list now names all twelve documents.
 | README paths | every repository path named in the README resolved | all exist |
 | Report structure | section numbering | 1-10, complete and in order |
 | Operations prompts | all nine read against what the project actually did | consistent. `github_push_verification.md` specifies the exact escalation this audit needed - "produce a transferable artefact, a `git bundle` preserves the full history, and give the exact commands to publish it from elsewhere. Never describe unpushed work as pushed" - which is what was done |
+
+---
+
+## Pass 6
+
+One finding. It is the third in a row against the audit's own text rather than the
+project's, which is itself the result: the original work has stopped yielding findings and
+the audit's own additions have become the failure surface.
+
+### A-17 · Documentation · **Minor**
+
+**What was wrong.** A-02's *Final numbers* line in this register read "Sortino 0.237 →
+0.177". Both figures were measured under the Sortino definition that **A-13 later replaced**,
+so a reader checking the line against `performance_oos.csv` — which now carries 0.245 —
+would find neither number in it. The same exposure applied to `docs/validation.md` V37,
+whose comparison table says "42 of 42 tables against **the committed versions**": the
+committed versions moved when Passes 1, 3 and 4 changed 14, 0 and 8 tables respectively, so
+a present-tense reading of a past test had become available.
+
+**Why it mattered.** Neither statement was wrong when written, and no result is affected.
+But this is the A-16 pattern once more: a correction in one place ages a statement in
+another, and the aging is silent. An audit that records numbers as it goes has to date them
+or they become claims about a present they no longer describe.
+
+**Where found.** This register, A-02; `docs/validation.md` V37.
+
+**Correction.** The A-02 line now marks both Sortino figures as being on the pre-A-13
+definition and gives the corrected out-of-sample value beside them. V37 carries a dated
+paragraph stating which commit its comparison is against, that 14, 0 and 8 tables changed
+in the passes that followed, and that the reproduction was re-run after each change and
+held — which is the point the row was making and is now stated rather than implied.
+
+**Status.** **Resolved.**
+
+## Checked and found clean in Pass 6
+
+| Check | Method | Result |
+|---|---|---|
+| Roll-weight arithmetic | `dr` and `dt` recomputed from the module's documented definition on the panel's own dates | **4,708 of 4,711 rows exact.** The 3 exceptions are the sample's final roll period, where the implementation's padded calendar is right and a calendar truncated at the last trading day is not |
+| The roll boundary convention | read against the code | the docstring *names* the vendor off-by-one ambiguity, builds weights under both `dr/dt` and `(dr+1)/dt`, and resolves it **empirically by tracking error** rather than asserting one is correct — and Pass 2 showed the chosen one reproduces all 4,710 returns exactly |
+| Settlement-date specification | the contract spec as quoted in the module against my Pass 2 independent derivation | identical, including the holiday pull-back and Juneteenth from 2022 |
+| `fit_gpd` | called correctly this time, on residuals from my own GARCH filter | ξ = 0.18134817 against a committed 0.18134850, β = 0.62964002 against 0.62963954, 189 exceedances — a **third** independent confirmation of the tail fit, after scipy in Pass 2 |
+| Spliced innovation distribution | seven quantiles round-tripped, continuity, monotonicity, limits | `cdf(ppf(q)) = q` to **machine precision** at all seven; the threshold jump scales linearly with the step (2.2e-08 at ±1e-7, 2.2e-10 at ±1e-9), so the splice is **continuous, not merely close**; monotone over [−8, 15]; `cdf(−25) = 1.4e-08`, `cdf(80) = 0.999999998` |
+| Every number this audit introduced | 31 claims plus the red-team tokens, recomputed from the current artefacts | **zero mismatches** — the timing count, all the corrected headline figures, the grid statistics, the breakeven, the leak calibration, the variant Sharpes, the stress windows, the turnover decomposition, the leave-one-out ranges, the survival gap and the artefact counts |
+| Accessibility claim | the palette's greyscale luminance separation and the linestyle set | 8 colours and **8 distinct linestyles**, so colour is never the only encoding — which is what makes the 7 close luminance pairs a warning rather than a failure, exactly as the project states |
+| `Makefile` | `make verify`, `make test`, `make figures` each run | manifest clean; 264 passed, 2 skipped; 24 figures rebuilt **byte-identically**, leaving the tree clean |
+| Repository and remote state | `git ls-remote` read, not assumed | remote `main` at `05bdd65`; three audit commits local-only and reported as such |

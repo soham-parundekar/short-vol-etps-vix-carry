@@ -1293,6 +1293,13 @@ the recursive audit. A fresh `git clone` into an empty Linux container, the 338 
 restored and verified against the manifest, and `scripts/run_pipeline.py` run end to end
 with no other change.
 
+**Dated, because "the committed versions" moved afterwards.** The comparison below is
+against the artefacts as committed at `c4c5ec6`, the state the audit entered at. Passes 1,
+3 and 4 subsequently changed 14, 0 and 8 tables respectively, so these rows record that the
+*unchanged* pipeline reproduced the *then-committed* outputs exactly — which is what makes
+every later difference attributable to a correction rather than to the environment. The
+reproduction was re-run after each change and held each time; the Pass 4 run is in A-13.
+
 | Step | Result |
 |---|---|
 | Interpreter and libraries | Python 3.11.15, **numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, matplotlib 3.10.9** — every one materially newer than the lower bounds in `requirements.txt` |
