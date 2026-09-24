@@ -1,0 +1,31 @@
+# Line endings are declared here rather than left to each user's global core.autocrlf.
+#
+# Without this file the committed blobs are LF while a Windows working tree is CRLF, so
+# a clone on Linux or macOS with core.autocrlf=false - the default there, and what a CI
+# runner gets - reports every tracked text file as modified immediately after cloning:
+# 168 files and 63,788 insertions against 63,788 deletions, with no real change in any
+# of them. This project reads "local and remote agree" off `git status` as part of its
+# verification, so that signal has to mean the same thing on every machine
+# (final audit A-01).
+
+*               text=auto eol=lf
+
+# Data and documents are compared byte-for-byte against the retrieval manifest and, for
+# figures, against previous builds. Nothing may rewrite their bytes.
+*.png           binary
+*.pdf           binary
+*.htm           binary
+*.html          binary
+*.bundle        binary
+
+# CSV is text and normalises safely, but the committed tables are checked for
+# byte-identical reproduction, so pin the ending explicitly rather than inferring it.
+*.csv           text eol=lf
+*.json          text eol=lf
+*.py            text eol=lf
+*.md            text eol=lf
+*.yaml          text eol=lf
+*.yml           text eol=lf
+*.toml          text eol=lf
+*.txt           text eol=lf
+Makefile        text eol=lf
