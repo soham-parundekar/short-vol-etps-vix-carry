@@ -61,7 +61,7 @@ against the contract specification before proceeding.
 
 ## Output
 
-`reports/tables/roll_convention_comparison.csv`; the chosen value written to
+`reports/tables/roll_convention.csv`; the chosen value written to
 `config/config.yaml` under `index.roll_convention`.
 
 ## Record

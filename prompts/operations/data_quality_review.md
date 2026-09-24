@@ -48,7 +48,8 @@ The dataset in question, its entry in `docs/data_sources.md`, and the raw manife
 
 ## What counts as done
 
-A row appended to `reports/tables/data_quality.csv` recording counts for every check,
+The counts for every check recorded in `docs/validation.md` (register A-10: this prompt
+named a `reports/tables/data_quality.csv` that the project never produced),
 and every anomaly either explained or escalated. "No anomalies found" is recorded
 explicitly — it is a result, and an empty section is indistinguishable from an
 unperformed check.

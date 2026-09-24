@@ -423,3 +423,135 @@ register shows the audit's coverage rather than only its catches.
 | F-A1's resolution | `docs/methodology.md` M5 | both `A_t` (25.0%) and `A_{t−1}` (24.8%) are reported, with the ambiguity stated — the Phase 16 action was actually carried out |
 | Cited primary source, VX settlement time | fetched the Cboe notice the project cites | "from 3:15 p.m. to 3:00 p.m. CT", effective October 26, 2020 — **verbatim as claimed** |
 | Inventory against claims | file counts | 42 tables, 24 figures, `report.md` 790 lines, `validation.md` 1,289, `project_log.md` 1,123 — all as claimed |
+
+---
+
+## Pass 2
+
+A fresh project-wide pass, not a re-check of Pass 1's changes. Its targets were the
+layers Pass 1 never reached: the econometric implementations, the index reconstruction
+and settlement calendar, the raw data, the ETP mechanics and the archived filings, the
+literature and its citations, the prompt system, and a re-reconciliation of every number
+now that Pass 1 moved many of them.
+
+Three findings. The most important is upstream of everything in Pass 1.
+
+### A-11 · Prompt system · **Major**
+
+**What was wrong.** `prompts/tasks/lookahead_audit.md` is the prompt that produced the
+look-ahead audit, and it is the root cause of A-05 and therefore of A-02. Two defects:
+
+1. **It specified a date-granular table.** "For every input, record in a table: the date
+   it is indexed by, the date its information becomes available, and the date it is first
+   used." Nothing asks for the clock time at which a value is struck. A-02 is a
+   fifteen-minute overlap between two series dated the same day, so the audit as specified
+   could not see it — and the artefact it produced did not.
+2. **It did not require the verdict to be computed.** Nothing in the prompt says the
+   comparison must be performed in code, or that the check must be capable of failing. The
+   implementation duly wrote `use_precedes_availability = False` as a literal and the
+   project cited it as mechanical evidence.
+
+**The uncomfortable detail.** The same prompt already names A-02's exact mechanism. Its
+list of how look-ahead arrives includes "*a signal computed from a close and traded at the
+same close*". The prompt identified the failure mode and then specified a check too coarse
+to detect it.
+
+**Where found.** `prompts/tasks/lookahead_audit.md`, Procedure step 2 and the Validation
+table.
+
+**Why it mattered.** Fixing the code without fixing the prompt would leave the generative
+cause in place: the next project built from this prompt pack would reproduce the same
+defect. This is the backward-propagation rule applied to the instructions rather than to
+the artefacts.
+
+**Correction.** Step 2 now requires each input's **strike time**, the strike time of the
+execution reference (which may change mid-sample, as the VX settlement did on 26 October
+2020), a **computed** verdict with a per-date failure count, the pipeline gated on it, and
+a **mutation test** proving the check catches the defect when the correction is removed.
+The Validation table gains a mutated-table row. The prompt also now records that step 1's
+perturbation test perturbs by whole days and therefore cannot detect an intraday overlap
+either, so the two steps are complementary and neither alone is sufficient.
+
+**Blast radius.** The prompt pack, and any future project built from it. No data or
+results.
+
+**Status.** **Resolved.**
+
+---
+
+### A-09 · Literature · **Minor**
+
+**What was wrong.** `docs/literature_review.md` cites Bollen, O'Neill & Whaley (2017),
+*Tail Wags Dog: Intraday Price Discovery in VIX Markets*, and files it under limitations:
+"relevant as a limitation rather than an input… this project works at daily frequency and
+therefore cannot resolve them." That reading is correct but incomplete. The same paper
+carries a constraint the *design* had to satisfy: if the VIX index and the VX settlement
+are struck at different moments, whether a VIX-derived signal is tradeable at the
+settlement depends on which comes first — and that ordering changed on 26 October 2020.
+
+**Why it mattered.** The literature needed to prevent A-02 was already cited. It was read
+as a caveat about describing events rather than as a constraint on timing decisions, so it
+did no work. No new source was required; the existing one needed a second reading.
+
+**Correction.** A paragraph added to §2 separating the two readings explicitly and
+pointing to M7a and L25, with the generalisable lesson: a paper filed under "limitations
+we cannot address" may also carry a constraint the design must satisfy.
+
+**Status.** **Resolved.**
+
+---
+
+### A-10 · Prompt system · **Minor**
+
+**What was wrong.** Three prompt files named output artefacts the project does not
+produce: `reports/tables/roll_convention_comparison.csv` (the table is
+`roll_convention.csv`) and `reports/tables/data_quality.csv`, which was **never produced
+under any name** — the cleaning counts went into `docs/validation.md` and the rules into
+`docs/methodology.md` M1 instead.
+
+**Where found.** `prompts/tasks/resolve_roll_convention.md`,
+`prompts/phases/06_data_cleaning_validation.md`,
+`prompts/operations/data_quality_review.md`.
+
+**Why it mattered.** Small, but §60's point exactly: the prompt system must describe the
+actual process. A reader following these prompts would look for two files that do not
+exist, and one of them was a planned artefact silently dropped rather than deliberately
+folded into a document.
+
+**Correction.** Filenames corrected; the dropped table recorded as dropped, with where its
+content actually went, rather than the reference quietly deleted.
+
+**Status.** **Resolved.**
+
+---
+
+## Checked and found clean in Pass 2
+
+Every row below is an independent recomputation or an external verification, not a reading
+of the project's own output. The estimator checks matter particularly because the project's
+own cross-checks against `arch` and `statsmodels` skip in every environment it has run in,
+so nothing had previously compared these numbers with anything but themselves.
+
+| Check | Method | Result |
+|---|---|---|
+| Hansen (1994) skewed-t density | numerical quadrature at both fitted parameter sets | integrates to 1.000000, mean ≈ 0, variance ≈ 1 — correctly standardised |
+| GJR-GARCH log-likelihood | recursion and density written from Glosten-Jagannathan-Runkle and Hansen, no project code | reproduces the committed log-likelihood to **1.6e-04** (pre-2018) and **1.3e-04** (full) with the documented sample-variance initialisation; persistence and unconditional annual volatility to **10 decimal places** |
+| Is the GARCH fit a maximum? | L-BFGS-B re-optimisation from the committed point | log-likelihood gain **0.000000**, parameters move ≤ 1.2e-10 — a genuine optimum, which nothing had checked |
+| GPD / peaks-over-threshold | `scipy.stats.genpareto.fit` on exceedances of my own filtered residuals, all 8 thresholds × 2 samples | every ξ and β agrees to **~4e-05**; thresholds and exceedance counts identical. Validates the GARCH filter and the GPD MLE together |
+| Kelly fraction | expected-log-growth maximisation, three samples | agrees to **2e-08**; ruin bounds `1/max(r)` exact |
+| Daily variance proxy | Yahoo JSON parsed here; overnight + Rogers-Satchell from their definitions | reproduces `rv_proxy` to **1.6e-16** on all 4,708 shared dates |
+| HAR, level specification | own OLS and own Newey-West | coefficients and OLS standard errors **exact**; HAC to 3e-05, the residual being precisely √(n/(n−k)) — a small-sample correction |
+| HAR, log specification | four candidate conventions tested against the table | identified exactly: target = log of the **arithmetic** mean of future RV, predictors = means of log RV. Matches `har_fit.csv` to 1e-06 and matches `methodology.md` M7 word for word. The rejected geometric-mean target is the bug the project's own log records catching |
+| Index reconstruction | 313 raw contract files parsed here, front-two basket rebuilt, **all 4,710 daily returns** recomputed | max absolute difference **4.0e-16**; zero rows differing by more than 1e-10 |
+| Roll dates specifically | the 225 dates where the front contract changes | max difference **9.9e-17**. A naive front-month `pct_change` would have booked a mean absolute error of **9.99%** on those days, which is what the reconstruction exists to avoid |
+| f1, f2 against raw settles | direct lookup with the documented open-interest filter | **exactly 0** difference on all 4,711 rows |
+| Settlement calendar | rule derived independently: Wednesday 30 days before the third Friday of the following month | 227 expiries; the **7** that deviate are all Tuesdays, and all 7 are correct holiday pull-backs (Good Friday ×5, Juneteenth ×2) |
+| Weight and term-structure identities | recomputed from the panel | `w1 + w2 = 1`, `w1 = dr/dt`, `days_to_exp`, `carry_log = ln(F2/F1)/(τ2−τ1)`, `basis_f1_vix = F1/VIX − 1`, `slope_cm`, `slope_vix3m`, `spread_f2_f1`, level chaining — all to ≤ 1.5e-09 |
+| Raw data integrity | duplicates, ordering, gaps, missing contracts, extreme moves | no duplicate dates, strictly increasing, one 5-day calendar gap, zero rows with a missing held contract, `cm30` missing on 234 rows (4.97%, as documented). All 9 days with \|return\| > 25% are identifiable events (Aug 2015, Brexit, Feb 2018, Mar 2020, Jun 2020, Omicron, Aug 2024, Apr 2025) |
+| Archived filings | all 28 quoted terms re-searched in the source documents | **28 of 28** quotations found verbatim and **28 of 28** search patterns re-match, after folding Unicode punctuation to ASCII. 11 carry a config cross-check, all agreeing |
+| Rebalancing-flow arithmetic | recomputed from the committed assets and raw open interest | `contracts = flow/(1000·F1)` to 7e-12; `share = contracts/OI` exact; 2018-02-05 lower bound 55,689.99 contracts and 24.995% confirmed |
+| De-levering counterfactual | coefficient ratio against flow ratio | `L(L−1)` goes 2.0 → 0.75 for **both** funds (SVXY −1→−0.5, UVXY 2→1.5); flow ratio = coefficient ratio = 0.375 exactly, reduction 0.625 exact. The documents say "coefficient", correctly, not "leverage" |
+| Bibliography | 35 entries cross-referenced against prose citations | all 23 author-year citations in the literature review map to an entry; the uncited entries are the source documents cited in `data_sources.md`; no malformed DOIs; one entry honestly marked "partial; volume and pagination not confirmed" |
+| Secrets and portability | pattern scan across code, config, docs and notebooks | no secrets; no absolute or machine-specific paths in any code or configuration file (they appear only in the project log's environment record and the resume prompt, where they belong) |
+| Prompt-to-project file references | every path mentioned in the 35 prompt files resolved | two stale names found (A-10); everything else resolves |
+| Full re-reconciliation | swept all documents for the 21 values Pass 1 moved | no stale value survives in any document describing the current state. The only remaining occurrences are in `docs/project_log.md` and `docs/final_audit.md`, both explicitly historical, both carrying forward-pointing notes |

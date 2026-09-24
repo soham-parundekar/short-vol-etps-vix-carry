@@ -96,7 +96,10 @@ is not a verdict; "5 February 2018, genuine market event, retained" is.
 
 - `data/interim/vx_panel.{parquet,csv}`
 - `data/interim/etp_prices.csv`, `data/interim/rates.csv`
-- `reports/tables/data_quality.csv` and a narrative section in `docs/validation.md`
+- a narrative section in `docs/validation.md` with the per-check counts, and the cleaning
+  rules in application order in `docs/methodology.md` M1. (This prompt specified a
+  `reports/tables/data_quality.csv` and no such table was ever produced; the counts went
+  into the documents instead. Corrected by the recursive audit, register A-10.)
 - Tests covering the cleaning rules
 
 ## 10. Git requirements

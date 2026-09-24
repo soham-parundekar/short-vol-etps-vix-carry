@@ -86,6 +86,18 @@ rather than an input: it establishes that the interesting dynamics on a day like
 cannot resolve them. That constraint is stated in `docs/limitations.md` rather than
 glossed.
 
+**[choice]** *This citation was used too narrowly, and the recursive audit shows where.*
+It was read as a caveat about *resolving events* — a daily study cannot describe what
+happened between 4:00 and 4:15 on 5 February 2018 — and not as a constraint on *strategy
+timing*: if the VIX index and the VX settlement are struck at different moments, then
+whether a VIX-derived signal is tradeable at the settlement depends on which of the two
+comes first, and that ordering changed on 26 October 2020. The project reproduced inside
+its own signal chain the measurement problem this literature describes, and its own first
+finding is about (register A-02, `docs/methodology.md` M7a, `docs/limitations.md` L25).
+The lesson for a literature review is that a paper filed under "limitations we cannot
+address" may also carry a constraint the design has to satisfy, and the two readings need
+separating explicitly.
+
 ---
 
 ## 3. Leveraged and inverse product mechanics
