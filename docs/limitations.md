@@ -7,6 +7,12 @@ themselves would feel it had been concealed.
 Items are stated at the strength the evidence supports. Where something is
 unexplained it says so rather than offering a mechanism that has not been shown.
 
+**On the numbering.** The limitations run **L1-L7 and L9-L25**. There is no L8: that label
+was attached to the closing *Open questions carried forward* list, which sits at the end of
+this document and is not a limitation. The number sat out of sequence there until the
+recursive audit (A-15), and the list is unnumbered now. Every L reference elsewhere in the
+project points into L1-L25 and none pointed at L8, so nothing moved.
+
 ---
 
 ## L1. The reconstructed index carries measurement noise against the traded products
@@ -394,7 +400,7 @@ it previously could not see. Whether any *further* sub-daily overlap remains is 
 rather than settled: daily data cannot rule out intraday sequencing effects inside the
 settlement window itself (L17).
 
-## L8. Open questions carried forward
+## Open questions carried forward
 
 1. The 2016 and 2019 steps in the tracking-error series are unexplained (L1).
 2. Post-October-2020 slopes are 0.985, 0.991 and 0.971 rather than 1.000. Whether the

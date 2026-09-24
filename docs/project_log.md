@@ -1350,3 +1350,55 @@ headline finding.
 Pass 4 found two issues, so the audit continues.
 
 ---
+
+## 2026-09-24 — Session 17: recursive audit, Pass 5
+
+Two findings, and both are against the audit's own earlier work rather than the original
+project.
+
+**A-16 is the one worth recording.** A-07 was closed in Pass 1 after the README's Status
+table was corrected from 244 tests. The README quoted the count in **two further places** -
+its file tree and its command list - and both stayed stale, and Pass 1's own addition to
+V37 became a fourth stale statement as later passes added tests. Checking that one
+occurrence is right is not the same as checking that all of them are, and an audit that
+closes a finding after fixing one occurrence has not closed it. The count is now stated in
+exactly one place, which says so, and `validation.md` carries both counts with dates
+attached so a record of a past run cannot read as a claim about the present.
+
+**A-15** was an orphan label: `L8, Open questions carried forward` sat last in
+`limitations.md` while holding a number in the middle of a scheme that six documents
+cross-reference. The list is unnumbered now and the header states that the limitations run
+L1-L7 and L9-L25.
+
+### What Pass 5 could not break
+
+All five single-day variance estimators reproduce **exactly** from their published formulas
+on the real bars, and Yang-Zhang exactly including its `k`. The Newey-West bandwidth rule
+matches every regression in the project, including the documented `max(h-1, rule)` that
+gives 20 for the HAR. The leverage-decay constant is the right one from Itô, and the SVXY
+regression reproduces **end to end** - 76 and 75 blocks, slope −2.845819 full and −1.087347
+ex-Feb-2018, annualised intercept 0.755793, every one exact - which validates the Yahoo
+parsing, the split adjustment, the block construction, the regression and the annualisation
+in a single check. Its standard error is HC1 exactly, which is the right choice with one
+extreme leverage point in the sample.
+
+The forecast-evaluation layer reproduces to **ten decimals** on OOS R², RMSE, MAE, bias,
+QLIKE and the whole Mincer-Zarnowitz regression including its HAC standard error — a second
+independent confirmation of the HAC code, by a different route from Pass 2's.
+
+One thing measured rather than assumed, because §46C asks about fees: the NAV recursion
+charges the fee on the prior NAV, which is the ETF convention exactly and covers four of the
+six products, and approximates the two ETNs' filed wording (`CIV x DailyPerformance x
+fee/365`) by at most **1.5e-04 a year**. Against tracking errors of 133 and 32 bp/day that
+is nothing.
+
+And `prompts/operations/github_push_verification.md` turns out to specify the exact
+escalation this audit needed: "produce a transferable artefact — a `git bundle` preserves
+the full history — and give the exact commands to publish it from elsewhere. Never describe
+unpushed work as pushed." That is what was done.
+
+### Status
+
+Pass 5 found two issues, so the audit continues.
+
+---

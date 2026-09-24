@@ -1319,8 +1319,12 @@ be excess of the T-bill accrual by backing the implied rate out of the ratio: 1.
 full sample, 0.24% design, 2.32% out of sample, each consistent with realised bill yields
 in that window.
 
-**Test count.** The suite is **258 passed, 2 skipped** after the recursive audit added
-thirteen tests in `tests/test_timing_and_costs.py`.
+**Test count, dated so it cannot drift silently.** **245 passed, 2 skipped** at the start
+of the recursive audit; **264 passed, 2 skipped** at the close of Pass 4, the audit having
+added nineteen tests - thirteen in `tests/test_timing_and_costs.py` (A-02/A-05), four in
+`tests/test_figure_single_writer.py` (A-12) and two in `tests/test_evaluation.py` (A-13).
+The live number is whatever `make test` prints; `README.md`'s Status table is the one place
+it is quoted, because quoting it in four places is what made it drift (A-16).
 
 ---
 

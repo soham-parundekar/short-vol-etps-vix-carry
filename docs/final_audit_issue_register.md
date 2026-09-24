@@ -751,3 +751,76 @@ nothing in the implementation depends on resolving it.
 | Phase-07 tracking gate | prompt's own failure band (>25 bp/day) against the measured 133.2 and 31.7 | the gate **failed** and the project recorded it as failed — "H1 rejected … against a 25 bp criterion" — rather than quietly passing it. The failure became the project's headline finding |
 | Phase-11 plausibility gates | prompt's bands against the corrected numbers | OOS Sharpe 0.20 within the "≤ 1.5" band; leak calibration 1.54 "far above the honest one"; cost sensitivity monotone; design and evaluation windows reported separately |
 | Index coverage gate | prompt requires ≥ 99% of sample trading days | 4,710 of 4,711 returns defined (99.98%) |
+
+---
+
+## Pass 5
+
+Two findings, both documentation, and both are findings against this audit's own earlier
+work rather than against the original project.
+
+### A-15 · Documentation · **Minor**
+
+**What was wrong.** `docs/limitations.md` numbers its sections L1-L25 and they are
+cross-referenced from six other documents, two to six times each. One section sat out of
+sequence: **L8, *Open questions carried forward*, was the last section in the file.** It is
+not a limitation - it is a closing list of unresolved questions - and it had taken an L
+number in the middle of the sequence while sitting at the end.
+
+**Why it mattered.** A numbered, cross-referenced scheme with one label out of order is
+exactly the documentation inconsistency §54 asks about. Nothing pointed at L8, so no
+reference was broken, but a reader scanning L1-L25 would find L8 missing from the sequence
+and then meet it at the bottom of the file attached to something that is not a limitation.
+
+**Correction.** The closing list is unnumbered now, and the document's header states that
+the limitations run L1-L7 and L9-L25 with no L8 and why. Every existing cross-reference is
+untouched, because none pointed at L8.
+
+**Status.** **Resolved.**
+
+---
+
+### A-16 · Documentation · **Minor**
+
+**What was wrong.** A-07 was recorded as resolved in Pass 1 after the README's Status table
+was corrected from 244 tests to the then-current count. **The fix was incomplete.** The
+README quoted the suite size in two further places - its file-tree block ("246 tests (244
+pass, 2 skipped)") and its command list ("`make test` # 246 tests") - and both were left
+stale. Pass 1's own addition to `docs/validation.md` V37 then became a fourth stale
+statement as Passes 3 and 4 added tests to the suite.
+
+The README's file tree was also stale in a second way: its `docs/` line listed ten
+documents and the directory holds twelve, omitting `final_audit.md` - which predates this
+audit - and `final_audit_issue_register.md`, which this audit added.
+
+**Why it mattered.** Small in itself, and the same failure as A-07 one level up: a number
+quoted in four places will drift, and *checking that one of them is right is not the same
+as checking that all of them are.* An audit that records a finding as resolved after fixing
+one occurrence has not resolved it.
+
+**Correction.** The count is now stated in exactly **one** place, the README's Status
+table, which says so; the file-tree and command-list mentions point there instead of
+repeating it. `docs/validation.md` states both counts **with dates attached** - 245 at the
+start of the audit, 264 at the close of Pass 4, with the nineteen added tests itemised by
+the finding that prompted them - so a record of a past run cannot read as a claim about the
+present. The `docs/` list now names all twelve documents.
+
+**Status.** **Resolved.**
+
+## Checked and found clean in Pass 5
+
+| Check | Method | Result |
+|---|---|---|
+| Parkinson, Garman-Klass, Rogers-Satchell, overnight, close-to-close | each reimplemented from its published formula and run on the real SPY bars | **all five exact (0.000e+00)** |
+| Yang-Zhang | independent, including the weight `k = 0.34/(1.34 + (n+1)/(n-1))` | exact; `k = 0.1393442623` at n = 21 |
+| Newey-West bandwidth | `floor(4 (T/100)^(2/9))` recomputed for every regression in the project | matches all five committed `hac_lags`, including the documented `max(h-1, rule)` giving 20 for the HAR |
+| Leverage-decay identity | derived from Itô: `d ln V = L d ln I - (1/2)(L^2 - L) sigma^2 dt` | the implementation's `-(1/2)(L^2 - L)` is right, and gives the table's 0, -1, -1, -0.375, -0.375 |
+| SVXY decay regression, end to end | Yahoo JSON parsed here, split adjustment via `adjclose`, blocks and OLS all independent | **76 and 75 blocks, slope -2.845819 full and -1.087347 ex-Feb-2018, annualised intercept 0.755793 - every one exact.** Validates parsing, split handling, block construction, the regression and the annualisation together |
+| Its standard error | OLS, HC0 and HC1 computed separately | committed 0.407995 is **HC1** exactly - the robust choice, which matters with one extreme leverage point |
+| Forecast evaluation | OOS R², RMSE, MAE, bias, Patton QLIKE, the Mincer-Zarnowitz regression with HAC errors, and both Diebold-Mariano tests, all reimplemented | R², RMSE, MAE, bias, QLIKE, MZ β, MZ β's HAC standard error, t(β=1), α and R² **all exact to ten decimals** - a second independent confirmation of the HAC layer. The two DM t-statistics agree to 4e-04 and 1.3e-03, the residual being a long-run-variance degrees-of-freedom convention |
+| ETP fee mechanics | the code's `NAV_{t-1} x fee/365` against the XIV filing's `CIV_{t-1} x DailyPerformance x fee/365` | the code matches the **ETF** convention (fee on average daily net assets) exactly, which covers four of the six products, and approximates the two ETNs' wording by at most **1.5e-04 a year** and 1.1e-04 in any single daily return. Against tracking errors of 133 and 32 bp/day this is nothing; recorded because §46C asks about fees |
+| Asset-bound construction | read against its own guards | raises if a disclosed anchor falls outside its own band, and cross-checks each anchor's two independent share-count statements (`nav_usd / price` against restated `shares_outstanding`) to 5% - which is what would catch a mis-signed split factor at the source rather than downstream |
+| Section numbering | `limitations.md`, `validation.md`, `methodology.md` parsed for gaps and duplicates | `validation.md` V1-V37 and `methodology.md` M1-M8 + M7a are complete with no duplicates; `limitations.md` produced A-15 |
+| README paths | every repository path named in the README resolved | all exist |
+| Report structure | section numbering | 1-10, complete and in order |
+| Operations prompts | all nine read against what the project actually did | consistent. `github_push_verification.md` specifies the exact escalation this audit needed - "produce a transferable artefact, a `git bundle` preserves the full history, and give the exact commands to publish it from elsewhere. Never describe unpushed work as pushed" - which is what was done |

@@ -43,7 +43,7 @@ verdicts and their qualifications: [`docs/results.md`](docs/results.md).
 | | |
 |---|---|
 | **Research design** | Fixed and committed before any data was retrieved. Five hypotheses, each with a stated rejection criterion |
-| **Analysis library** | Complete and tested — **258 tests passing**, 2 skipped (cross-checks against packages not installed) |
+| **Analysis library** | Complete and tested — **264 tests passing**, 2 skipped (cross-checks against packages not installed). This is the one place the count is stated; `make test` prints it |
 | **Data** | Retrieved by `scripts/fetch_data.py`; 338 files, each with URL, retrieval time and SHA-256 in `data/raw/_manifest.json`. 4,711 index sessions, 2008-01-02 to 2026-09-18 |
 | **Phases complete** | 07 index validation · 08 mechanics and flows · 09 tail risk and survival · 10 forecasting and signals · 11 backtest and H5 · 12 robustness and red-team · 13 results · 14 figures · 15 documentation and report · 16 final audit · **recursive audit** (`docs/final_audit_issue_register.md`) |
 | **Hypotheses** | H1 **rejected** · H2 **not rejected** (25.0% of front-month open interest at the lower asset bound) · H3 **not rejected, magnitude unmet** (8.7×, not 10×) · H4 **rejected** · H5 **not rejected** (out-of-sample Sharpe 0.20 ± 0.31; alpha −2.2% a year, t = −0.77) |
@@ -180,7 +180,9 @@ with `VIX/VIX3M` as a robustness variant. Details in
 config/          config.yaml (every tunable parameter) and filings.yaml (primary sources)
 data/            raw / interim / processed, with a provenance manifest
 docs/            research question, design, literature, data sources, methodology,
-                 results, validation, limitations, project log, figure index
+                 results, validation, limitations, project log, figure index,
+                 final_audit.md (Phase 16) and final_audit_issue_register.md (the
+                 recursive audit: every issue, its blast radius and its correction)
 prompts/         the phase, task and operational prompts used to build the project
 references/      bibliography and archived SEC filings
 reports/         report.md, summary_one_page.md, 24 figures and 42 tables
@@ -196,7 +198,7 @@ src/svcarry/
   strategy/      signals, crash-budgeted sizing, backtest engine
   evaluation/    performance metrics, drawdowns, attribution regressions
   viz/           shared style and one function per figure
-tests/           246 tests (244 pass, 2 skipped when optional packages are absent)
+tests/           the suite; the count is in the Status table above, not repeated here
 ```
 
 ## Running it
@@ -207,7 +209,7 @@ cd short-vol-etps-vix-carry
 pip install -e .            # numpy, pandas, scipy, matplotlib, requests, PyYAML
 
 make data                   # download everything (idempotent; cached and hashed)
-make test                   # 246 tests; uses pytest if installed, else the bundled runner
+make test                   # the suite; uses pytest if installed, else the bundled runner
 make pipeline               # clean -> index -> mechanics -> tail -> signals -> backtest
 make figures
 make verify                 # re-hash every file against the manifest
