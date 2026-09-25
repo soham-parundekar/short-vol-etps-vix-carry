@@ -192,8 +192,8 @@ and the VIXY/UVXY 1-for-4 reverse splits, which the reconstruction matches.
 **The VIX3M history begins on 18 September 2009**, inside the design window. The primary
 term-structure signal is therefore the interpolated `cm30/cm90` slope from the futures
 curve itself, which is available from the start of the sample; `VIX/VIX3M` is carried as a
-robustness variant. This choice was fixed in the phase prompt (commit 3db0269) before any
-data was retrieved, not selected on performance.
+robustness variant. The choice was fixed at commit 3db0269, before any data was
+retrieved, and was not selected on performance.
 
 **Assets outstanding are not observed daily.** Because the flow estimate is linear in
 assets, assets are **bounded, never point-estimated**. Anchors are net assets and share
@@ -318,16 +318,16 @@ from a GJR-GARCH-plus-GPD model estimated on index log returns **to 31 December 
 — the design window — with parameters then frozen and only the volatility state filtered
 forward. Every input is formed at the close of `t`; the engine applies the one-day lag.
 
-**The amendment.** The configuration and the phase prompt originally set `floor_t` to the
-5 February 2018 move (96.1%). Applied from 2008, that sizes every pre-2018 position using a
-day that had not happened yet — a leak by this project's own look-ahead rule and contrary to
-the research design's requirement of an *ex-ante* stress loss. It was replaced with the
-**running maximum one-day index rise observed through `t`**, which is the real-time form of
-the same idea and is exact from 5 February 2018 onwards. The amendment was committed
-**before any backtest was run**. The event floor is still run and reported beside the honest
-version as a calibration of what knowing the answer in advance is worth; because it sizes
-*larger* before 2018 (floor 0.14–0.33 rather than 0.96), the honest version is the one that
-takes the bigger loss on 5 February 2018.
+**The amendment.** The pre-registered configuration originally set `floor_t` to the 5
+February 2018 move (96.1%). Applied from 2008, that sizes every pre-2018 position using
+a day that had not happened yet — a leak by this project's own look-ahead rule and
+contrary to the research design's requirement of an *ex-ante* stress loss. It was
+replaced with the **running maximum one-day index rise observed through `t`**, which is
+the real-time form of the same idea and is exact from 5 February 2018 onwards. The
+amendment was committed **before any backtest was run**. The event floor is still run
+and reported beside the honest version as a calibration of what knowing the answer in
+advance is worth; because it sizes *larger* before 2018 (floor 0.14–0.33 rather than
+0.96), the honest version is the one that takes the bigger loss on 5 February 2018.
 
 **Costs** are charged at 1 tick (0.05 VIX points) per side on the weighted futures price
 actually held, on both sources of trading: the rebalance back to target after the position
@@ -721,8 +721,9 @@ as one.
 
 ## 10. References
 
-Full bibliography with verification status: [`references/references.bib`](../references/references.bib).
-Archived filings: [`references/filings/`](../references/filings/).
+Full bibliography with verification status:
+[`references/references.bib`](../references/references.bib). Archived filings:
+[`references/filings/`](../references/filings/).
 
 Augustin, P., Cheng, I.-H. & Van den Bergen, L. (2021). Volmageddon and the failure of
 short volatility products. *Financial Analysts Journal* 77(3), 35–51.

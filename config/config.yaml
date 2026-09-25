@@ -135,17 +135,17 @@ strategy:
   # Trade only when the curve slope is below this. The slope is cm30/cm90 from the
   # interpolated futures curve (primary; VIX/VIX3M is the robustness variant, since
   # VIX3M starts 2009-09-18). This comment said VIX/VIX3M until Phase 10; the value
-  # never changed, and the primary measure was fixed in the Phase 10 prompt
-  # (commit 3db0269) before any data was retrieved. See docs/methodology.md M7.
+  # never changed, and the primary measure was fixed at commit 3db0269, before any
+  # data was retrieved. See docs/methodology.md M7 and docs/preregistration.md.
   contango_threshold: 1.0
   vrp_min: 0.0                  # require a positive variance risk premium
   vol_target: 0.15              # annualised
   vol_lookback: 21
   max_stress_loss: 0.20         # cap on the loss under the stress scenario
   stress_quantile: 0.999
-  # How the floor under the crash scenario is set. PHASE 11 AMENDMENT, made before
-  # any backtest was run (see docs/project_log.md Session 8 and docs/methodology.md
-  # M8): "running_max" is the largest one-day index rise observed up to the decision
+  # How the floor under the crash scenario is set. Amended before any backtest was
+  # run (docs/preregistration.md 4.2, docs/methodology.md M8): "running_max" is the
+  # largest one-day index rise observed up to the decision
   # date. The original setting, the 5 February 2018 move, is not observable before
   # 5 February 2018, so using it to size 2008-2017 positions is look-ahead - and the
   # research design itself asks for an "ex-ante stress loss". The event floor is kept

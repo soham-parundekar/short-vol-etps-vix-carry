@@ -366,11 +366,11 @@ def me_xi(z, lo_q, hi_q):
 
 
 def choose_threshold(z, grid):
-    """The recorded rule (prompts/tasks/choose_evt_threshold.md): the lowest
-    threshold with >= 50 exceedances, xi within one se of the next two, KS on the
-    excesses p > 0.10, and inside the linear region of the mean excess - taken as
-    the lower and upper halves of [q, 0.99] implying xi within one se of each
-    other."""
+    """Pick the peaks-over-threshold level by the rule fixed before any data was
+    retrieved (docs/preregistration.md, section 3): the lowest threshold with >= 50
+    exceedances, xi within one se of the next two, KS on the excesses p > 0.10, and
+    inside the linear region of the mean excess - taken here as the lower and upper
+    halves of [q, 0.99] implying xi within one se of each other."""
     rows = []
     fits = {q: fit_gpd(z, q=q, tail="upper") for q in grid}
     for i, q in enumerate(grid):

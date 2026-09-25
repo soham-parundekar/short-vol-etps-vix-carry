@@ -1,8 +1,12 @@
 # Research design
 
-Status: **design fixed, implementation in progress.** Anything not yet estimated is
-marked `[pending data]`. No number in this document is a placeholder for a result —
-where a result is not yet computed, the cell is empty rather than invented.
+Sections 1 to 8 are the design as it was committed at `ef232d4` on 20 September 2026,
+before any data was retrieved. No hypothesis, rejection criterion, method or validation
+plan has been edited since, which is what makes §9 — written once the evidence was in —
+readable against them. The one later change is in §6, where the list of expected outputs
+no longer names the working procedure notes that left the repository in the final cleanup
+(`docs/humanization_audit.md`, H-01). `docs/preregistration.md` records the parameter set
+that was fixed alongside this document, and everything that changed afterwards.
 
 ---
 
@@ -256,7 +260,6 @@ Detail in `docs/validation.md`. Summary of what is checked and against what:
   regression
 - `docs/` — literature review, data sources, methodology, validation, limitations,
   project log, final audit
-- `prompts/` — the phase and task prompt pack used to run the project
 
 ---
 

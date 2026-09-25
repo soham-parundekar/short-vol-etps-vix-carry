@@ -83,8 +83,8 @@ def test_filter_sigma_uses_only_past_returns():
 # --------------------------------------------------------- probabilities by state
 def test_calm_states_carry_less_risk_than_average_under_the_model(innov):
     """Under a GARCH scale the one-day tail probability rises with sigma, so the
-    calm-state probability is BELOW the unconditional one. The phase prompt originally
-    asserted the reverse; the model cannot produce that, and this test records why."""
+    calm-state probability is BELOW the unconditional one. The expectation recorded
+    going in was the reverse; the model cannot produce that, and this test records why."""
     idx = pd.bdate_range("2010-01-04", periods=1000)
     sig = pd.Series(np.random.default_rng(4).lognormal(np.log(0.04), 0.4, 1000), index=idx)
     t = termination_table(sig, PARAMS["mu"], innov, {"-1x": 0.80}).set_index("state")

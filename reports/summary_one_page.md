@@ -59,8 +59,9 @@ rejected but the stated 10× magnitude unmet at 8.7× · H4 rejected · H5 not r
 **The strategy result is specification-dependent.** Across 144 specifications the
 out-of-sample Sharpe runs from −0.37 to 0.50 with a **median of 0.06**; the
 pre-registered configuration's 0.20 sits at the 74th percentile. The parameters were
-fixed before any data was retrieved and the commit history proves it, so 0.20 is not a
-mined result — but a pre-registered draw from a distribution whose median is 0.06 is
-still a draw. The strategy earns nothing at 1.77 ticks of transaction cost per side, and
-its escape from February 2018 rests on the contango filter clearing its threshold by
-0.72% at the previous close.
+fixed before any data was retrieved and the commit history proves it
+([`docs/preregistration.md`](../docs/preregistration.md)), so 0.20 is not a mined result
+— but a pre-registered draw from a distribution whose median is 0.06 is still a draw.
+The strategy earns nothing at 1.77 ticks of transaction cost per side, and its escape
+from February 2018 rests on the contango filter clearing its threshold by 0.72% at the
+previous close.

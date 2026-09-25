@@ -212,7 +212,7 @@ def asset_bounds(
     out["is_anchor"] = out.index.isin(pd.DatetimeIndex(a["date"]))
     out["extrapolated"] = (out.index < a["date"].min()) | (out.index > a["date"].max())
 
-    # --- the bracketing check the task prompt requires ---
+    # --- every disclosed anchor must fall inside its own band (docs/methodology.md M4) ---
     for _, row in a.iterrows():
         d = pd.Timestamp(row["date"])
         if d not in out.index:        # cannot happen now anchors sit on sessions
