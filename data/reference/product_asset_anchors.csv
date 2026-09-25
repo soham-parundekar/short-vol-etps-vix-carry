@@ -14,7 +14,7 @@
 # and the bounding code values them at the market price of the day.
 #
 # These are the ANCHORS. Between and beyond them, assets are bounded, never point
-# estimated - see prompts/tasks/estimate_product_assets.md and docs/methodology.md.
+# estimated - see docs/methodology.md M4 for the construction and its assumption.
 #
 # Validation of the price series against these: the ratio of per-share NAV between
 # two anchors is invariant to splits, so it is directly comparable to the cumulative

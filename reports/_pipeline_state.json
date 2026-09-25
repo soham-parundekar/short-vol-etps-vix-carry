@@ -57,8 +57,8 @@
    "reports/tables/delevering_counterfactual.csv",
    "data/processed/product_assets_bounds.csv"
   ],
-  "seconds": 0.9,
-  "finished_utc": "2026-09-25T07:52:09Z"
+  "seconds": 1.7,
+  "finished_utc": "2026-09-25T08:28:49Z"
  },
  "tail": {
   "pre2018_threshold_q": 0.925,
