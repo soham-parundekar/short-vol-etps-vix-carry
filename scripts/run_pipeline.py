@@ -298,15 +298,6 @@ def stage_index(cfg) -> dict:
     return qc
 
 
-def _not_yet(name: str):
-    def _stage(cfg):
-        raise SystemExit(
-            f"Stage '{name}' requires the upstream stages to have produced their "
-            f"outputs. Run the earlier stages first, or `--list` to see the order."
-        )
-    return _stage
-
-
 def stage_mechanics(cfg) -> dict:
     """Leverage decay, the February 2018 de-levering, and rebalancing flows.
 
@@ -869,7 +860,7 @@ def stage_tail(cfg) -> dict:
 def stage_signals(cfg) -> dict:
     """Realised variance, real-time HAR forecasts, VRP and term-structure signals.
 
-    Order matters and is the order of the phase prompt: choose the variance proxy
+    Order matters, and it is the order the design fixes: choose the variance proxy
     (and show why), fit the HAR in sample for description only, produce real-time
     forecasts, judge them against naive benchmarks, and only then build signals.
     Thresholds come from configuration, fixed in commit 2bdeb31 before any data was
@@ -1082,7 +1073,7 @@ def stage_signals(cfg) -> dict:
     # ---- 7. timing table (look-ahead audit, step 2) -------------------------------
     # Computed, not asserted. Through Phase 16 this table ended in
     # `timing["use_precedes_availability"] = False`, a literal that the project then
-    # cited as mechanical evidence of no look-ahead; it concealed A-02 for 1,483 days.
+    # cited as mechanical evidence of no look-ahead; it concealed A-02 for 1,482 days.
     # svcarry.timing compares clock times per date and counts the failures, so a row
     # can come back True. The whole table is written here rather than half here and
     # half in stage_backtest, which also removes the de-duplication hack that existed
@@ -1465,7 +1456,7 @@ def stage_robust(cfg) -> dict:
     """Try to break every conclusion, and report the whole grid - not the cells that
     worked.
 
-    The organising question is the phase prompt's: not "does the result survive small
+    The organising question is not "does the result survive small
     perturbations" but "what is the smallest reasonable change that reverses it".
     Every cell of every sweep is written out, the chosen configuration's rank inside
     the full grid is reported, and the nine red-team questions are answered with

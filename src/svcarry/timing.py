@@ -10,7 +10,7 @@ hand in ``scripts/run_pipeline.py``, ending in
 The column was a literal, not a computation. The project then cited that table — "0 of
 18 inputs have use preceding availability" — as *mechanical* evidence that nothing
 leaks. It was an assertion wearing a table's clothes, and it hid a real overlap for
-1,483 trading days (final audit Pass 1, A-02 and A-05).
+1,482 trading days (final audit Pass 1, A-02 and A-05).
 
 What this module does instead is compare two clock times for every input, per date, and
 count the days on which the comparison fails. A row can now come back ``True``.

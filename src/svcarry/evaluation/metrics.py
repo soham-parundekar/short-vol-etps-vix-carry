@@ -97,19 +97,12 @@ def performance_stats(
     vol = float(r.std(ddof=1) * np.sqrt(periods))
     sharpe = float(ex.mean() / ex.std(ddof=1) * np.sqrt(periods)) if ex.std(ddof=1) > 0 else np.nan
 
-    # Target downside deviation, target zero: sqrt(mean of squared shortfalls over
-    # *every* observation), not the standard deviation of the losses about their own
-    # mean over the count of losses. Until the recursive audit (A-13) this read
-    #
-    #     downside = ex[ex < 0]
-    #     dsd = downside.std(ddof=1) * sqrt(periods)
-    #
-    # which selects the subset by the target and then measures dispersion about the
-    # subset's mean. That is not the Sortino denominator and not any standard
-    # statistic: it reports how varied the losses were, not how large. It ran
-    # conservative here - the published figures were lower than the real ratio - but a
-    # reader comparing the column with any other Sortino was comparing two different
-    # things.
+    # Target downside deviation with a target of zero: the root mean square of the
+    # shortfalls over *every* observation. Until A-13 this measured the dispersion of
+    # the losses about their own mean over the count of losses, which is not the
+    # Sortino denominator and not any standard statistic - it says how varied the
+    # losses were, not how large. It ran conservative, so the published figures were
+    # below the true ratio. See docs/methodology.md and final_audit_issue_register.md.
     shortfall = np.minimum(ex.to_numpy(), 0.0)
     dsd = float(np.sqrt(np.mean(shortfall ** 2)) * np.sqrt(periods))
     sortino = float(ex.mean() * periods / dsd) if dsd > 0 else np.nan
