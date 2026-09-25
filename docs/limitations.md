@@ -316,10 +316,11 @@ SPY are total returns, and the T-bill accrual is subtracted before every Sharpe.
 
 At the configured tick the strategy earns 4.1% a year against 3.2% of costs, so the
 answer is roughly "more than half the gross return goes to friction". At two ticks per
-side the out-of-sample Sharpe is -0.06, and it reaches zero at 1.77 ticks. The tick model charges a full tick on each leg of the
-roll, where a calendar spread would usually trade inside that, so the default is
-conservative - but the conclusion is not robust to the cost assumption in either
-direction, and no result from this strategy should be quoted without it.
+side the out-of-sample Sharpe is -0.06, and it reaches zero at 1.77 ticks. The tick
+model charges a full tick on each leg of the roll, where a calendar spread would usually
+trade inside that, so the default is conservative - but the conclusion is not robust to
+the cost assumption in either direction, and no result from this strategy should be
+quoted without it.
 
 ---
 

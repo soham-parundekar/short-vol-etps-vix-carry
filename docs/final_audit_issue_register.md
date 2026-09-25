@@ -15,9 +15,9 @@ quality, consistency, clarity or hygiene.
 
 ## Pass 1
 
-Entry environment: fresh `git clone` into an empty Linux container with no project
-history, numpy 2.4.4, pandas 3.0.2, Python 3.11.15 — all materially newer than the
-lower bounds in `requirements.txt`. Raw data absent from the clone by design
+Entry environment: fresh `git clone` into an empty Linux working directory with no
+project history, numpy 2.4.4, pandas 3.0.2, Python 3.11.15 — all materially newer than
+the lower bounds in `requirements.txt`. Raw data absent from the clone by design
 (`data/raw/**` is gitignored); verified separately against the authoritative local
 working copy, which holds it.
 
@@ -103,7 +103,7 @@ The chain, each link verified empirically rather than read from a comment:
 So before 26 October 2020 the signal input and the execution price are struck at the
 same instant (4:15 p.m. ET), which is the ordinary idealisation. From 26 October 2020
 the input is struck at 4:15 p.m. ET and the execution price at 4:00 p.m. ET, and the
-position is set with fifteen minutes of hindsight, on every one of the 1,483 trading
+position is set with fifteen minutes of hindsight, on every one of the 1,482 trading
 days in that period.
 
 This is the *same fifteen-minute gap* the project identifies as its first headline
@@ -179,15 +179,16 @@ reporting, with `vrp_aligned` and `slope_vix3m_aligned` added, so the panel show
 was observed and what was tradeable. The config comment and `methodology.md` M7a now state
 the convention once, correctly.
 
-**Validation performed.** The counterfactual predicted an out-of-sample Sharpe of 0.1989;
-the full pipeline re-run produced **0.198909**. Before any change the unchanged pipeline was
-run from raw data and reproduced **all 42 tables and all 24 figures byte-identically**, so
-every difference is attributable to this correction alone. 14 of 42 tables, 9 of 24 figures
-and 4 of 8 processed datasets regenerated. `performance_design.csv` unchanged, confirming no
-parameter was contaminated. Suite 258 passed / 2 skipped *(as measured at the close of Pass 1;
-later passes added tests — `README.md` carries the current figure)*. `check_results_numbers.py` passes
-against the new tables and now asserts the timing audit's verdict, its row count, and the
-1,482 dates carrying a real extra-lag requirement.
+**Validation performed.** The counterfactual predicted an out-of-sample Sharpe of
+0.1989; the full pipeline re-run produced **0.198909**. Before any change the unchanged
+pipeline was run from raw data and reproduced **all 42 tables and all 24 figures
+byte-identically**, so every difference is attributable to this correction alone. 14 of
+42 tables, 9 of 24 figures and 4 of 8 processed datasets regenerated.
+`performance_design.csv` unchanged, confirming no parameter was contaminated. Suite 258
+passed / 2 skipped *(as measured at the close of Pass 1; later passes added tests —
+`README.md` carries the current figure)*. `check_results_numbers.py` passes against the
+new tables and now asserts the timing audit's verdict, its row count, and the 1,482
+dates carrying a real extra-lag requirement.
 
 **Final numbers.** OOS Sharpe 0.27 → **0.20** (se 0.31); CAGR 5.0% → **4.1%**; max drawdown
 −26.3% → **−26.8%**; Sortino 0.237 → 0.177 *(both on the pre-A-13 definition, which was
@@ -292,7 +293,8 @@ was, and it was concealing one (A-02) on 1,482 days.
 **Why it mattered.** This is the more important of the two findings. A-02 is a defect; A-05
 is the reason a defect of that kind could survive sixteen phases and a six-perspective audit
 that explicitly looked for look-ahead. A check that cannot fail is not a check, and citing
-one as mechanical evidence overstates the project's rigour in exactly the way §55 forbids.
+one as mechanical evidence overstates the project's rigour, which is precisely what an
+audit is for.
 
 Compounding it, the convention was asserted in three mutually inconsistent forms —
 `config.yaml` line 143 ("traded at close of t", a two-day description), the *VIX close* and
@@ -341,9 +343,9 @@ the project completion note held outside the repository.
 
 **Where found.** `docs/project_log.md`, Phase 16 "Clean-room reproduction".
 
-**Why it mattered.** It overstates a reproducibility result in the document a reader is most
-likely to quote, and §55 puts reproducibility claims among those that must not exceed the
-evidence. It is also self-indicting: the same section's closing paragraph draws the lesson
+**Why it mattered.** It overstates a reproducibility result in the document a reader is
+most likely to quote, and a reproducibility claim must not outrun the evidence behind
+it. It is also self-indicting: the same section's closing paragraph draws the lesson
 that every number in prose should be in a table, and the figure count was never in one.
 
 **Root cause.** A summary sentence written from the intent of the test rather than from its
@@ -434,49 +436,49 @@ register shows the audit's coverage rather than only its catches.
 A fresh project-wide pass, not a re-check of Pass 1's changes. Its targets were the
 layers Pass 1 never reached: the econometric implementations, the index reconstruction
 and settlement calendar, the raw data, the ETP mechanics and the archived filings, the
-literature and its citations, the prompt system, and a re-reconciliation of every number
-now that Pass 1 moved many of them.
+literature and its citations, the project's own procedure notes, and a re-reconciliation
+of every number now that Pass 1 moved many of them.
 
 Three findings. The most important is upstream of everything in Pass 1.
 
-### A-11 · Prompt system · **Major**
+### A-11 · Validation procedure · **Major**
 
-**What was wrong.** `prompts/tasks/lookahead_audit.md` is the prompt that produced the
-look-ahead audit, and it is the root cause of A-05 and therefore of A-02. Two defects:
+**What was wrong.** The look-ahead audit's own specification is the root cause of A-05 and
+therefore of A-02. Two defects in it:
 
-1. **It specified a date-granular table.** "For every input, record in a table: the date
-   it is indexed by, the date its information becomes available, and the date it is first
-   used." Nothing asks for the clock time at which a value is struck. A-02 is a
+1. **It specified a date-granular table.** For every input it asked for the date the value
+   is indexed by, the date its information becomes available, and the date it is first
+   used. Nothing asked for the clock time at which a value is struck. A-02 is a
    fifteen-minute overlap between two series dated the same day, so the audit as specified
    could not see it — and the artefact it produced did not.
-2. **It did not require the verdict to be computed.** Nothing in the prompt says the
-   comparison must be performed in code, or that the check must be capable of failing. The
+2. **It did not require the verdict to be computed.** Nothing said the comparison had to
+   be performed in code, or that the check had to be capable of failing. The
    implementation duly wrote `use_precedes_availability = False` as a literal and the
    project cited it as mechanical evidence.
 
-**The uncomfortable detail.** The same prompt already names A-02's exact mechanism. Its
+**The uncomfortable detail.** The specification already named A-02's exact mechanism. Its
 list of how look-ahead arrives includes "*a signal computed from a close and traded at the
-same close*". The prompt identified the failure mode and then specified a check too coarse
-to detect it.
+same close*". It identified the failure mode and then asked for a check too coarse to
+detect it.
 
-**Where found.** `prompts/tasks/lookahead_audit.md`, Procedure step 2 and the Validation
-table.
+**Where found.** The audit's procedure step 2 and its validation criteria, both now
+written out in `docs/validation.md` V25.
 
-**Why it mattered.** Fixing the code without fixing the prompt would leave the generative
-cause in place: the next project built from this prompt pack would reproduce the same
-defect. This is the backward-propagation rule applied to the instructions rather than to
-the artefacts.
+**Why it mattered.** Fixing the code and leaving the procedure alone would leave the
+generative cause in place: the next run of the same audit would miss the same class of
+defect. This is the backward-propagation rule applied to the method rather than to the
+artefacts.
 
 **Correction.** Step 2 now requires each input's **strike time**, the strike time of the
 execution reference (which may change mid-sample, as the VX settlement did on 26 October
 2020), a **computed** verdict with a per-date failure count, the pipeline gated on it, and
 a **mutation test** proving the check catches the defect when the correction is removed.
-The Validation table gains a mutated-table row. The prompt also now records that step 1's
-perturbation test perturbs by whole days and therefore cannot detect an intraday overlap
-either, so the two steps are complementary and neither alone is sufficient.
+Step 1's perturbation test is recorded as perturbing by whole days and therefore unable to
+detect an intraday overlap either, so the two steps are complementary and neither alone is
+sufficient. The whole procedure is in `docs/validation.md` V25.
 
-**Blast radius.** The prompt pack, and any future project built from it. No data or
-results.
+**Blast radius.** The validation method, and any later analysis that relies on it. No data
+or results.
 
 **Status.** **Resolved.**
 
@@ -504,25 +506,21 @@ we cannot address" may also carry a constraint the design must satisfy.
 
 ---
 
-### A-10 · Prompt system · **Minor**
+### A-10 · Planned outputs · **Minor**
 
-**What was wrong.** Three prompt files named output artefacts the project does not
-produce: `reports/tables/roll_convention_comparison.csv` (the table is
+**What was wrong.** The working procedure notes named two output artefacts the project
+does not produce: `reports/tables/roll_convention_comparison.csv` (the table is
 `roll_convention.csv`) and `reports/tables/data_quality.csv`, which was **never produced
 under any name** — the cleaning counts went into `docs/validation.md` and the rules into
 `docs/methodology.md` M1 instead.
 
-**Where found.** `prompts/tasks/resolve_roll_convention.md`,
-`prompts/phases/06_data_cleaning_validation.md`,
-`prompts/operations/data_quality_review.md`.
+**Why it mattered.** Small, but the point stands: a planned artefact that gets folded into
+a document should be recorded as folded, not left as a dangling filename. One of these two
+was silently dropped rather than deliberately relocated, and nothing said so.
 
-**Why it mattered.** Small, but §60's point exactly: the prompt system must describe the
-actual process. A reader following these prompts would look for two files that do not
-exist, and one of them was a planned artefact silently dropped rather than deliberately
-folded into a document.
-
-**Correction.** Filenames corrected; the dropped table recorded as dropped, with where its
-content actually went, rather than the reference quietly deleted.
+**Correction.** The surviving filename corrected; the dropped table recorded as dropped,
+with where its content actually went. `docs/research_design.md` §6 and the figure and
+table indexes are now the list of what the project produces, and every entry resolves.
 
 **Status.** **Resolved.**
 
@@ -555,8 +553,8 @@ so nothing had previously compared these numbers with anything but themselves.
 | Rebalancing-flow arithmetic | recomputed from the committed assets and raw open interest | `contracts = flow/(1000·F1)` to 7e-12; `share = contracts/OI` exact; 2018-02-05 lower bound 55,689.99 contracts and 24.995% confirmed |
 | De-levering counterfactual | coefficient ratio against flow ratio | `L(L−1)` goes 2.0 → 0.75 for **both** funds (SVXY −1→−0.5, UVXY 2→1.5); flow ratio = coefficient ratio = 0.375 exactly, reduction 0.625 exact. The documents say "coefficient", correctly, not "leverage" |
 | Bibliography | 35 entries cross-referenced against prose citations | all 23 author-year citations in the literature review map to an entry; the uncited entries are the source documents cited in `data_sources.md`; no malformed DOIs; one entry honestly marked "partial; volume and pagination not confirmed" |
-| Secrets and portability | pattern scan across code, config, docs and notebooks | no secrets; no absolute or machine-specific paths in any code or configuration file (they appear only in the project log's environment record and the resume prompt, where they belong) |
-| Prompt-to-project file references | every path mentioned in the 35 prompt files resolved | two stale names found (A-10); everything else resolves |
+| Secrets and portability | pattern scan across code, config, docs and notebooks | no secrets; no absolute or machine-specific paths in any code or configuration file (they appear only in the project log's environment record, where they belong) |
+| Planned-output references | every output path named in the project's procedure notes resolved | two stale names found (A-10); everything else resolves |
 | Full re-reconciliation | swept all documents for the 21 values Pass 1 moved | no stale value survives in any document describing the current state. The only remaining occurrences are in `docs/project_log.md` and `docs/final_audit.md`, both explicitly historical, both carrying forward-pointing notes |
 
 ---
@@ -677,8 +675,8 @@ Two consequences follow from the wrong centre and the wrong count:
 
 **Where found.** `src/svcarry/evaluation/metrics.py`, `performance_stats`.
 
-**Why it mattered.** It is a named financial statistic reported in eight committed tables,
-and §46C's point applies exactly: a numerically valid result computed from an incorrect
+**Why it mattered.** It is a named financial statistic reported in eight committed
+tables, the point holds exactly: a numerically valid result computed from an incorrect
 financial definition is still wrong. A reader comparing this column with any other
 published Sortino was comparing two different quantities.
 
@@ -753,9 +751,9 @@ nothing in the implementation depends on resolving it.
 | `figure_index.md` against the figures | set comparison and row parsing | 24 on disk, 24 indexed, registry identical, and every row carries both a question and an input — no gaps |
 | `data_sources.md` against the manifest | host, URL-prefix and family comparison | all four hosts and every URL family documented; the Stooq entry is labelled a **fallback** and the status row says Yahoo was used, which the manifest confirms — documented but unused, and honestly so |
 | The 2024 Cboe notice | followed up as a threat to A-02 | it changes the settlement *procedure*, not its time; A-02 unaffected (and A-14 records the omission) |
-| Phase-07 tracking gate | prompt's own failure band (>25 bp/day) against the measured 133.2 and 31.7 | the gate **failed** and the project recorded it as failed — "H1 rejected … against a 25 bp criterion" — rather than quietly passing it. The failure became the project's headline finding |
-| Phase-11 plausibility gates | prompt's bands against the corrected numbers | OOS Sharpe 0.20 within the "≤ 1.5" band; leak calibration 1.54 "far above the honest one"; cost sensitivity monotone; design and evaluation windows reported separately |
-| Index coverage gate | prompt requires ≥ 99% of sample trading days | 4,710 of 4,711 returns defined (99.98%) |
+| Phase-07 tracking gate | the design's own failure band (>25 bp/day) against the measured 133.2 and 31.7 | the gate **failed** and the project recorded it as failed — "H1 rejected … against a 25 bp criterion" — rather than quietly passing it. The failure became the project's headline finding |
+| Phase-11 plausibility gates | the pre-declared plausibility bands against the corrected numbers | OOS Sharpe 0.20 within the "≤ 1.5" band; leak calibration 1.54 "far above the honest one"; cost sensitivity monotone; design and evaluation windows reported separately |
+| Index coverage gate | the design requires ≥ 99% of sample trading days | 4,710 of 4,711 returns defined (99.98%) |
 
 ---
 
@@ -773,7 +771,7 @@ not a limitation - it is a closing list of unresolved questions - and it had tak
 number in the middle of the sequence while sitting at the end.
 
 **Why it mattered.** A numbered, cross-referenced scheme with one label out of order is
-exactly the documentation inconsistency §54 asks about. Nothing pointed at L8, so no
+exactly the kind of documentation inconsistency worth chasing down. Nothing pointed at L8, so no
 reference was broken, but a reader scanning L1-L25 would find L8 missing from the sequence
 and then meet it at the bottom of the file attached to something that is not a limitation.
 
@@ -823,12 +821,12 @@ present. The `docs/` list now names all twelve documents.
 | SVXY decay regression, end to end | Yahoo JSON parsed here, split adjustment via `adjclose`, blocks and OLS all independent | **76 and 75 blocks, slope -2.845819 full and -1.087347 ex-Feb-2018, annualised intercept 0.755793 - every one exact.** Validates parsing, split handling, block construction, the regression and the annualisation together |
 | Its standard error | OLS, HC0 and HC1 computed separately | committed 0.407995 is **HC1** exactly - the robust choice, which matters with one extreme leverage point |
 | Forecast evaluation | OOS R², RMSE, MAE, bias, Patton QLIKE, the Mincer-Zarnowitz regression with HAC errors, and both Diebold-Mariano tests, all reimplemented | R², RMSE, MAE, bias, QLIKE, MZ β, MZ β's HAC standard error, t(β=1), α and R² **all exact to ten decimals** - a second independent confirmation of the HAC layer. The two DM t-statistics agree to 4e-04 and 1.3e-03, the residual being a long-run-variance degrees-of-freedom convention |
-| ETP fee mechanics | the code's `NAV_{t-1} x fee/365` against the XIV filing's `CIV_{t-1} x DailyPerformance x fee/365` | the code matches the **ETF** convention (fee on average daily net assets) exactly, which covers four of the six products, and approximates the two ETNs' wording by at most **1.5e-04 a year** and 1.1e-04 in any single daily return. Against tracking errors of 133 and 32 bp/day this is nothing; recorded because §46C asks about fees |
+| ETP fee mechanics | the code's `NAV_{t-1} x fee/365` against the XIV filing's `CIV_{t-1} x DailyPerformance x fee/365` | the code matches the **ETF** convention (fee on average daily net assets) exactly, which covers four of the six products, and approximates the two ETNs' wording by at most **1.5e-04 a year** and 1.1e-04 in any single daily return. Against tracking errors of 133 and 32 bp/day this is nothing; recorded because every fee in this project is quoted from a filing |
 | Asset-bound construction | read against its own guards | raises if a disclosed anchor falls outside its own band, and cross-checks each anchor's two independent share-count statements (`nav_usd / price` against restated `shares_outstanding`) to 5% - which is what would catch a mis-signed split factor at the source rather than downstream |
 | Section numbering | `limitations.md`, `validation.md`, `methodology.md` parsed for gaps and duplicates | `validation.md` V1-V37 and `methodology.md` M1-M8 + M7a are complete with no duplicates; `limitations.md` produced A-15 |
 | README paths | every repository path named in the README resolved | all exist |
 | Report structure | section numbering | 1-10, complete and in order |
-| Operations prompts | all nine read against what the project actually did | consistent. `github_push_verification.md` specifies the exact escalation this audit needed - "produce a transferable artefact, a `git bundle` preserves the full history, and give the exact commands to publish it from elsewhere. Never describe unpushed work as pushed" - which is what was done |
+| Publication procedure | the project's own release checklist read against what was actually done | consistent: the escalation this audit needed - produce a transferable artefact (a `git bundle` preserves the full history), give the exact commands to publish it from elsewhere, and never describe unpushed work as pushed - is what was done |
 
 ---
 

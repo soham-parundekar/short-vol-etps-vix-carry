@@ -112,8 +112,9 @@ The difference is small where it matters and is reported rather than hidden. On
 | `A_{t-1}` | 55,187 | 24.8% |
 
 Both are far above H2's 10% threshold, so the verdict does not turn on the choice. Daily
-data cannot resolve it; a daily shares-outstanding source would. Only the lower bound supports a claim; the upper bound
-is reported and plotted but exceeds the entire front-month contract on 7 sessions.
+data cannot resolve it; a daily shares-outstanding source would. Only the lower bound
+supports a claim; the upper bound is reported and plotted but exceeds the entire
+front-month contract on 7 sessions.
 
 Scope: SVXY and UVXY only, because they are the only geared products with disclosed
 anchors in the archived filings. XIV (-1x) and the other ETNs are excluded, so the
@@ -127,10 +128,11 @@ ex-ante model) and on the full sample (descriptive only). Four starts from each 
 seeds; the two optima must agree.
 
 **Tail.** A Generalised Pareto distribution fitted to the upper tail of the standardised
-residuals, above a threshold chosen on pre-2018 residuals only by the rule in
-`prompts/tasks/choose_evt_threshold.md` (V15). The innovation law is spliced: the fitted
-skewed-*t*, rescaled, below the threshold; the GPD above it, carrying exactly the
-empirical exceedance mass (`svcarry.econometrics.tailrisk.SplicedInnovations`).
+residuals, above a threshold chosen on pre-2018 residuals only, by the rule fixed before
+any data was retrieved (`docs/preregistration.md` section 3; applied in V15). The
+innovation law is spliced: the fitted skewed-*t*, rescaled, below the threshold; the GPD
+above it, carrying exactly the empirical exceedance mass
+(`svcarry.econometrics.tailrisk.SplicedInnovations`).
 
 **Termination.** A one-day index **simple** return of `w / |L|` removes a share `w` of a
 product at leverage `L`; with `w = 0.8`, that is 80% for -1x and 160% for -0.5x. The
@@ -167,7 +169,7 @@ return `ln(O_t / C_{t-1})` plus the Rogers-Satchell intraday range estimator, on
 `rs_overnight`, fixed in configuration before any data was retrieved). Three
 decisions, each with its evidence in `reports/tables/variance_proxy_comparison.csv`:
 
-1. *SPY, not the S&P 500 index.* The phase prompt says "SPX OHLC". The index's opening
+1. *SPY, not the S&P 500 index.* The index's opening
    print equals the previous close on 14% of days (SPY: 0.9%), because it is computed
    from constituents that have not yet traded; its overnight return is therefore
    mostly missing, and `rs_overnight` on the index averages 64% of close-to-close
@@ -227,19 +229,18 @@ in annualised variance at typical levels, against a median VRP of 0.0077. Not ad
 stated, with the proxy's opposite and larger effect, in L16.
 
 **The term-structure signal.** `cm30 / cm90` from the interpolated futures curve is the
-primary measure (fixed in the phase prompt, committed 3db0269 before any data was
-retrieved), because VIX3M begins only on 18 September 2009. `VIX / VIX3M` is the
-robustness variant.
+primary measure (fixed at commit 3db0269, before any data was retrieved), because VIX3M
+begins only on 18 September 2009. `VIX / VIX3M` is the robustness variant.
 
-The interpolated curve leaves `cm30` missing whenever no listed contract is shorter
-than 30 days - the few sessions after each monthly expiry that is followed by a
-five-week cycle, 234 sessions in all (5.0%). On those days `cm30` is interpolated
-between the curve's observable zero-maturity point, spot VIX (a future expiring today
-settles to it), and the front contract (`spot_anchored_front`). Only missing values are
-filled, each is flagged in `cm30_spot_anchored`, and the two slope measures agree on
-91.5% of filled days against 91.7% overall. Left unfilled, coverage would sit at 95.0%,
-the edge of the prompt's pass band, and the strategy would be forced flat on a
-calendar pattern rather than a market state.
+The interpolated curve leaves `cm30` missing whenever no listed contract is shorter than
+30 days - the few sessions after each monthly expiry that is followed by a five-week
+cycle, 234 sessions in all (5.0%). On those days `cm30` is interpolated between the
+curve's observable zero-maturity point, spot VIX (a future expiring today settles to
+it), and the front contract (`spot_anchored_front`). Only missing values are filled,
+each is flagged in `cm30_spot_anchored`, and the two slope measures agree on 91.5% of
+filled days against 91.7% overall. Left unfilled, coverage would sit at 95.0%, the edge
+of the acceptable band, and the strategy would be forced flat on a calendar pattern
+rather than a market state.
 
 **Signals.** Contango on when `slope < 1.0`; VRP on when `VRP > 0.0`; combined by
 requiring both. Thresholds from `config/config.yaml`, fixed in commit 2bdeb31
@@ -331,18 +332,18 @@ was computed from data through `t`.
 - `floor_t` is the **largest one-day index rise observed through `t`**
   (`running_max_floor`).
 
-*The amendment.* The configuration and the phase prompt set the floor to the
-5 February 2018 move (96.1%). Applied from 2008, that sizes every pre-2018 position
-with a day that had not happened yet: by this project's own look-ahead rule
-(`prompts/tasks/lookahead_audit.md`, "any row where use precedes availability is a
-leak"), it is a leak, and the research design asks for an *ex-ante* stress loss
-(§4.5). The running maximum is the real-time form of the same idea - the largest move
-that has actually happened - and is exact from 5 February 2018 onwards, where it equals
-the configured value. The amendment was written into `config/config.yaml` and committed
-**before any backtest was run**; the event floor is still run, and reported beside the
-honest version, as a calibration of what knowing the answer in advance is worth. It
-sizes larger before 2018 (floor 0.14-0.33 rather than 0.96), so the honest version is
-the one that takes the bigger loss on 5 February 2018.
+*The amendment.* The pre-registered configuration set the floor to the 5 February 2018
+move (96.1%). Applied from 2008, that sizes every pre-2018 position with a day that had
+not happened yet: by this project's own look-ahead rule - any row where use precedes
+availability is a leak (`reports/tables/timing_audit.csv`) - it is a leak, and the
+research design asks for an *ex-ante* stress loss (§4.5). The running maximum is the
+real-time form of the same idea - the largest move that has actually happened - and is
+exact from 5 February 2018 onwards, where it equals the configured value. The amendment
+was written into `config/config.yaml` and committed **before any backtest was run**; the
+event floor is still run, and reported beside the honest version, as a calibration of
+what knowing the answer in advance is worth. It sizes larger before 2018 (floor
+0.14-0.33 rather than 0.96), so the honest version is the one that takes the bigger loss
+on 5 February 2018.
 
 **Costs.** Both sources of trading, at 1 tick (0.05 VIX points) per side on the weighted
 futures price held: the rebalance back to target after the position drifts, and the

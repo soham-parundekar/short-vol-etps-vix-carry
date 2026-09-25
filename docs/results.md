@@ -3,14 +3,14 @@
 What the numbers say, at the confidence the evidence supports.
 
 Every figure in this document is traceable to a committed table; the table is named
-beside it, and `python scripts/check_results_numbers.py` re-reads the tables and
-asserts the figures quoted here (it exits non-zero on any disagreement, so a pipeline
-change that moves a number cannot leave this document quietly wrong). Where a number is a derivation rather than a table entry, the derivation is
-in `docs/validation.md` at the section named. The hypotheses and their rejection
-criteria were fixed in `docs/research_design.md` before any data was retrieved (commit
-2bdeb31, 07:40:36 UTC on 20 September 2026; first data retrieval 08:30:04 UTC), and
-nothing below reinterprets a criterion: §9 of that document records where the evidence
-leaves each claim.
+beside it, and `python scripts/check_results_numbers.py` re-reads the tables and asserts
+the figures quoted here (it exits non-zero on any disagreement, so a pipeline change
+that moves a number cannot leave this document quietly wrong). Where a number is a
+derivation rather than a table entry, the derivation is in `docs/validation.md` at the
+section named. The hypotheses and their rejection criteria were fixed in
+`docs/research_design.md` before any data was retrieved (commit 2bdeb31, 07:40:36 UTC on
+20 September 2026; first data retrieval 08:30:04 UTC), and nothing below reinterprets a
+criterion: §9 of that document records where the evidence leaves each claim.
 
 ---
 

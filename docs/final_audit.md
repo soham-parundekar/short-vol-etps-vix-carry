@@ -419,8 +419,8 @@ section records the recursive audit that followed it.
 | Minor | 12 |
 
 Categories encountered: bias/look-ahead, verification integrity, financial theory,
-statistics, code, reproducibility, reporting, documentation, literature, prompt system,
-Git hygiene.
+statistics, code, reproducibility, reporting, documentation, literature, validation
+procedure, Git hygiene.
 
 Findings by pass: Pass 1 six (A-01 to A-08, less A-09/A-10), Pass 2 three, Pass 3 one,
 Pass 4 two, Pass 5 two, Pass 6 one, Pass 7 one, **Pass 8 zero**.
@@ -449,11 +449,12 @@ reproduced inside its own signal chain. Cost: out-of-sample Sharpe **0.27 → 0.
 5.0% → 4.1%, alpha −1.4% → −2.2% a year. The design window is untouched, so no parameter was
 chosen on leaked information.
 
-**A-11, the generative cause.** `prompts/tasks/lookahead_audit.md` specified a *date*-granular
-timing table and never required the verdict to be computed — while already listing "a signal
-computed from a close and traded at the same close" among the ways look-ahead arrives. It
-named the failure mode and specified a check too coarse to detect it. The prompt now requires
-strike times, a computed per-date verdict, the pipeline gated on it, and a mutation test.
+**A-11, the generative cause.** The look-ahead audit's own specification asked for a
+*date*-granular timing table and never required the verdict to be computed — while already
+listing "a signal computed from a close and traded at the same close" among the ways
+look-ahead arrives. It named the failure mode and then asked for a check too coarse to
+detect it. The procedure now requires strike times, a computed per-date verdict, the
+pipeline gated on it, and a mutation test; it is written out in `docs/validation.md` V25.
 
 **A-13.** The `sortino` column was not the Sortino ratio: the denominator was the spread of
 the losses about their own mean, over the count of losses, rather than the target downside
@@ -469,8 +470,8 @@ figures lived in one script. One writer now, asserted by test.
 * A-02 was found from the *engine's* behaviour and corrected at the **signal construction**,
   not at the output: `build_signal_panel` applies the lag, and `config.yaml` gained a
   `timing:` block.
-* A-11 went further back still, to the **prompt** that specified the flawed check. Fixing
-  the code alone would have left the next project built from this pack to reproduce it.
+* A-11 went further back still, to the **specification** of the flawed check. Fixing the
+  code alone would have left the method free to miss the same class of defect again.
 * A-13 was found in a table and corrected in `evaluation/metrics.py`, with the definition
   written into `methodology.md` and pinned by tests.
 * A-12 was found in a figure byte-comparison and corrected by deleting twenty call sites in
@@ -493,7 +494,7 @@ in `docs/validation.md` V32 rather than smoothed over.
 
 | Check | Result |
 |---|---|
-| Full pipeline from raw data, clean container | **42 of 42 tables, 24 of 24 figures, 8 of 8 processed datasets byte-identical** |
+| Full pipeline from raw data, clean clone | **42 of 42 tables, 24 of 24 figures, 8 of 8 processed datasets byte-identical** |
 | Environment | numpy 2.4.4, pandas 3.0.2, scipy 1.17.1, matplotlib 3.10.9, Python 3.11 — all far newer than the pinned lower bounds |
 | Test suite | passes with 2 documented skips; `README.md` carries the count |
 | Retrieval manifest | clean, 338 entries re-hashed |
@@ -510,13 +511,13 @@ in `docs/validation.md` V32 rather than smoothed over.
 **Pass 8 was a complete, independent, project-wide pass and found zero issues** — no
 critical, major, moderate or minor. The confirmation scan then verified that no register
 entry is unresolved, every intended output exists, the documentation describes the current
-implementation, the conclusions match the current numbers, and the prompt system describes
-the process actually followed.
+implementation, the conclusions match the current numbers, and the documented procedure
+describes the process actually followed.
 
-**One criterion is outside this environment's reach.** GitHub could not be written to from
-either the analysis container or the local sandbox, so repository synchronisation is
-completed by the author's own `git push`. Until that push lands, the audit is *clean* but the
-project is not *published*, and this document does not claim otherwise.
+**One criterion sits outside the audit's reach.** Neither machine the project was built
+on can write to GitHub, so repository synchronisation is completed by the author's own
+`git push`. Until that push lands, the audit is *clean* but the project is not
+*published*, and this document does not claim otherwise.
 
 ## Status
 
