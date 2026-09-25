@@ -60,8 +60,11 @@ result is a design that will find it.
 
 ## 3. The parameter set, as fixed
 
-Reproduced from `git show 2bdeb31:config/config.yaml`. Values that are still in force
-today are unmarked; the four that changed are flagged and explained in §4.
+Reproduced from `git show 2bdeb31:config/config.yaml`. Every value below is still in
+force today except `strategy.stress_floor_event`, which is marked where it appears. The
+product block — issuer, wrapper, leverage, fee and inception for each of the six products
+— was fixed in the same commit and is not reproduced here; §4.1 records the one figure in
+it that later changed.
 
 **Sample and split**
 

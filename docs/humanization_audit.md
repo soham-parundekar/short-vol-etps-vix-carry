@@ -271,6 +271,12 @@ Run before any change and again after all of them, from the same raw data.
 | Broken links and repository paths | — | 0 |
 | Mentions of "prompt" outside `prompts/` | 91 | 1, an ordinary English verb (this file aside) |
 
+And the check that matters most after deleting 35 files: a fresh `git clone` of the final
+state, with the raw data restored and nothing else changed, runs the suite at 264/2 and
+reproduces **all 42 tables, all 24 figures and all 8 processed datasets byte-identically**.
+`git status` afterwards names one file, `reports/_pipeline_state.json`, which records when
+the run happened. Nothing in the repository depended on anything removed from it.
+
 Byte-identity was established by hashing every output before the first change and
 comparing after the last. The headline figures are therefore unchanged and are not
 restated here: `docs/results.md` holds them.
