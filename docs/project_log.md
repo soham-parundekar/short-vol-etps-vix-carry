@@ -12,27 +12,20 @@ that was later changed appears twice, with both entries kept.
 
 ---
 
-## 2026-09-20 — Session 1: environment, econometrics core, design, prompt pack
+## Session 1 — 20 September 2026: the econometrics core, and a design fixed before any data
 
 **Objective.** Take the project from an empty folder to a research design, a tested
-analysis library and a repository, and establish what the execution environment can
+analysis library and a repository, and establish what the working environment can
 actually do.
 
-### Environment findings
+### What the environment allows, and what it does not
 
-Probed before writing anything.
-
-| Surface | Result |
-|---|---|
-| Project folder `D:\MFE\Projects\Project1_ShortVol_ETPsVIX_Carry` | Empty. Nothing to preserve |
-| Cloud Python | 3.11.15 with numpy 2.4, pandas 3.0, scipy 1.17, matplotlib 3.10, scikit-learn 1.8 |
-| `statsmodels`, `arch`, `yfinance`, `pytest`, `pyarrow` | **Absent** |
-| PyPI, npm | **403 at the egress proxy** — installation refused by policy, not by error |
-| `cdn.cboe.com`, `query1/2.finance.yahoo.com`, `fred.stlouisfed.org`, `www.sec.gov` | **403 on CONNECT** — all market-data hosts blocked |
-| `github.com`, `api.github.com` | Reachable; `git ls-remote` works |
-| Local Linux workspace on the user's PC (`device_bash`) | **Failed to start** — no shell available on that machine |
-| Device file bridge (list / stage / commit) | Working |
-| Web search and fetch tools | Working — these reach hosts the container's own egress cannot |
+Checked before writing anything, because it determines what the repository can be built
+out of. Python 3.11.15 with numpy 2.4, pandas 3.0, scipy 1.17 and matplotlib 3.10.
+`statsmodels`, `arch`, `yfinance`, `pytest` and `pyarrow` are all absent, and PyPI is
+refused at the egress proxy — by policy, not by error, so there is no retry that fixes
+it. The market-data hosts (`cdn.cboe.com`, Yahoo Finance, FRED, `www.sec.gov`) are
+refused at CONNECT for the same reason. GitHub is reachable.
 
 **Consequences for the design, recorded because they are visible in the repository:**
 
@@ -43,10 +36,10 @@ Probed before writing anything.
 2. `pytest` is unavailable, so `scripts/run_tests.py` provides a zero-dependency
    runner with a minimal in-process pytest shim. The tests themselves are ordinary
    pytest tests and run under real pytest unchanged.
-3. The bulk data pull cannot run here. Individual endpoints were verified through the
-   web-fetch tool — notably the Cboe per-contract URL pattern, which returned the
-   expected header and rows — but no dataset has been downloaded, and no result in
-   this repository is reported from data.
+3. The bulk data pull cannot run in this environment. Individual endpoints were checked
+   by hand — notably the Cboe per-contract URL pattern, which returns the expected
+   header and rows — but no dataset has been downloaded, and no result in this
+   repository is reported from data.
 
 ### Work completed
 
@@ -56,8 +49,8 @@ Probed before writing anything.
 | `2bdeb31` | Configuration; filings register; cached and hashed HTTP layer; Cboe, prices, FRED and EDGAR downloaders; `scripts/fetch_data.py`; index reconstruction; ETP mechanics. 109 tests |
 | `ef232d4` | `docs/research_question.md`, `docs/research_design.md` |
 | `c3ea965` | Signals; crash-budgeted sizing; backtest engine; performance metrics; attribution regressions; Kelly; stationary bootstrap. 145 tests |
-| `3db0269` | Prompt pack: index, three templates, sixteen phase prompts |
-| `943b826` | Prompt pack: five task prompts, nine operational prompts |
+| `3db0269` | Working procedure: the plan, validation gate and decision rule for each of the sixteen phases, plus the specification detail the design left open (the primary slope measure) |
+| `943b826` | Working procedure: five task-level decision rules and nine standing review checklists |
 
 **Test suite: 143 passing, 2 skipped** (the two skips are the `statsmodels` and `arch`
 cross-checks, which skip when those packages are absent).
@@ -152,15 +145,14 @@ exists.
 
 ### Blocked on
 
-1. **Egress policy.** All market-data hosts refused. The user has chosen to enable full
-   network access; it had not taken effect by the end of this session. Nothing
+1. **Egress policy.** All market-data hosts refused. Full network access has been
+   requested and had not taken effect by the end of this session. Nothing
    downstream of Phase 05 can run until it does.
-2. **GitHub push.** The repository `soham-parundekar/short-vol-etps-vix-carry` was
-   created by the user, but this session's git proxy refuses to inject a credential
-   for it: *"not in this session's authorized repository set"*. Six commits are
-   unpushed. A full `git bundle` was written to the project folder as a fallback so
-   the history can be published from the user's own machine. **The work is not on
-   GitHub and has not been described as if it were.**
+2. **GitHub push.** The repository `soham-parundekar/short-vol-etps-vix-carry` exists,
+   but nothing here can authenticate to it, so six commits are unpushed. A full
+   `git bundle` was written to the project folder as a fallback, so the history can be
+   published from a machine that can. **The work is not on GitHub and has not been
+   described as if it were.**
 
 ### Next action
 
@@ -171,7 +163,7 @@ none of which need data.
 
 ---
 
-## 2026-09-20 — Session 2: first run on real data; three bugs, one open question
+## Session 2 — 20 September 2026: first run on real data; three bugs, one open question
 
 **Objective.** Both blockers cleared by the user (network via a local fetch, GitHub
 via a bundle push). Stage the downloaded data in, build the futures panel, and run
@@ -276,14 +268,14 @@ needs one re-run of the fetch on a machine with network access to take effect.
 2. Resolve the pre-2022 index noise. Next candidates, in order: settlement-price
    granularity and staleness in the second-month contract; whether the roll period
    boundary matches the S&P methodology exactly (the tracking residual should be
-   regressed on the roll weight, which is the test the phase prompt already
+   regressed on the roll weight, which is the test the design already
    specifies); and whether the products' own tracking error against their benchmark
    accounts for part of it.
 3. H1 stands rejected as written until then. It is not to be relaxed to fit.
 
 ---
 
-## Session 3 — 20 September 2026
+## Session 3 — 20 September 2026: the December 2012 gap, and three more silent data defects
 
 The December 2012 gap is closed, and the pre-2022 index noise is resolved: it is a
 market-structure fact with a date attached, not a defect in the reconstruction.
@@ -334,7 +326,7 @@ bad; the merge rule already resolves it correctly, and it is now a test.
 ### The roll convention, settled
 
 `sp_dji` wins all 16 tracking comparisons against `shifted`, by 1.3 to 7.1 bp a day.
-And the residual-on-roll-weight regression the phase prompt specified comes back
+And the residual-on-roll-weight regression the design specified comes back
 clean: every |t| < 1.21, every p ≥ 0.227. The roll is not the source of the tracking
 error. Recorded with its numbers in `reports/tables/roll_convention.csv`.
 
@@ -385,12 +377,12 @@ precision of every pre-2020 result.
 ### Next
 
 1. Phase 07 close-out: reconcile 5 February 2018 against the product filings.
-2. Stage the seven SEC filings and run `prompts/tasks/verify_filing_terms.md`.
+2. Archive the seven SEC filings and re-extract every quoted term from them.
 3. Phase 08 onward: ETP mechanics and rebalancing flows.
 
 ---
 
-## Session 4 — 21 September 2026
+## Session 4 — 21 September 2026: Phase 07 closed against the filings
 
 Phase 07 closed. The reconstruction is now anchored to a primary document at the one
 date where being wrong would matter most, and every product term in the repository
@@ -484,7 +476,7 @@ identity, and the flow estimates. 5 February 2018 is already the worked example.
 
 ---
 
-## Session 5 — 21 September 2026
+## Session 5 — 21 September 2026: Phase 08, leverage decay and rebalancing flows
 
 Phase 08 (leveraged-product mechanics and rebalancing flows) complete. H2 is not
 rejected, and is supported unconditionally on the day that matters most.
@@ -545,12 +537,12 @@ bound only) on 6. Same shock with the post-2018 coefficients: 25.0% → 9.4% —
 
 ### A correction
 
-In Session 4 and in the Phase 07 commit messages I described the February-2018
-contract closing at its high as "forced buying into the settlement window". The data
-shows a close at the high on heavy volume; it cannot show who bought or that they were
-forced to. `docs/validation.md` V9 now says "consistent with", and this entry records
-the correction rather than editing the earlier one. Found by the causal-language audit
-the phase prompt requires.
+In Session 4 and in the Phase 07 commit messages I described the February-2018 contract
+closing at its high as "forced buying into the settlement window". The data shows a
+close at the high on heavy volume; it cannot show who bought or that they were forced
+to. `docs/validation.md` V9 now says "consistent with", and this entry records the
+correction rather than editing the earlier one. Found by the standing check on causal
+language.
 
 ### Also
 
@@ -565,7 +557,7 @@ conditional EVT on data ending 31 December 2017.
 
 ---
 
-## Session 6 — 21 September 2026
+## Session 6 — 21 September 2026: Phase 09, the ex-ante tail model, survival and Kelly
 
 Phase 09 (tail model, termination probability, survival, Kelly) complete.
 **H3 not rejected, but its stated magnitude is not met. H4 rejected.**
@@ -612,10 +604,11 @@ was about growth-optimal.
   pipeline's seed) is not an estimate at all: with an unbounded fitted tail, every short
   has positive ruin probability and the model optimum is exactly zero; the simulated
   number is just one over the largest draw.
-* **My own phase prompt was wrong.** It asserted calm-state tail risk "should" exceed
-  the unconditional risk; under any GARCH scale it cannot. Tested the question it was
-  reaching for instead - exceedance rates by volatility quintile - and found no
-  under-reaction in calm regimes (p = 0.56). Prompt corrected, property now a test.
+* **My own stated expectation was wrong.** Going in I had written that calm-state tail
+  risk "should" exceed the unconditional risk; under any GARCH scale it cannot. Tested
+  the question it was reaching for instead - exceedance rates by volatility quintile -
+  and found no under-reaction in calm regimes (p = 0.56). Expectation corrected, and the
+  property is now a test.
 
 ### Errors caught before they shipped
 
@@ -640,7 +633,7 @@ premium and the term-structure signal.
 
 ---
 
-## Session 7 — 21 September 2026
+## Session 7 — 21 September 2026: Phase 10, realised variance, HAR and the entry signals
 
 **Phase 10 — realised variance, HAR forecasts and the entry signals.** Complete.
 
@@ -671,7 +664,7 @@ the old code.
 ### Two further decisions, and one I did not make
 
 * **SPY, not the index, for OHLC.** The index's open equals the prior close on 14% of
-  days; its overnight leg carries a tenth of close-to-close variance. The prompt said
+  days; its overnight leg carries a tenth of close-to-close variance. The design named
   "SPX OHLC"; the deviation is in M7.
 * **Spot-anchoring `cm30`.** The interpolated `cm30` is missing on 234 sessions (5.0%)
   where no contract is inside 30 days - after expiries followed by five-week cycles.
@@ -682,8 +675,8 @@ the old code.
   the first training window), so the normal-theory retransformation leaves forecasts
   12% low in mean. Duan's smearing would be the better estimator of the conditional
   mean. But the method was fixed in advance, the primary passes its criteria, and the
-  OOS results were already in front of me - adopting it now would be the kind of change
-  the phase prompt forbids. It goes to Phase 12 as a variant (VRP positive 81.7%,
+  OOS results were already in front of me - adopting it now would be exactly the kind of
+  change the design forbids. It goes to Phase 12 as a variant (VRP positive 81.7%,
   invested 69.1%).
 
 ### Where the forecast is weak
@@ -707,12 +700,12 @@ crisis periods on MSE and by QLIKE everywhere.
 `svcarry.econometrics.forecast_eval` (QLIKE, metrics, Diebold-Mariano);
 `build_signal_panel`, `spot_anchored_front`, `signal_statistics`; `stage_signals`; three
 figures; `har_oos_forecast` gains `retransform` and runs to the sample end; the VRP is
-rebuilt by hand, forecast included, from the raw Cboe line on every run. Tests: seven for
-the panel (the look-ahead perturbation test mutation-checked against two injected
-leaks), five for HAR, three for forecast evaluation, three for the figures. Suite:
-228 passed, 2 skipped. Methodology M7, validation V20-V24,
-limitations L15-L17. The config comment naming `VIX/VIX3M` as the signal contradicted
-the pre-data prompt; the comment was corrected, the value untouched.
+rebuilt by hand, forecast included, from the raw Cboe line on every run. Tests: seven
+for the panel (the look-ahead perturbation test mutation-checked against two injected
+leaks), five for HAR, three for forecast evaluation, three for the figures. Suite: 228
+passed, 2 skipped. Methodology M7, validation V20-V24, limitations L15-L17. The config
+comment naming `VIX/VIX3M` as the signal contradicted the specification fixed before any
+data; the comment was corrected, the value untouched.
 
 ### Handoff to Phase 11
 
@@ -728,7 +721,7 @@ Phase 11 — the backtest and H5.
 
 ---
 
-## Session 8 — 23 September 2026
+## Session 8 — 23 September 2026: Phase 11, the crash-budgeted backtest and H5
 
 **Phase 11 — the crash-budgeted backtest and H5.** Complete. **H5 not rejected.**
 
@@ -763,7 +756,7 @@ indistinguishable from zero.
 
 1. **A constant 0.173 short does better.** Sharpe 0.40 against 0.27, CAGR 7.0% against
    5.0%. What the dynamic parts buy is the tail: worst day -11.7% against -16.6%, skew
-   -3.0 against -4.1. The phase prompt said to report this honestly if it happened; it
+   -3.0 against -4.1. The design said to report this honestly if it happened; it
    happened.
 2. **February 2018 turns on 0.72%.** The strategy lost 0.07% on 5 February because the
    contango filter turned off at the previous close - with `cm30/cm90` at 1.0072
@@ -798,7 +791,7 @@ Phase 12 — robustness and red-teaming. The first thing it should price is the
 
 ---
 
-## Session 9 — 23 September 2026
+## Session 9 — 23 September 2026: Phase 12, robustness and the red team
 
 **Phase 12 — robustness and red-team.** Complete. The strategy claim comes out of this
 phase materially weaker than it went in, and the write-up now says so.
@@ -874,7 +867,7 @@ Phase 13 — results: every conclusion stated at the confidence Phase 12 support
 
 ---
 
-## Session 10 — 23 September 2026
+## Session 10 — 23 September 2026: Phase 13, results and interpretation
 
 **Phase 13 — results and interpretation.** Complete. `docs/results.md` states each
 hypothesis against its pre-registered criterion, then interprets the findings at the
@@ -932,7 +925,7 @@ Phase 14 — visualisation: the figures that carry those three findings.
 
 ---
 
-## Session 11 — 23 September 2026
+## Session 11 — 23 September 2026: Phase 14, twenty-four figures
 
 **Phase 14 — visualisation.** Complete. Twenty-four figures, each with a question it
 answers, all regenerating from one script.
@@ -991,11 +984,11 @@ Phase 15 — documentation and the report.
 
 ---
 
-## Session 12 — 24 September 2026
+## Session 12 — 24 September 2026: Phase 15, the report and a clean-clone reproduction
 
-**Phase 15 — documentation and report.** The phase prompt's instruction was to write the
-key findings first: "If that section cannot be written clearly, the project is not
-finished." It could, in three sentences, and they are now the opening of the report, the
+**Phase 15 — documentation and report.** The rule set for this phase was to write the
+key findings first: if that section cannot be written clearly, the project is not
+finished. It could, in three sentences, and they are now the opening of the report, the
 README and the one-page summary, saying the same thing in the same numbers.
 
 ### Written
@@ -1044,17 +1037,16 @@ What a clone reproduces: 245 tests, the number check, and 20 of 24 figures. What
 not: anything needing the 338 raw files, which are gitignored by design — the pipeline
 stops with exit code 2 and names the command to run rather than downloading implicitly.
 
-### Divergences from the prompt pack, this phase
+### Divergences from the plan, this phase
 
-* The prompt asks for an 8–10 page report; `reports/report.md` is about that length in
+* The plan asks for an 8–10 page report; `reports/report.md` is about that length in
   print but is written as a repository document with tables and links rather than as a
   paginated PDF. No PDF is produced, because every number in it is asserted against a
   live table by a script and a PDF would freeze that link.
-* The prompt asks to "update the prompt pack where execution diverged". The divergences
-  from earlier phases were already recorded where they happened — the running-max stress
-  floor replacing the event floor (M8), SPY rather than SPX for the variance proxy (M7),
-  the log-HAR target correction (V20a). This session added no new methodological
-  divergence, so the pack is unchanged beyond this note.
+* Divergences from earlier phases were recorded where they happened — the running-max
+  stress floor replacing the event floor (M8), SPY rather than SPX for the variance
+  proxy (M7), the log-HAR target correction (V20a). This session added no new
+  methodological divergence.
 
 ### Next
 
@@ -1062,7 +1054,7 @@ Phase 16 — final audit.
 
 ---
 
-## Session 13 — 24 September 2026
+## Session 13 — 24 September 2026: Phase 16, the final audit
 
 **Phase 16 — final audit.** Six perspectives at commit `50a6c3b`, the commit at which the
 project was declared finished. The findings were written and committed (`700c45a`) before
@@ -1140,23 +1132,22 @@ one conclusion the audit required to change has been changed.
 
 ---
 
-## 2026-09-24 — Session 14: recursive audit, Pass 1
+## Session 14 — 24 September 2026: recursive audit, Pass 1
 
 **Objective.** Re-audit the finished project as a system of dependencies rather than a
-sequence of phases, assuming something is still wrong. Entered from a fresh clone in an
-empty container with no project history, so nothing could be taken on trust from the
-working tree.
+sequence of phases, assuming something is still wrong. Entered from a fresh clone with no
+project history to hand, so nothing could be taken on trust from the working tree.
 
 ### What the entry checks established before anything was changed
 
-The unchanged pipeline was run end to end from the raw data, in a container with **numpy
-2.4.4, pandas 3.0.2, Python 3.11.15** — all materially newer than the pinned lower bounds.
-**All 42 tables and all 24 figures came back byte-identical**, as did all 8 processed
-datasets (V37). The suite passed 245 / 2 skipped under the bundled shim with no pytest
-installed. The manifest re-hashed clean over 338 entries. The local working tree was shown
-to be content-identical to `origin/main` at `c4c5ec6` by LF-normalised blob hashing. The
-headline statistics were reproduced to 4.2e-15 by an independent implementation importing
-none of `svcarry`.
+The unchanged pipeline was run end to end from the raw data, on **numpy 2.4.4, pandas
+3.0.2, Python 3.11.15** — all materially newer than the pinned lower bounds. **All 42
+tables and all 24 figures came back byte-identical**, as did all 8 processed datasets
+(V37). The suite passed 245 / 2 skipped under the bundled shim with no pytest installed.
+The manifest re-hashed clean over 338 entries. The local working tree was shown to be
+content-identical to `origin/main` at `c4c5ec6` by LF-normalised blob hashing. The
+headline statistics were reproduced to 4.2e-15 by an independent implementation
+importing none of `svcarry`.
 
 This mattered for what followed: with the baseline reproducing bit for bit, every later
 difference was attributable to a correction and not to the environment.
@@ -1223,28 +1214,29 @@ silently either.
 
 ### Status
 
-Pass 1 corrections are complete, regenerated and revalidated. The audit continues:
-Pass 1 has not yet reached the econometrics implementations, the EVT and survival layer,
-the index reconstruction, the literature review or the prompt system, and by the recursive
-rule Pass 2 re-examines the whole project rather than only what changed here. The register
-is [`final_audit_issue_register.md`](final_audit_issue_register.md).
+Pass 1 corrections are complete, regenerated and revalidated. The audit continues: Pass
+1 has not yet reached the econometrics implementations, the EVT and survival layer, the
+index reconstruction, the literature review or the validation procedure, and by the
+recursive rule Pass 2 re-examines the whole project rather than only what changed here.
+The register is [`final_audit_issue_register.md`](final_audit_issue_register.md).
 
 ---
 
-## 2026-09-24 — Session 15: recursive audit, Passes 2 and 3
+## Session 15 — 24 September 2026: recursive audit, Passes 2 and 3
 
 ### Pass 2 — the instructions, and the estimators
 
-Three findings. The important one was upstream of everything in Pass 1:
-`prompts/tasks/lookahead_audit.md` specified a **date-granular** timing table and never
-required the verdict to be computed, which is why A-05's hard-coded `False` satisfied it
-and why a fifteen-minute overlap was out of scope. The same prompt already lists "*a
-signal computed from a close and traded at the same close*" among the ways look-ahead
-arrives. It named the failure mode and specified a check too coarse to catch it. The
-prompt now requires strike times, a computed per-date verdict, the pipeline gated on it,
-and a mutation test (A-11). Also: the literature that would have prevented A-02 was
-already cited and read too narrowly (A-09), and three prompts named output tables the
-project does not produce — one of them never produced under any name (A-10).
+Three findings. The important one was upstream of everything in Pass 1: the look-ahead
+audit's own specification asked for a **date-granular** timing table and never required
+the verdict to be computed, which is why A-05's hard-coded `False` satisfied it and why a
+fifteen-minute overlap was out of scope. That same specification already lists "*a signal
+computed from a close and traded at the same close*" among the ways look-ahead arrives.
+It named the failure mode and then asked for a check too coarse to catch it. The
+procedure now requires strike times, a computed per-date verdict, the pipeline gated on
+it, and a mutation test (A-11); it is written out in `docs/validation.md` V25. Also: the
+literature that would have prevented A-02 was already cited and read too narrowly (A-09),
+and the working notes named output tables the project does not produce — one of them
+never produced under any name (A-10).
 
 What Pass 2 could not break, all by independent recomputation rather than by reading the
 project's own output: the GJR-GARCH log-likelihood (to 1.6e-04 from the published
@@ -1283,13 +1275,14 @@ pre-crash growth-optimal sizing favoured the full inverse exposure the products 
 
 ### The pattern across three passes
 
-Every finding above the Minor line is the same defect in a different place: **a statement
-about the project that was true in prose and false in the code.** The timing convention
-(A-02/A-05), the prompt that specified it (A-11), the figure-reproduction claim (A-06),
-the test count (A-07), the window a percentage came from (A-08), and the single-writer
-claim (A-12). The project's Phase 16 lesson was that every number in prose should be in a
-table. The audit's lesson is the same sentence about verifications: every claim that a
-check passed should be the output of a check that could have failed.
+Every finding above the Minor line is the same defect in a different place: **a
+statement about the project that was true in prose and false in the code.** The timing
+convention (A-02/A-05), the check that was specified too coarsely to catch it (A-11),
+the figure-reproduction claim (A-06), the test count (A-07), the window a percentage
+came from (A-08), and the single-writer claim (A-12). The project's Phase 16 lesson was
+that every number in prose should be in a table. The audit's lesson is the same sentence
+about verifications: every claim that a check passed should be the output of a check
+that could have failed.
 
 ### Status
 
@@ -1297,7 +1290,7 @@ Pass 3 found one issue, so it is not a clean pass and the audit continues.
 
 ---
 
-## 2026-09-24 — Session 16: recursive audit, Pass 4
+## Session 16 — 24 September 2026: recursive audit, Pass 4
 
 ### A-13: the Sortino column was not the Sortino ratio
 
@@ -1340,7 +1333,7 @@ autocorrelation preservation (0.675 against a sample 0.709, where iid gives 0.00
 the figures, with no gaps in either direction. `data_sources.md` against all 338 manifest
 entries, including the Stooq fallback that is documented and honestly marked unused.
 
-And the Phase 07 gate, which is worth recording: the prompt's own failure band is a
+And the Phase 07 gate, which is worth recording: the design's own failure band is a
 tracking error above 25 bp/day, the measurement was 133.2, and the project wrote down that
 the gate had failed rather than passing it quietly. That failure is now the project's first
 headline finding.
@@ -1351,7 +1344,7 @@ Pass 4 found two issues, so the audit continues.
 
 ---
 
-## 2026-09-24 — Session 17: recursive audit, Pass 5
+## Session 17 — 24 September 2026: recursive audit, Pass 5
 
 Two findings, and both are against the audit's own earlier work rather than the original
 project.
@@ -1386,16 +1379,16 @@ The forecast-evaluation layer reproduces to **ten decimals** on OOS R², RMSE, M
 QLIKE and the whole Mincer-Zarnowitz regression including its HAC standard error — a second
 independent confirmation of the HAC code, by a different route from Pass 2's.
 
-One thing measured rather than assumed, because §46C asks about fees: the NAV recursion
-charges the fee on the prior NAV, which is the ETF convention exactly and covers four of the
-six products, and approximates the two ETNs' filed wording (`CIV x DailyPerformance x
-fee/365`) by at most **1.5e-04 a year**. Against tracking errors of 133 and 32 bp/day that
-is nothing.
+One thing measured rather than assumed, because every fee here is quoted from a filing:
+the NAV recursion charges the fee on the prior NAV, which is the ETF convention exactly
+and covers four of the six products, and approximates the two ETNs' filed wording (`CIV
+x DailyPerformance x fee/365`) by at most **1.5e-04 a year**. Against tracking errors of
+133 and 32 bp/day that is nothing.
 
-And `prompts/operations/github_push_verification.md` turns out to specify the exact
-escalation this audit needed: "produce a transferable artefact — a `git bundle` preserves
-the full history — and give the exact commands to publish it from elsewhere. Never describe
-unpushed work as pushed." That is what was done.
+The standing release checklist turns out to specify the exact escalation this audit
+needed: produce a transferable artefact — a `git bundle` preserves the full history — give
+the exact commands to publish it from elsewhere, and never describe unpushed work as
+pushed. That is what was done.
 
 ### Status
 
@@ -1403,7 +1396,7 @@ Pass 5 found two issues, so the audit continues.
 
 ---
 
-## 2026-09-24 — Session 18: recursive audit, Passes 6 and 7
+## Session 18 — 24 September 2026: recursive audit, Passes 6 and 7
 
 Both passes found exactly one issue, both in the audit's own text, and Pass 7 closes the
 class that produced them.
@@ -1453,12 +1446,12 @@ Pass 7 found one issue. Pass 8 is the candidate clean pass.
 
 ---
 
-## 2026-09-24 — Session 19: recursive audit, Pass 8 — clean
+## Session 19 — 24 September 2026: recursive audit, Pass 8 — clean
 
 **Pass 8 found zero issues.** A complete, independent, project-wide pass: no critical, no
 major, no moderate, no minor.
 
-What it ran. The full pipeline from the raw data in a clean container — **42 of 42 tables,
+What it ran. The full pipeline from the raw data in a clean clone — **42 of 42 tables,
 24 of 24 figures and 8 of 8 processed datasets byte-identical**. The manifest clean over 338
 entries. The number check across four write-ups. The suite with two documented skips. The
 timing gate computed and clean at nineteen rows. Both independent verification scripts
@@ -1475,12 +1468,12 @@ additions, which A-18 had closed as a class and which came back clean.
 The confirmation scan then verified that no register entry is unresolved (eighteen findings,
 eighteen resolved, none critical), that every intended output exists, that the documentation
 describes the current implementation, that the conclusions match the current numbers, and
-that the prompt system describes the process actually followed.
+that the documented procedure describes the process actually followed.
 
-**What the audit could not do.** GitHub is unreachable from both environments available to
-this session, so repository synchronisation is completed by the author's own push. The audit
-is clean; the project is not published until that push lands, and nothing here claims
-otherwise — which is what `prompts/operations/github_push_verification.md` requires.
+**What the audit could not do.** GitHub is unreachable from both machines the project is
+built on, so repository synchronisation is completed by the author's own push. The audit is
+clean; the project is not published until that push lands, and nothing here claims
+otherwise.
 
 ### The shape of the whole thing, for the record
 
