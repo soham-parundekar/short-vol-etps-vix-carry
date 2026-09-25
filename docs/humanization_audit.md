@@ -45,7 +45,12 @@ in [`validation.md`](validation.md) V25.
 comments.
 
 **Validation.** A repository-wide search for "prompt" returns one hit outside this file,
-an ordinary use of the English verb. The link checker reports zero broken references across every markdown
+an ordinary use of the English verb. The last one to go was found only by the final sweep,
+because the earlier passes searched markdown, Python and YAML and this one was a comment
+inside a CSV: `data/reference/product_asset_anchors.csv` pointed at the removed
+asset-bounding task note. It points at `methodology.md` M4 now, and re-running the
+mechanics stage returned every table and dataset byte-identical, as a comment-only change
+should. The link checker reports zero broken references across every markdown
 file and every backticked repository path. Tests and outputs unchanged.
 
 **Files.** `prompts/` (deleted, 35 files); `docs/preregistration.md` (new);
