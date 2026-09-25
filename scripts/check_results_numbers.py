@@ -3,8 +3,8 @@
 
 Phase 13's rule is that a number in the prose must be pointable to a table. This
 script is that rule, executable: it reads the tables and asserts the figures
-quoted in `docs/results.md`, `reports/report.md`, `reports/summary_one_page.md`
-and `README.md`. It is deliberately dumb - the expected values are written out
+quoted in `docs/results.md`, `reports/report.md`, `reports/summary_one_page.md`,
+`docs/preregistration.md` and `README.md`. It is deliberately dumb - the expected values are written out
 here, so a pipeline change that moves a number fails this check instead of
 silently disagreeing with the write-up.
 
@@ -19,6 +19,7 @@ pipeline's own validation stages do.
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -142,6 +143,8 @@ def main() -> int:
     chk("grid minimum", sp["sharpe"].min(), -0.37, 0.02)
     chk("chosen percentile", (sp["sharpe"] < po.loc["strategy", "sharpe"]).mean(), 0.74, 0.02)
     chk("share of cells positive", (sp["sharpe"] > 0).mean(), 0.674)
+    # The grid's size is quoted in four documents and was in none of them checkable.
+    chk("grid cells", len(sp), 144, 0.0)
 
     # The look-ahead claim itself, which used to live only in prose and in a column of
     # hard-coded False. A-05: the table is computed now, so it belongs in this check.
@@ -256,12 +259,29 @@ def main() -> int:
         if token not in str(rt.loc[per, "number"]):
             fails.append(f"report section 6: period answer no longer quotes {token}")
 
+    # ---- the pre-registration claim, which is a date rather than a table value ----
+    #
+    # `docs/preregistration.md`, `docs/methodology.md`, `docs/results.md` and the README
+    # all date the parameter set against the first data retrieval. That retrieval time is
+    # in the manifest, so the claim is checkable and is checked here rather than trusted.
+    manifest = json.loads((ROOT / "data" / "raw" / "_manifest.json").read_text())
+    stamps = [v["retrieved_utc"] for v in manifest.values()
+              if isinstance(v, dict) and "retrieved_utc" in v]
+    if len(manifest) != 338:
+        fails.append(f"manifest holds {len(manifest)} entries; the write-ups say 338")
+    if min(stamps) != "2026-09-20T08:30:04Z":
+        fails.append(
+            f"first data retrieval is {min(stamps)}; the pre-registration claim is dated "
+            "against 2026-09-20T08:30:04Z"
+        )
+
     if fails:
         print(f"{len(fails)} number(s) in the write-ups do not match the tables:")
         for line in fails:
             print("  " + line)
         return 1
-    print("results.md, report.md, summary_one_page.md, README.md: every checked number matches its committed table")
+    print("results.md, report.md, summary_one_page.md, preregistration.md, README.md: "
+          "every checked number matches its committed table")
     return 0
 
 

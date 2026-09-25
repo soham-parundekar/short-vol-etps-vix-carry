@@ -42,10 +42,10 @@ verdicts and their qualifications: [`docs/results.md`](docs/results.md).
 
 | | |
 |---|---|
-| **Research design** | Fixed and committed before any data was retrieved. Five hypotheses, each with a stated rejection criterion |
+| **Research design** | Fixed and committed 50 minutes before the first data retrieval. Five hypotheses, each with a stated rejection criterion; the parameter set and every later change to it are in [`docs/preregistration.md`](docs/preregistration.md) |
 | **Analysis library** | Complete and tested — **264 tests passing**, 2 skipped (cross-checks against packages not installed). This is the one place the count is stated; `make test` prints it |
 | **Data** | Retrieved by `scripts/fetch_data.py`; 338 files, each with URL, retrieval time and SHA-256 in `data/raw/_manifest.json`. 4,711 index sessions, 2008-01-02 to 2026-09-18 |
-| **Phases complete** | 07 index validation · 08 mechanics and flows · 09 tail risk and survival · 10 forecasting and signals · 11 backtest and H5 · 12 robustness and red-team · 13 results · 14 figures · 15 documentation and report · 16 final audit · **recursive audit** (`docs/final_audit_issue_register.md`) |
+| **Phases complete** | 07 index validation · 08 mechanics and flows · 09 tail risk and survival · 10 forecasting and signals · 11 backtest and H5 · 12 robustness and red-team · 13 results · 14 figures · 15 documentation and report · 16 final audit · **recursive audit** (`docs/final_audit_issue_register.md`) · repository cleanup (`docs/humanization_audit.md`) |
 | **Hypotheses** | H1 **rejected** · H2 **not rejected** (25.0% of front-month open interest at the lower asset bound) · H3 **not rejected, magnitude unmet** (8.7×, not 10×) · H4 **rejected** · H5 **not rejected** (out-of-sample Sharpe 0.20 ± 0.31; alpha −2.2% a year, t = −0.77) |
 | **What the backtest does not show** | The dynamic rule does not beat a constant 0.173 short (Sharpe 0.40); what it buys is the tail (worst day −11.7% against −16.6%). Its escape from 5 February 2018 rests on one filter clearing its threshold by 0.72% the day before |
 | **How robust** | Across 144 specifications the out-of-sample Sharpe runs −0.37 to 0.50, **median 0.06**; the pre-registered cell (0.20) is the 74th percentile. Breakeven cost 1.77 ticks per side. Rebalancing weekly instead of daily loses 31.7% in February 2018 |
@@ -56,14 +56,13 @@ exits non-zero on any disagreement. Each number is traced in `docs/validation.md
 what remains imperfect in `docs/limitations.md` and the sequence of work — including errors
 caught and what they were worth — in `docs/project_log.md`.
 
-The environment used to build this repository could not reach the data hosts or PyPI
-through its egress proxy. The data was therefore fetched on the author's own machine by
-the same script, and every file re-hashed against the manifest on arrival.
-
-One consequence is visible throughout and is arguably an improvement: with `arch` and
-`statsmodels` uninstallable, **every estimator is implemented in this repository** —
-GJR-GARCH with Hansen skewed-*t* innovations, peaks-over-threshold GPD, HAR, Newey-West
-HAC, range-based realised variance, Kelly, the stationary bootstrap — and each is
+Two constraints shaped the repository, and both turned out to be worth keeping. The
+machine this was built on sits behind an egress proxy that reaches neither the data hosts
+nor PyPI, so the raw data is fetched by the same script from an unrestricted machine and
+re-hashed against the manifest on arrival — which is where the manifest discipline comes
+from. And with `arch` and `statsmodels` uninstallable, **every estimator is implemented
+here**: GJR-GARCH with Hansen skewed-*t* innovations, peaks-over-threshold GPD, HAR,
+Newey-West HAC, range-based realised variance, Kelly and the stationary bootstrap, each
 unit-tested against simulated data with known parameters. Where those packages *are*
 available the suite cross-checks against them automatically.
 
@@ -78,7 +77,8 @@ available the suite cross-checks against them automatically.
 
 Five hypotheses, each falsifiable, stated in full in
 [`docs/research_question.md`](docs/research_question.md) and
-[`docs/research_design.md`](docs/research_design.md):
+[`docs/research_design.md`](docs/research_design.md), with the parameter set that was
+fixed alongside them in [`docs/preregistration.md`](docs/preregistration.md):
 
 | | Hypothesis | Rejected if |
 |---|---|---|
@@ -179,11 +179,12 @@ with `VIX/VIX3M` as a robustness variant. Details in
 ```
 config/          config.yaml (every tunable parameter) and filings.yaml (primary sources)
 data/            raw / interim / processed, with a provenance manifest
-docs/            research question, design, literature, data sources, methodology,
-                 results, validation, limitations, project log, figure index,
-                 final_audit.md (Phase 16) and final_audit_issue_register.md (the
-                 recursive audit: every issue, its blast radius and its correction)
-prompts/         the phase, task and operational prompts used to build the project
+docs/            research question, design, pre-registration, literature, data
+                 sources, methodology, results, validation, limitations, project
+                 log, figure index, and three audit records: final_audit.md
+                 (Phase 16), final_audit_issue_register.md (the recursive audit --
+                 every issue, its blast radius and its correction) and
+                 humanization_audit.md (the final repository cleanup)
 references/      bibliography and archived SEC filings
 reports/         report.md, summary_one_page.md, 24 figures and 42 tables
 scripts/         fetch_data.py, run_pipeline.py, make_figures.py, run_tests.py,
@@ -265,7 +266,8 @@ The tests that matter most, all of which currently pass:
   variance 1, its CDF equals the integrated PDF, and its quantile function inverts the
   CDF — checked across six parameter sets.
 
-Full record: [`docs/validation.md`](docs/validation.md) (populated as each phase runs).
+Full record: [`docs/validation.md`](docs/validation.md) — thirty-seven checks, each with
+what it proposes, how it was tested and what came back.
 
 ---
 
