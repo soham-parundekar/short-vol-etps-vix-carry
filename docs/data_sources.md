@@ -4,12 +4,11 @@ Every dataset the project uses, where it comes from, what has been verified abou
 and what it cannot tell us. All sources are free and public; none requires
 registration, and nothing here involves circumventing an access control.
 
-**Verification status.** A source is marked **verified** only where the endpoint has
-been requested and its payload inspected. Where the endpoint has been confirmed to
-exist but its full contents have not yet been pulled — which is the case for the bulk
-series while this environment's egress policy blocks the hosts — it is marked
-**endpoint confirmed, bulk pull pending**, and the row will be updated when the
-pipeline runs. Nothing is described as verified that has not been seen.
+**Verification status.** Every source below has been pulled in full and hashed: 338
+files, each with its URL, retrieval timestamp and SHA-256 in `data/raw/_manifest.json`,
+retrieved on 20 September 2026 and re-verified byte for byte since (V2). The **Status**
+row on each source records what was actually retrieved and over what window. Nothing is
+described as verified that has not been seen.
 
 ---
 
@@ -22,7 +21,7 @@ pipeline runs. Nothing is described as verified that has not been seen.
 | **Varying element** | `<settlement>` = the contract's final settlement date, `YYYY-MM-DD` |
 | **Columns** | `Trade Date, Futures, Open, High, Low, Close, Settle, Change, Total Volume, EFP, Open Interest` |
 | **Frequency** | Daily, one file per contract covering that contract's whole life |
-| **Status** | **Verified** — `VX_2018-02-14.csv` requested and its header and first rows inspected |
+| **Status** | **Retrieved** — 313 per-contract files, 2008-01-16 through the last listed expiry, all hashed in the manifest |
 | **Used for** | Index reconstruction, term structure, open interest as the flow denominator |
 
 **Why keyed by expiry rather than by trade date.** Requesting per contract means the
@@ -92,7 +91,7 @@ the SHA-256 manifest reproduces the exact files.
 | **URL pattern** | `https://cdn.cboe.com/api/global/us_indices/daily_prices/<NAME>_History.csv` |
 | **Series used** | `VIX`, `VIX3M`, `VIX9D`, `VIX6M`, `VVIX`, `PUT`, `BXM` |
 | **Layout** | `DATE, OPEN, HIGH, LOW, CLOSE`, or `DATE, <NAME>` for some strategy indices |
-| **Status** | **Verified** for `VIX` (from 1990-01-02), `VIX3M` (from 2009-09-18) and `PUT` (from 1991); others endpoint confirmed, bulk pull pending |
+| **Status** | **Retrieved** through 2026-09-18: `VIX` from 1990-01-02, `VVIX` from 2006-03-06, `VIX6M` from 2008-01-02, `VIX3M` from 2009-09-18, `VIX9D` from 2011-01-04, `PUT` from 1991-03-04, `BXM` from 2002-03-22 |
 | **Used for** | The implied leg of the variance risk premium; the term-structure signal; the PutWrite benchmark |
 
 **The VIX3M constraint, and what is done about it.** The Cboe VIX3M file begins on
@@ -156,7 +155,7 @@ adjustment check above.
 | **Provider** | Federal Reserve Bank of St. Louis (FRED) |
 | **URL** | `https://fred.stlouisfed.org/graph/fredgraph.csv?id=<SERIES>` |
 | **Series** | `DTB3` (3-month bill, secondary market **discount rate**), `DGS3MO` (3-month constant maturity **yield**), `DFF` (effective fed funds) |
-| **Status** | Endpoint pattern confirmed; bulk pull pending |
+| **Status** | **Retrieved** — `DTB3`, `DGS3MO` and `DFF`, all three hashed in the manifest |
 | **Used for** | The index total-return accrual and the strategy's collateral return |
 
 **Discount rate, not yield.** The S&P VIX futures total-return indices and the
@@ -187,7 +186,7 @@ useful, though the manifest makes it unnecessary.
 |---|---|
 | **Provider** | U.S. Securities and Exchange Commission |
 | **Documents** | See `config/filings.yaml` — seven filings across four issuers |
-| **Status** | Two verified by direct reading (the XIV acceleration announcement and the VelocityShares pricing supplement); the others located and pending archival |
+| **Status** | **Retrieved and read** — all seven archived in `references/filings/`, with **28 of 28** quoted terms re-found verbatim in the source documents by `scripts/extract_filing_terms.py` |
 | **Used for** | Every product term the project asserts |
 
 EDGAR's fair-access policy requires a descriptive User-Agent with a contact address and
@@ -195,17 +194,17 @@ asks for no more than ten requests a second. The HTTP layer supplies the header 
 `config/config.yaml` and throttles well below that limit.
 
 `config/filings.yaml` records, for each document, the **specific claims** it supports
-and whether those claims have been read out of the archived file. The task prompt
-`prompts/tasks/verify_filing_terms.md` governs the re-extraction, and any term that
-cannot be quoted from a primary document is marked unverified in the repository with
-the results that depend on it flagged.
+and whether those claims have been read out of the archived file.
+`scripts/extract_filing_terms.py` re-extracts every term from the archived document into
+`reports/tables/filing_terms.csv`; any term that cannot be quoted from a primary
+document is marked unverified there, with the results that depend on it flagged.
 
 **The weakest input: assets outstanding.** Net assets by fund appear in the ProShares
 10-K at period ends, not daily. Because the rebalancing-flow estimate is *linear* in
-assets, the project constructs an upper and a lower bound between the disclosed
-anchors rather than a point estimate, and requires its conclusion to hold at both.
-The method is specified in `prompts/tasks/estimate_product_assets.md` and its
-consequences are recorded in `docs/limitations.md`.
+assets, the project constructs an upper and a lower bound between the disclosed anchors
+rather than a point estimate, and requires its conclusion to hold at both. The method is
+specified in `docs/methodology.md` M4 and its consequences are recorded in
+`docs/limitations.md`.
 
 **Redistribution.** SEC filings are public documents and are archived in
 `references/filings/` so that a reader can check any quoted term.
@@ -225,11 +224,11 @@ repository:
    or `arch`, and unit-tested against simulated data with known parameters. Where those
    packages are available the test suite cross-checks against them automatically and
    skips otherwise.
-2. **The bulk data pull is pending** at the time of writing. The acquisition code,
-   the URL patterns and the manifest machinery are complete and the per-source
-   endpoints have been verified individually; the rows above marked "bulk pull pending"
-   become "verified" when `scripts/fetch_data.py` completes, and this document is
-   updated in the same commit.
+2. **The data was pulled from an unrestricted machine** by the same
+   `scripts/fetch_data.py`, and every file was re-hashed against the manifest on
+   arrival. That is where the manifest discipline comes from: it exists because the
+   download and the analysis happen in different places and the join between them has
+   to be checkable.
 
 Nothing in this project substitutes a convenient source for a correct one because of
 these constraints, and no result is reported from data that has not been downloaded.

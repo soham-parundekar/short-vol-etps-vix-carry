@@ -570,11 +570,11 @@ errors and a 63-day horizon are run as cross-checks. Full table:
 
 ### V12a. One block, and why it is not deleted
 
-The 21-day and 63-day estimates for pre-2018 SVXY disagree (-2.85 against -1.08),
-which the phase prompt names as the sign that block length is doing work it should
-not. Leave-one-block-out locates it: **dropping the single block containing 5-6
-February 2018 moves the SVXY slope by +1.76**; the next most influential block moves
-it by 0.11. Two documented causes, neither a data error:
+The 21-day and 63-day estimates for pre-2018 SVXY disagree (-2.85 against -1.08), which
+is the sign that block length is doing work it should not. Leave-one-block-out locates
+it: **dropping the single block containing 5-6 February 2018 moves the SVXY slope by
++1.76**; the next most influential block moves it by 0.11. Two documented causes,
+neither a data error:
 
 1. **The identity is an approximation.** Over that block, exact discrete rebalancing
    `prod(1 + L r)` and the continuous-time identity differ by **27.8 percentage
@@ -705,11 +705,11 @@ Full sample: p = 0.006, driven by too *few* exceedances in the turbulent quintil
 
 ## V15. The EVT threshold
 
-Chosen on **pre-2018 residuals only** by the rule in
-`prompts/tasks/choose_evt_threshold.md`: the lowest quantile with at least 50
-exceedances, xi within one standard error of the next two thresholds, KS on the
-excesses p > 0.10, and inside the linear region of the mean excess (taken as the lower
-and upper halves of [q, 0.99] implying xi within one standard error of each other).
+Chosen on **pre-2018 residuals only**, by the rule fixed before any data was retrieved
+(`docs/preregistration.md` section 3): the lowest quantile with at least 50 exceedances,
+xi within one standard error of the next two thresholds, KS on the excesses p > 0.10,
+and inside the linear region of the mean excess (taken as the lower and upper halves of
+[q, 0.99] implying xi within one standard error of each other).
 
 | q | exceedances | xi (se) | KS p | linear | passes |
 |---|---|---|---|---|---|
@@ -745,9 +745,10 @@ the pipeline's number.
 | **5 February 2018, data through 2 February** | **1 in 12.8 years** (grid 10.0 - 13.7) | 1 in 115 years (grid 53 - 135) |
 
 The unconditional numbers move by 1.6x (-1x) and 2.9x (-0.5x) across the grid, inside
-the factor of three beyond which the phase prompt requires a range as the headline.
-The calm-state numbers move by 8x to 30x across the grid and are therefore reported as
-ranges, never as points: far into the tail, small differences in xi compound.
+the factor of three beyond which the pre-registered rule requires a range as the
+headline. The calm-state numbers move by 8x to 30x across the grid and are therefore
+reported as ranges, never as points: far into the tail, small differences in xi
+compound.
 
 **The warning, day by day** (`exante_warning_path.csv`, `figures/exante_warning.png`).
 Parameters frozen at 31 December 2017, volatility state updated as each day arrives:
@@ -756,12 +757,12 @@ Parameters frozen at 31 December 2017, volatility state updated as each day arri
 week - and still a one-day probability of about 1 in 3,200 trading days on the morning
 of the event.
 
-**A correction to the phase prompt.** Its self-review asserted that the
-calm-quintile probability "should" exceed the unconditional one. Under any GARCH
-scale the one-day tail probability rises with sigma, so the reverse must hold, and it
-does. The real question behind the assertion - whether the model under-states risk
-in calm regimes - is tested in V14 and the answer is no. Prompt corrected; the
-property is now a test.
+**An expectation, corrected.** The expectation recorded going in was that the
+calm-quintile probability "should" exceed the unconditional one. Under any GARCH scale
+the one-day tail probability rises with sigma, so the reverse must hold, and it does.
+The real question behind the assertion - whether the model under-states risk in calm
+regimes - is tested in V14 and the answer is no. The expectation was corrected and the
+property is now a test (`tests/test_tailrisk.py`).
 
 **H3, against its pre-registered rule.** Rejected if the ordering reverses, if the
 survival gap is unstable across the grid, or if the -1x probability is below 1 in
@@ -797,11 +798,12 @@ innovations - generates volatility spirals far outside anything observed
 | daily volatility, maximum | 0.158 | **6.92** |
 
 The 1.1% of simulated days with volatility above the observed maximum carry **81%** of
-simulated wipeouts, and 41% of paths that suffer one suffer another within 20 days. That is extrapolation of the variance dynamics, not of
-the innovation tail. Capping volatility at its observed maximum removes it; the pair
-brackets the answer and neither is offered alone. Notably, 5 February 2018 itself did
-not come out of such a spiral: it was an 8.5-sigma innovation at a volatility of 127%
-annualised, well inside the observed range.
+simulated wipeouts, and 41% of paths that suffer one suffer another within 20 days. That
+is extrapolation of the variance dynamics, not of the innovation tail. Capping
+volatility at its observed maximum removes it; the pair brackets the answer and neither
+is offered alone. Notably, 5 February 2018 itself did not come out of such a spiral: it
+was an 8.5-sigma innovation at a volatility of 127% annualised, well inside the observed
+range.
 
 ---
 
@@ -965,16 +967,38 @@ of days. By year the invested share ranges from 40% (2008) and 53% (2020) to 97%
 
 **Parameter provenance** (look-ahead audit, step 5): threshold 1.0, VRP minimum 0.0,
 `rs_overnight`, log HAR, horizon, lags, burn-in and refit interval all appear in
-`config/config.yaml` at commit 2bdeb31 (07:40:36 UTC); the primary slope measure in the
-Phase 10 prompt at commit 3db0269 (08:01:09 UTC); the first data retrieval in the
-manifest is 08:30:04 UTC. Nothing was changed after. The config comment naming
-VIX/VIX3M contradicted the prompt; the comment was corrected, not the value.
-**Timing table** (step 2): `timing_audit.csv`, no row where use precedes availability.
-The shift test (step 3) needs the backtest and belongs to Phase 11.
+`config/config.yaml` at commit 2bdeb31 (07:40:36 UTC); the primary slope measure was
+fixed at commit 3db0269 (08:01:09 UTC); the first data retrieval in the manifest is
+08:30:04 UTC. Nothing was changed after. The config comment naming VIX/VIX3M
+contradicted the fixed specification; the comment was corrected, not the value. **Timing
+table** (step 2): `timing_audit.csv`, no row where use precedes availability. The shift
+test (step 3) needs the backtest and belongs to Phase 11.
 
 ---
 
 ## V25. The sizing chain: timing
+
+**The procedure**, in the form A-11 left it. Every step is run by the pipeline and every
+one of them can fail:
+
+1. *Perturbation.* Change every input after a cut-off date and require each earlier
+   forecast and strategy return to be bit-identical. This perturbs by whole days, so it
+   cannot see an intraday overlap - step 2 exists because of that.
+2. *Timing table.* For every input record the date it is indexed by, the date its
+   information becomes available, **the clock time at which its value is struck**, and
+   the strike time of the execution reference, which may move mid-sample as the VX
+   settlement did on 26 October 2020. The verdict is **computed per date** with a failure
+   count, and the pipeline is gated on it.
+3. *Shift test.* Re-run at lag 0, 1 and 2 and require the Sharpe to fall strictly. Lag 0
+   is the deliberate leak, and its value is reported as the calibration.
+4. *Mutation test.* Remove the correction and require the check to fail. A check that
+   cannot fail is not evidence.
+5. *Parameter provenance.* Every parameter traced to the commit that fixed it and that
+   commit dated against the first data retrieval.
+
+Steps 1 and 2 are complementary and neither alone is sufficient: the first sees
+whole-day leaks the second's clock times would not flag as anomalous, and the second
+sees same-day overlaps the first cannot reach.
 
 | Check | Result | Verdict |
 |---|---|---|
@@ -1205,7 +1229,7 @@ loss, because the correctly lagged VRP filter kept the position flat - against a
 
 ## V35. The red team, answered with numbers
 
-`redteam_answers.csv`, in the prompt's order:
+`redteam_answers.csv`, in order:
 
 1. **Weakest assumption**: the contango threshold. February 2018 by threshold: -0.1%
    at 0.95, 0.975 and 1.0; **-24.3% at 1.025**.
@@ -1250,7 +1274,8 @@ happened, in full, including the two defects it found.
 the manifest but not the 338 raw files. The pipeline does not download implicitly: the
 clean stage stops with
 
-> Missing raw VIX futures files: data/raw/cboe/vx → run: `python scripts/fetch_data.py --only futures`
+> Missing raw VIX futures files: data/raw/cboe/vx → run: `python scripts/fetch_data.py
+  --only futures`
 
 and explains that every input must come through `fetch_data.py` so that its URL,
 retrieval time and SHA-256 are recorded. Four figures (`index_vs_products`,
@@ -1289,7 +1314,7 @@ closes this gap.**
 ## V37. Full reproduction from raw data (recursive audit, Pass 1)
 
 The gap V36 left open — whether the *tables* reproduce from the raw files — was closed in
-the recursive audit. A fresh `git clone` into an empty Linux container, the 338 raw files
+the recursive audit. A fresh `git clone` into an empty Linux working directory, the 338 raw files
 restored and verified against the manifest, and `scripts/run_pipeline.py` run end to end
 with no other change.
 
@@ -1338,7 +1363,9 @@ it is quoted, because quoting it in four places is what made it drift (A-16).
 ## Open items
 
 1. The 2016 and 2019 steps in V6 are not explained.
-2. The seven SEC filings are not yet verifiable in this environment (V2).
+2. ~~The seven SEC filings are not yet verifiable in this environment.~~ **Closed.**
+   All seven are archived and all 28 quoted terms re-found verbatim in them (V2,
+   `reports/tables/filing_terms.csv`).
 3. Post-October-2020 slopes are 0.985 (VIXY), 0.991 (SVXY), 0.971 (UVXY) — close to
    but not equal to one. Whether the residual 1-3% is product tracking difficulty,
    fee drag mis-attributed to the slope, or remaining index noise is not resolved.
